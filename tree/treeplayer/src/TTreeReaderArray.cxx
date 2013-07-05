@@ -85,7 +85,7 @@ namespace {
 
       Bool_t CheckProxy(ROOT::TBranchProxy *proxy) {
          if (!proxy->Read()) return false;
-         if (proxy->IsaPointer() && !proxySet) {
+         if (proxy->IsaPointer() && (!proxySet || !((TGenCollectionProxy*)proxy->GetCollection())->GetEnv()->fObject)) {
             if (proxy->GetWhere() && *(void**)proxy->GetWhere()){
                ((TGenCollectionProxy*)proxy->GetCollection())->PushProxy(*(void**)proxy->GetWhere());
                proxySet = true;
@@ -314,8 +314,6 @@ void ROOT::TTreeReaderArrayBase::CreateProxy()
 {
    // Create the proxy object for our branch.
    if (fProxy) {
-      Error("CreateProxy()", "Proxy object for branch %s already exists!",
-            fBranchName.Data());
       return;
    }
    if (!fTreeReader) {

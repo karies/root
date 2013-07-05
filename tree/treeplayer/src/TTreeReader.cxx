@@ -94,6 +94,8 @@ TTreeReader::EEntryStatus TTreeReader::SetEntry(Long64_t entry)
       fEntryStatus = kEntryNoTree;
       return fEntryStatus;
    }
+   Int_t treeNumInChain = fTree->GetTreeNumber();
+
    TTree* prevTree = fDirector->GetTree();
 
    int loadResult = fTree->LoadTree(entry);
@@ -102,9 +104,9 @@ TTreeReader::EEntryStatus TTreeReader::SetEntry(Long64_t entry)
       return fEntryStatus;
    }
 
-   TTree* currentTree = fTree->GetTree();
-   if (prevTree != currentTree) {
-      fDirector->SetTree(currentTree);
+   Int_t currentTreeNumInChain = fTree->GetTreeNumber();
+   if (treeNumInChain != currentTreeNumInChain) {
+         fDirector->SetTree(fTree->GetTree());
    }
    if (!prevTree || fDirector->GetReadEntry() == -1) {
       // Tell readers we now have a tree
@@ -119,7 +121,7 @@ TTreeReader::EEntryStatus TTreeReader::SetEntry(Long64_t entry)
          }
       }
    }
-   fDirector->SetReadEntry(entry);
+   fDirector->SetReadEntry(loadResult);
    fEntryStatus = kEntryValid;
    return fEntryStatus;
 }
