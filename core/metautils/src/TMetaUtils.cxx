@@ -3230,7 +3230,7 @@ clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
             "Cannot find header file " << *hdr
                    << " included in dictionary module "
                    << moduleName.data()
-                   << " in include search path!";
+                   << " in include search path!" << std::endl;
          hdrFileEntry = PP.getFileManager().getFile(*hdr, /*OpenFile=*/false,
                                                     /*CacheFailure=*/false);
       } else if (getenv("ROOT_MODULES")) {
