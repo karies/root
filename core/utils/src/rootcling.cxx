@@ -2225,7 +2225,20 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
             ROOT::TMetaUtils::Error(0, "Cannot open %s\n", modName);
             return false;
          }
-         if (interp.loadModuleForHeader(contentHdr)
+         std::string::size_type posDir = contentHdr.find_last_of("/");
+         if (posDir != std::string::npos) {
+            const clang::DirectoryEntry* DirEntry = interp.getCI()->getFileManager()
+               .getDirectory(contentHdr.substr(0, posDir));
+            clang::DirectoryLookup DirLookup(DirEntry,
+                                             clang::SrcMgr::C_User,
+                                             false /*isFramework*/);
+            interp.getCI()->getPreprocessor().getHeaderSearchInfo()
+               .AddSearchPath(DirLookup, false /*angled*/);
+            ++posDir;
+         } else {
+            posDir = 0;
+         }
+         if (interp.loadModuleForHeader(contentHdr.c_str() + posDir)
              != cling::Interpreter::kSuccess) {
             ROOT::TMetaUtils::Error(0, "Cannot parse %s\n", contentHdr.c_str());
             return false;
@@ -2276,13 +2289,6 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          return false;
       const clang::VarDecl* arrIncludesVar = LoadSteps().getIncludesVar(interp, *iM);
       if (!arrIncludesVar) return false;
-
-      /*
-      if (!ROOT::TMetaUtils::declareModuleMap(interp.getCI(), iM->c_str(),
-                                              contentHeaders)) {
-         ROOT::TMetaUtils::Error(0, "Cannot open %s\n", iM->c_str());
-         return false;
-         }*/
    }
    return true;
 }
