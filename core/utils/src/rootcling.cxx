@@ -2193,6 +2193,100 @@ static bool InjectModuleUtilHeader(const char* argv0,
    return true;
 }
 
+static bool LoadDependentPCMs(cling::Interpreter& interp,
+                              const std::vector<std::string>& baseModules)
+{
+
+   class LoadSteps {
+   public:
+      bool findPCM(const std::string& name) const {
+         struct stat statPCM;
+         if (stat(name.c_str(), &statPCM)) {
+            ROOT::TMetaUtils::Error(0, "Cannot find %s\n", name.c_str());
+            return false;
+         }
+         return true;
+      }
+
+      std::string getContentHdr(const std::string& name) const {
+         // libCore_rdict.pcm -> libCore_rdictContent.h
+         std::string contentHdr(name);
+         contentHdr.erase(contentHdr.length() - 4, 4);
+         contentHdr += "Content.h";
+         return contentHdr;
+      }
+
+      bool declareContentModuleMap(cling::Interpreter& interp,
+                                   const char* modName,
+                                   const std::string& contentHdr) const {
+         const char* contentHeaders[] = { contentHdr.c_str(), 0};
+         if (!ROOT::TMetaUtils::declareModuleMap(interp.getCI(), modName,
+                                                 contentHeaders)) {
+            ROOT::TMetaUtils::Error(0, "Cannot open %s\n", modName);
+            return false;
+         }
+         if (interp.loadModuleForHeader(contentHdr)
+             != cling::Interpreter::kSuccess) {
+            ROOT::TMetaUtils::Error(0, "Cannot parse %s\n", contentHdr.c_str());
+            return false;
+         }
+         return true;
+      }
+
+      const clang::VarDecl* getIncludesVar(cling::Interpreter& interp,
+                                           const std::string& modName) {
+         const clang::NamespaceDecl* nsp = getNamespace(interp, "ROOT");
+         if (!nsp) return 0;
+         nsp = getNamespace(interp, "Dict", nsp);
+         if (!nsp) return 0;
+         nsp = getNamespace(interp, "modName", nsp);
+         if (!nsp) return 0;
+         const clang::NamedDecl* nd
+            = cling::utils::Lookup::Named(&interp.getSema(), "arrIncludes", nsp);
+         if (!nd) {
+            ROOT::TMetaUtils::Error(0, "Cannot find declaration for %s::arrIncludes\n",
+                                    nsp->getName().str().c_str());
+            return 0;
+         }
+         return llvm::dyn_cast_or_null<clang::VarDecl>(nd);
+      }
+
+   private:
+      const clang::NamespaceDecl* getNamespace(cling::Interpreter& interp,
+                                               const char* name,
+                                               const clang::DeclContext* Within = 0) {
+         clang::NamespaceDecl* ret
+            = cling::utils::Lookup::Namespace(&interp.getSema(), name, Within);
+         if (!ret) {
+            const clang::NamedDecl* ndWithin
+               = llvm::dyn_cast_or_null<clang::NamedDecl>(Within);
+            ROOT::TMetaUtils::Error(0, "Cannot find namespace %s::%s\n",
+                                    ndWithin ? ndWithin->getName().str().c_str() : "",
+                                    name);
+         }
+         return ret;
+      }
+   };
+
+   for (std::vector<std::string>::const_iterator iM = baseModules.begin(),
+           eM = baseModules.end(); iM != eM; ++iM) {
+      if (!LoadSteps().findPCM(*iM)) return false;
+      std::string contentHdr = LoadSteps().getContentHdr(*iM);
+      if (!LoadSteps().declareContentModuleMap(interp, iM->c_str(), contentHdr))
+         return false;
+      const clang::VarDecl* arrIncludesVar = LoadSteps().getIncludesVar(interp, *iM);
+      if (!arrIncludesVar) return false;
+
+      /*
+      if (!ROOT::TMetaUtils::declareModuleMap(interp.getCI(), iM->c_str(),
+                                              contentHeaders)) {
+         ROOT::TMetaUtils::Error(0, "Cannot open %s\n", iM->c_str());
+         return false;
+         }*/
+   }
+   return true;
+}
+
 //______________________________________________________________________________
 static int GenerateModule(TModuleGenerator& modGen,
                           clang::CompilerInstance* CI,
@@ -2742,6 +2836,8 @@ int RootCling(int argc,
    clingArgs.push_back("-I");
    clingArgs.push_back(std::string(R__GCC_TOOLCHAIN) + "/include/c++/4.6.2/x86_64-unknown-linux-gnu");
 #endif
+   clingArgs.push_back("-Xclang");
+   clingArgs.push_back("-fmodules");
 
    std::vector<const char*> clingArgsC;
    for (size_t iclingArgs = 0, nclingArgs = clingArgs.size();
@@ -2754,10 +2850,16 @@ int RootCling(int argc,
 #else
    gResourceDir = TMetaUtils::GetLLVMResourceDir(ROOTBUILDVAL);
 #endif
+
    cling::Interpreter interp(clingArgsC.size(), &clingArgsC[0],
                              gResourceDir.c_str());
+   if (!LoadDependentPCMs(interp, baseModules)) {
+      CleanupOnExit(1);
+      return 1;
+   }
+
    if (interp.declare("namespace std {} using namespace std;") != cling::Interpreter::kSuccess
-// CINT uses to define a few header implicitly, we need to do it explicitly.
+// CINT uses to define a few headers implicitly, we need to do it explicitly.
        || interp.declare("#include <assert.h>\n"
                          "#include <stdlib.h>\n"
                          "#include <stddef.h>\n"
@@ -2811,9 +2913,9 @@ int RootCling(int argc,
    for (int i = ic; i < argc; i++) {
       if (strcmp("-m", argv[i]) == 0 && (i+1) < argc) {
          // precompiled modules
-         baseModules.push_back(argv[ic+1]);
-         ++i;
-         continue;
+         ROOT::TMetaUtils::Error(0, "-m %s must be before first header file!", argv[ic+1]);
+         CleanupOnExit(1);
+         return 1;
       }
       if (!firstInputFile && *argv[i] != '-' && *argv[i] != '+') {
          firstInputFile = i;
