@@ -824,8 +824,8 @@ TCling::TCling(const char *name, const char *title)
          , "-I", sysIncludePath1.c_str()
          , "-I", sysIncludePath2.c_str()
 #endif
+         "-Xclang", "-fmodules"};
         };
-         //"-Xclang", "-fmodules"};
 
    fInterpreter = new cling::Interpreter(sizeof(interpArgs) / sizeof(char*),
                                          interpArgs,
