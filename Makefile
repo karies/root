@@ -462,7 +462,9 @@ ifeq ($(PLATFORM),ios)
    POSTBIN       += staticlib
 endif
 
+ifeq ($(ROOT_MODULES),)
 POSTBIN       += onepcm
+endif
 
 MAKEDEP        = $(RMKDEP)
 MAKELIB        = $(ROOT_SRCDIR)/build/unix/makelib.sh $(MKLIBOPTIONS)
