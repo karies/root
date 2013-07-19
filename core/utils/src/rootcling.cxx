@@ -2258,7 +2258,7 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
             = cling::utils::Lookup::Named(&interp.getSema(), "arrIncludes", nsp);
          if (!nd) {
             ROOT::TMetaUtils::Error(0, "Cannot find declaration for %s::arrIncludes\n",
-                                    nsp->getName().str().c_str());
+                                    nsp->getQualifiedNameAsString().c_str());
             return 0;
          }
          return llvm::dyn_cast_or_null<clang::VarDecl>(nd);
@@ -2274,7 +2274,7 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
             const clang::NamedDecl* ndWithin
                = llvm::dyn_cast_or_null<clang::NamedDecl>(Within);
             ROOT::TMetaUtils::Error(0, "Cannot find namespace %s::%s\n",
-                                    ndWithin ? ndWithin->getName().str().c_str() : "",
+                                    ndWithin ? ndWithin->getQualifiedNameAsString().c_str() : "",
                                     name);
          }
          return ret;
