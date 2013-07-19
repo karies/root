@@ -2193,16 +2193,19 @@ static bool InjectModuleUtilHeader(const char* argv0,
    return true;
 }
 
+//______________________________________________________________________________
 static bool LoadDependentPCMs(cling::Interpreter& interp,
                               const std::vector<std::string>& baseModules)
 {
+
+   using namespace clang;
 
    class LoadSteps {
    public:
       bool findPCM(const std::string& name) const {
          struct stat statPCM;
          if (stat(name.c_str(), &statPCM)) {
-            ROOT::TMetaUtils::Error(0, "Cannot find %s\n", name.c_str());
+            TMetaUtils::Error(0, "Cannot find %s\n", name.c_str());
             return false;
          }
          return true;
@@ -2220,17 +2223,17 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
                                    const char* modName,
                                    const std::string& contentHdr) const {
          const char* contentHeaders[] = { contentHdr.c_str(), 0};
-         if (!ROOT::TMetaUtils::declareModuleMap(interp.getCI(), modName,
+         if (!TMetaUtils::declareModuleMap(interp.getCI(), modName,
                                                  contentHeaders)) {
-            ROOT::TMetaUtils::Error(0, "Cannot open %s\n", modName);
+            TMetaUtils::Error(0, "Cannot open %s\n", modName);
             return false;
          }
          std::string::size_type posDir = contentHdr.find_last_of("/");
          if (posDir != std::string::npos) {
-            const clang::DirectoryEntry* DirEntry = interp.getCI()->getFileManager()
+            const DirectoryEntry* DirEntry = interp.getCI()->getFileManager()
                .getDirectory(contentHdr.substr(0, posDir));
-            clang::DirectoryLookup DirLookup(DirEntry,
-                                             clang::SrcMgr::C_User,
+            DirectoryLookup DirLookup(DirEntry,
+                                             SrcMgr::C_User,
                                              false /*isFramework*/);
             interp.getCI()->getPreprocessor().getHeaderSearchInfo()
                .AddSearchPath(DirLookup, false /*angled*/);
@@ -2240,15 +2243,15 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          }
          if (interp.loadModuleForHeader(contentHdr.c_str() + posDir)
              != cling::Interpreter::kSuccess) {
-            ROOT::TMetaUtils::Error(0, "Cannot parse %s\n", contentHdr.c_str());
+            TMetaUtils::Error(0, "Cannot parse %s\n", contentHdr.c_str());
             return false;
          }
          return true;
       }
 
-      const clang::VarDecl* getIncludesVar(cling::Interpreter& interp,
-                                           const std::string& modName) {
-         const clang::NamespaceDecl* nsp = getNamespace(interp, "ROOT");
+      const VarDecl* getIncludesVar(cling::Interpreter& interp,
+                                    const std::string& modName) {
+         const NamespaceDecl* nsp = getNamespace(interp, "ROOT");
          if (!nsp) return 0;
          nsp = getNamespace(interp, "Dict", nsp);
          if (!nsp) return 0;
@@ -2263,26 +2266,26 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          modNameNSp.erase(modNameNSp.length() - 10, 10);
          nsp = getNamespace(interp, modNameNSp.c_str(), nsp);
          if (!nsp) return 0;
-         const clang::NamedDecl* nd
+         const NamedDecl* nd
             = cling::utils::Lookup::Named(&interp.getSema(), "arrIncludes", nsp);
          if (!nd) {
-            ROOT::TMetaUtils::Error(0, "Cannot find declaration for %s::arrIncludes\n",
+            TMetaUtils::Error(0, "Cannot find declaration for %s::arrIncludes\n",
                                     nsp->getQualifiedNameAsString().c_str());
             return 0;
          }
-         return llvm::dyn_cast_or_null<clang::VarDecl>(nd);
+         return llvm::dyn_cast_or_null<VarDecl>(nd);
       }
 
    private:
-      const clang::NamespaceDecl* getNamespace(cling::Interpreter& interp,
+      const NamespaceDecl* getNamespace(cling::Interpreter& interp,
                                                const char* name,
-                                               const clang::DeclContext* Within = 0) {
-         clang::NamespaceDecl* ret
+                                               const DeclContext* Within = 0) {
+         NamespaceDecl* ret
             = cling::utils::Lookup::Namespace(&interp.getSema(), name, Within);
          if (!ret) {
-            const clang::NamedDecl* ndWithin
-               = llvm::dyn_cast_or_null<clang::NamedDecl>(Within);
-            ROOT::TMetaUtils::Error(0, "Cannot find namespace %s::%s\n",
+            const NamedDecl* ndWithin
+               = llvm::dyn_cast_or_null<NamedDecl>(Within);
+            TMetaUtils::Error(0, "Cannot find namespace %s::%s\n",
                                     ndWithin ? ndWithin->getQualifiedNameAsString().c_str() : "",
                                     name);
          }
@@ -2296,7 +2299,7 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
       std::string contentHdr = LoadSteps().getContentHdr(*iM);
       if (!LoadSteps().declareContentModuleMap(interp, iM->c_str(), contentHdr))
          return false;
-      const clang::VarDecl* arrIncludesVar = LoadSteps().getIncludesVar(interp, *iM);
+      const VarDecl* arrIncludesVar = LoadSteps().getIncludesVar(interp, *iM);
       if (!arrIncludesVar) return false;
    }
    return true;
@@ -2326,7 +2329,7 @@ static int GenerateModule(TModuleGenerator& modGen,
          headersCStr.push_back(iH->c_str());
       }
       headersCStr.push_back(0);
-      module = ROOT::TMetaUtils::declareModuleMap(CI, modGen.GetModuleFileName().c_str(), &headersCStr[0]);
+      module = TMetaUtils::declareModuleMap(CI, modGen.GetModuleFileName().c_str(), &headersCStr[0]);
    }
 
    // From PCHGenerator and friends:
