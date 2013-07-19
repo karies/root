@@ -2898,7 +2898,7 @@ int RootCling(int argc,
 #endif
        ) {
       // There was an error.
-      ROOT::TMetaUtils::Error(0,"Error loading the default header files.");
+      ROOT::TMetaUtils::Error(0,"Error loading the default header files.\n");
       CleanupOnExit(1);
       return 1;
    }
