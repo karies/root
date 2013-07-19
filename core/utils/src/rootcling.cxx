@@ -2252,7 +2252,16 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          if (!nsp) return 0;
          nsp = getNamespace(interp, "Dict", nsp);
          if (!nsp) return 0;
-         nsp = getNamespace(interp, "modName", nsp);
+         std::string modNameNSp("_");
+         std::string::size_type posFilename = modName.find_last_of("/\\");
+         // lib/libCore_rdict.pcm -> libCore_rdict.pcm
+         if (posFilename != std::string::npos)
+            modNameNSp += modName.substr(posFilename + 1);
+         else
+            modNameNSp += modName;
+         // libCore_rdict.pcm -> libCore
+         modNameNSp.erase(modNameNSp.length() - 10, 10);
+         nsp = getNamespace(interp, modNameNSp.c_str(), nsp);
          if (!nsp) return 0;
          const clang::NamedDecl* nd
             = cling::utils::Lookup::Named(&interp.getSema(), "arrIncludes", nsp);
