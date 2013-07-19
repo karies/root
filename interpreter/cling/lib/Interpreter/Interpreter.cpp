@@ -488,7 +488,8 @@ namespace cling {
     // Pretend that the module came from an inclusion directive, so that clang
     // will create an implicit import declaration to capture it in the AST.
     bool isInclude = true;
-    SourceLocation includeLoc;
+    SourceManager& SM = getCI()->getSourceManager();
+    SourceLocation includeLoc = SM.getLocForEndOfFile(SM.getMainFileID());
     if (getCI()->loadModule(includeLoc, path, Module::AllVisible, isInclude)) {
       // After module load we need to "force" Sema to generate the code for
       // things like dynamic classes.
