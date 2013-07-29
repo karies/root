@@ -256,8 +256,9 @@ clang::NestedNameSpecifier* AddDefaultParametersNNS(const clang::ASTContext& Ctx
          outer_scope = AddDefaultParametersNNS(Ctx, outer_scope, interpreter, normCtxt);
       }
 
-      clang::QualType addDefault =
-         ROOT::TMetaUtils::AddDefaultParameters(clang::QualType(scope_type,0), interpreter, normCtxt );
+      clang::QualType addDefault = 
+         ROOT::TMetaUtils::AddDefaultParameters(clang::QualType(scope_type,0), interpreter, normCtxt);
+
       // NOTE: Should check whether the type has changed or not.
       return clang::NestedNameSpecifier::Create(Ctx,outer_scope,
                                                 false /* template keyword wanted */,
@@ -2657,10 +2658,17 @@ const char* ROOT::TMetaUtils::DataMemberInfo__ValidArrayIndex(const clang::Field
 }
 
 
-void WriteEverything(ROOT::TMetaUtils::CallWriteStreamer_t WriteStreamerFunc, std::ostream& finalString, const ROOT::TMetaUtils::AnnotatedRecordDecl &cl, const clang::CXXRecordDecl *decl, const cling::Interpreter &interp, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt)
+void ROOT::TMetaUtils::WriteEverything(ROOT::TMetaUtils::CallWriteStreamer_t WriteStreamerFunc, std::ostream& finalString, const ROOT::TMetaUtils::AnnotatedRecordDecl &cl, const cling::Interpreter &interp, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt)
 {
    bool needCollectionProxy = false;
-   ROOT::TMetaUtils::WriteClassInit(finalString, cl, decl, interp, normCtxt, needCollectionProxy);
+   const clang::CXXRecordDecl* decl = llvm::dyn_cast<clang::CXXRecordDecl>(cl.GetRecordDecl());
+   
+   if (TMetaUtils::IsStdClass(*decl) && 0 != TClassEdit::STLKind(decl->getName().str().c_str()) ) {
+      RStl::Instance().GenerateTClassFor( cl.GetNormalizedName(), decl, interp, normCtxt);
+   } else {
+      ROOT::TMetaUtils::WriteClassInit(finalString, cl, decl, interp, normCtxt, needCollectionProxy);
+   }
+
    ROOT::TMetaUtils::WriteClassCode(WriteStreamerFunc, cl, interp, normCtxt, finalString);
    ROOT::RStl::Instance().WriteClassInit(finalString, interp, normCtxt, needCollectionProxy);
 }

@@ -94,7 +94,7 @@ public:
    Int_t    GetExitCode() const { return RealObject()->GetExitCode(); }
    TClass  *GenerateTClass(const char *classname, Bool_t emulation, Bool_t silent = kFALSE);
    TClass  *GenerateTClass(ClassInfo_t *classinfo, Bool_t silent = kFALSE); 
-   Int_t    GenerateDictionary(const char *classes, const char *includes = 0, const char *options = 0); 
+   Int_t    GenerateDictionary(const char *classes, const char *includes = 0, const char *options = 0);
    Int_t    GetMore() const {  return RealObject()->GetMore(); }
    Bool_t   IsLoaded(const char *filename) const {  return RealObject()->IsLoaded(filename); }
    char    *GetPrompt();

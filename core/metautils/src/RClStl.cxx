@@ -221,6 +221,7 @@ void ROOT::RStl::WriteClassInit(std::ostream &ostr, const cling::Interpreter &in
       ROOT::TMetaUtils::WriteClassInit(ostr, *iter, result, interp, normCtxt, needCollectionProxy);
       ROOT::TMetaUtils::WriteAuxFunctions(ostr, *iter, result, interp, normCtxt);
    }
+   fList.clear();
 }
 
 // void ROOT::RStl::WriteStreamer(FILE *file, const clang::CXXRecordDecl *stlcl)

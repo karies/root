@@ -97,6 +97,7 @@
 #include <stdexcept>
 #include <stdint.h>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -2518,11 +2519,26 @@ TClass *TCling::GenerateTClass(const char *classname, Bool_t emulation, Bool_t s
    //   if (1 || !tci.IsValid()) {
 
    int version = 1;
-   if (TClassEdit::IsSTLCont(classname)) {
-      version = TClass::GetClass("TVirtualStreamerInfo")->GetClassVersion();
+   TClass *cl = 0;
+   if (!emulation) {
+      // Ask the interpreter to runtime-generate the dictionary
+      TClingClassInfo tci(fInterpreter, classname);
+      if (tci.IsValid() && isa<clang::RecordDecl>(tci.GetDecl())) {  
+         TCling::GenerateDictionary(tci.GetDecl());
+         VoidFuncPtr_t dict = TClassTable::GetDict(classname);
+         if (dict) {
+            (dict)();
+            cl = TClass::GetClass(classname, kFALSE, silent);
+         }
+      }
    }
-   TClass *cl = new TClass(classname, version, 0, 0, -1, -1, silent);
-   if (emulation) cl->SetBit(TClass::kIsEmulation);
+   if (!cl) {
+      if (TClassEdit::IsSTLCont(classname)) {
+         version = TClass::GetClass("TVirtualStreamerInfo")->GetClassVersion();
+      }
+      cl = new TClass(classname, version, 0, 0, -1, -1, silent);
+      if (emulation) cl->SetBit(TClass::kIsEmulation);
+   }
 
    return cl;
 
@@ -2605,6 +2621,35 @@ TClass *TCling::GenerateTClass(ClassInfo_t *classinfo, Bool_t silent /* = kFALSE
       cl = new TClass(classname, 1, 0, 0, -1, -1, silent);
    }
    return cl;
+}
+
+void GenerateStreamerError(const ROOT::TMetaUtils::AnnotatedRecordDecl &cl, const cling::Interpreter &interp,
+   const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt, bool isAutoStreamer) {
+   ROOT::TMetaUtils::Error("GenerateStreamerError", "Could not generate streamer function for class %s.\n",
+      cl.GetNormalizedName());
+}
+
+//______________________________________________________________________________
+Int_t TCling::GenerateDictionary(const clang::Decl* decl)
+{
+   // Generate dictionary using methods in TMetaUtils
+   std::ostringstream finalString;
+   
+   const clang::RecordDecl* recDecl = dyn_cast<clang::RecordDecl>(decl);
+   if(!recDecl)
+   {
+      return 1;
+   }
+
+   //ROOT::TMetaUtils::AnnotatedRecordDecl annoDecl(long index, const clang::RecordDecl *decl, bool rStreamerInfo, bool rNoStreamer, bool rRequestNoInputOperator, bool rRequestOnlyTClass, int rRequestedVersionNumber, const cling::Interpreter &interpret, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt);
+   //AnnotatedRecordDecl(long index, const clang::RecordDecl *decl, bool rStreamerInfo, bool rNoStreamer, bool rRequestNoInputOperator, bool rRequestOnlyTClass, int rRequestedVersionNumber, const cling::Interpreter &interpret, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt);
+   ROOT::TMetaUtils::AnnotatedRecordDecl annoDecl(0L /*long index*/, recDecl, true /*bool rStreamerInfo*/, false /*bool rNoStreamer*/, false /*rRequestNoInputOperator*/, false /*rRequestOnlyTClass*/, -1 /*rRequestedVersionNumber*/, *fInterpreter, *TCling::fNormalizedCtxt);
+
+   ROOT::TMetaUtils::WriteEverything(GenerateStreamerError, finalString, annoDecl, *fInterpreter, *TCling::fNormalizedCtxt);
+
+   LoadText(finalString.str().c_str());
+
+   return 0;
 }
 
 //______________________________________________________________________________

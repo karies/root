@@ -33,6 +33,8 @@
 
 #include "TVirtualMutex.h" // For R__LOCKGUARD
 
+//#include "TMetaUtils.h"
+
 //
 // Utility function to allow the creation of a TClass for a std::pair without
 // a dictionary (See end of file for implementation
@@ -45,6 +47,7 @@ TEmulatedCollectionProxy::TEmulatedCollectionProxy(const TEmulatedCollectionProx
    : TGenCollectionProxy(copy)
 {
    // Build a Streamer for an emulated vector whose type is 'name'.
+   
    fProperties |= kIsEmulated;
 }
 
@@ -57,6 +60,7 @@ TEmulatedCollectionProxy::TEmulatedCollectionProxy(const char* cl_name, Bool_t s
    if ( this->TEmulatedCollectionProxy::InitializeEx(silent) ) {
       fCreateEnv = TGenCollectionProxy::Env_t::Create;
    }
+
    fProperties |= kIsEmulated;
 }
 
