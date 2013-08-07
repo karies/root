@@ -224,10 +224,16 @@ std::ostream& TModuleGenerator::WritePPIncludes(std::ostream& out) const
 std::ostream& TModuleGenerator::WriteAllSeenHeadersArray(std::ostream& out) const
 {
    SourceManager& srcMgr = fCI->getSourceManager();
+   FileID mainFileID = srcMgr.getMainFileID();
+   const FileEntry* mainFile = 0;
+   if (!mainFileID.isInvalid())
+      mainFile = srcMgr.getFileEntryForID(mainFileID);
    for (SourceManager::fileinfo_iterator i = srcMgr.fileinfo_begin(),
            e = srcMgr.fileinfo_end(); i != e; ++i) {
       const FileEntry* fileEntry = i->first;
-      out << "\"" << fileEntry->getName() << "\",\n";
+      if (fileEntry != mainFile) {
+         out << "\"" << fileEntry->getName() << "\",\n";
+      }
    }
    out << "0" << std::endl;
    return out;
