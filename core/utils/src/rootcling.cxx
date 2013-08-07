@@ -2224,7 +2224,7 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
                                    const std::string& contentHdr) const {
          const char* contentHeaders[] = { contentHdr.c_str(), 0};
          if (!TMetaUtils::declareModuleMap(interp.getCI(), modName,
-                                                 contentHeaders)) {
+                                           contentHeaders, true /*update*/)) {
             TMetaUtils::Error(0, "Cannot open %s\n", modName);
             return false;
          }
@@ -2301,15 +2301,18 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          return false;
       const VarDecl* arrIncludesVar = LoadSteps().getIncludesVar(interp, *iM);
       if (!arrIncludesVar) return false;
-      assert( arrIncludesVar->getInitStyle() == clang::VarDecl::CInit );
+      assert(arrIncludesVar->getInitStyle() == clang::VarDecl::CInit && "Content description without initializer!");
       const InitListExpr *initAddr = llvm::dyn_cast<InitListExpr>(arrIncludesVar->getInit());
-      for (unsigned int i = 0; i < initAddr->getNumInits(); ++i ) {
+      // Skip terminating ", 0":
+      for (unsigned int i = 0; i < initAddr->getNumInits() - 1; ++i ) {
          const CastExpr *cast = llvm::dyn_cast<CastExpr>(initAddr->getInit(i));
          const StringLiteral *lit = llvm::dyn_cast<StringLiteral>(cast->getSubExpr());
          if (lit) {
-            fprintf(stderr,"We found %d %s\n",i,lit->getString().str().c_str());
             if (!LoadSteps().declareContentModuleMap(interp, iM->c_str(), lit->getString().str()))
                return false;
+         } else {
+            TMetaUtils::Error(0, "Unexpected initializer array element [%d] in %s's %s\n",
+                              i, iM->c_str(), arrIncludesVar->getQualifiedNameAsString().c_str());
          }
       }
    }
