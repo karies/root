@@ -292,7 +292,8 @@ namespace ROOT {
       // Declare a virtual module.map to clang. Returns Module on success.
       clang::Module* declareModuleMap(clang::CompilerInstance* CI,
                                       const char* moduleFileName,
-                                      const char* headers[]);
+                                      const char* headers[],
+                                      bool update = false);
 
       // Return the -I needed to find RuntimeUniverse.h
       std::string GetInterpreterExtraIncludePath(bool rootbuild);

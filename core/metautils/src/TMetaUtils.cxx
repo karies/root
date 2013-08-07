@@ -3191,7 +3191,8 @@ std::string ROOT::TMetaUtils::GetModuleFileName(const char* moduleName)
 //////////////////////////////////////////////////////////////////////////
 clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
                                                   const char* moduleFileName,
-                                                  const char* headers[])
+                                                  const char* headers[],
+                                                  bool update /*= false*/)
 {
    // Declare a virtual module.map to clang. Returns Module on success.
    clang::Preprocessor& PP = CI->getPreprocessor();
@@ -3210,7 +3211,8 @@ clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
       = ModuleMap.findOrCreateModule(moduleName.str().c_str(),
                                      0 /*ActiveModule*/,
                                      false /*Framework*/, false /*Explicit*/);
-   if (!modCreation.second && !strstr(moduleFileName, "/allDict_rdict.pcm")) {
+   if (!update && !modCreation.second
+       && !strstr(moduleFileName, "/allDict_rdict.pcm")) {
       std::cerr << "TMetaUtils::declareModuleMap: "
          "Duplicate definition of dictionary module "
                 << moduleFileName << std::endl;
