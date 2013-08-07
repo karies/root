@@ -2241,7 +2241,7 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          } else {
             posDir = 0;
          }
-         if (interp.loadModuleForHeader(contentHdr.c_str() + posDir)
+         if (interp.loadModuleForHeader(contentHdr.c_str())
              != cling::Interpreter::kSuccess) {
             TMetaUtils::Error(0, "Cannot parse %s\n", contentHdr.c_str());
             return false;
@@ -2267,9 +2267,9 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          nsp = getNamespace(interp, modNameNSp.c_str(), nsp);
          if (!nsp) return 0;
          const NamedDecl* nd
-            = cling::utils::Lookup::Named(&interp.getSema(), "arrIncludes", nsp);
+            = cling::utils::Lookup::Named(&interp.getSema(), "arrAllHeaders", nsp);
          if (!nd) {
-            TMetaUtils::Error(0, "Cannot find declaration for %s::arrIncludes\n",
+            TMetaUtils::Error(0, "Cannot find declaration for %s::arrAllHeaders\n",
                                     nsp->getQualifiedNameAsString().c_str());
             return 0;
          }
