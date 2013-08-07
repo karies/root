@@ -3248,7 +3248,7 @@ clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
          ModuleMap.addHeader(modCreation.first, hdrFileEntry, /*Excluded=*/ false);
          HS.MarkFileModuleHeader(hdrFileEntry);
       }
-      if (!HS.hasModuleMap(*hdr, 0)) {
+      if (!HS.hasModuleMap(hdrFileEntry->getName(), 0)) {
          std::cerr << "TMetaUtils::declareModuleMap: "
             "Header file " << *hdr
                    << " still not associated with dictionary module "
