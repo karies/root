@@ -2301,6 +2301,17 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          return false;
       const VarDecl* arrIncludesVar = LoadSteps().getIncludesVar(interp, *iM);
       if (!arrIncludesVar) return false;
+      assert( arrIncludesVar->getInitStyle() == clang::VarDecl::CInit );
+      const InitListExpr *initAddr = llvm::dyn_cast<InitListExpr>(arrIncludesVar->getInit());
+      for (unsigned int i = 0; i < initAddr->getNumInits(); ++i ) {
+         const CastExpr *cast = llvm::dyn_cast<CastExpr>(initAddr->getInit(i));
+         const StringLiteral *lit = llvm::dyn_cast<StringLiteral>(cast->getSubExpr());
+         if (lit) {
+            fprintf(stderr,"We found %d %s\n",i,lit->getString().str().c_str());
+            if (!LoadSteps().declareContentModuleMap(interp, iM->c_str(), lit->getString().str()))
+               return false;
+         }
+      }
    }
    return true;
 }
@@ -3639,6 +3650,20 @@ void AddToArgVector(std::vector<char*>& argvVector,
    for (std::vector<std::string>::const_iterator it = argsToBeAdded.begin();
         it!=argsToBeAdded.end();it++){
       argvVector.push_back(string2charptr(optName+*it));
+   }
+}
+
+//______________________________________________________________________________
+void AddToArgVectorSplit(std::vector<char*>& argvVector,
+                         const std::vector<std::string>& argsToBeAdded,
+                         const std::string& optName = "")
+{
+   for (std::vector<std::string>::const_iterator it = argsToBeAdded.begin();
+        it != argsToBeAdded.end();it++){
+      if (optName.length()) {
+         argvVector.push_back(string2charptr(optName));
+      }
+      argvVector.push_back(string2charptr(*it));
    }   
 }
 

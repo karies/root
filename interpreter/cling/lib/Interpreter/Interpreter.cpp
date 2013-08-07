@@ -476,8 +476,12 @@ namespace cling {
     const DirectoryLookup* CurDir = 0;
 
     Module* module = 0;
-    PP.LookupFile(headerFile, isAngled, LookupFrom, CurDir, /*SearchPath*/0,
-                  /*RelativePath*/ 0, &module, /*SkipCache*/false);
+    const FileEntry *FE
+      = PP.LookupFile(headerFile, isAngled, LookupFrom, CurDir, /*SearchPath*/0,
+                      /*RelativePath*/ 0, &module, /*SkipCache*/false);
+    if (FE && !module) {
+      module = PP.getHeaderSearchInfo().findModuleForHeader(FE);
+    }
     if (!module)
       return Interpreter::kFailure;
 
