@@ -540,6 +540,10 @@ void ROOT::TTreeReaderArrayBase::CreateProxy()
       }
    } else if (branch->IsA() == TBranch::Class()) {
       TLeaf *topLeaf = branch->GetLeaf(branch->GetName());
+      if (!topLeaf) {
+         Error("CreateProxy", "Failed to get the top leaf from the branch");
+         return;
+      }
       Int_t size = 0;
       TLeaf *sizeLeaf = topLeaf->GetLeafCounter(size);
       if (!sizeLeaf) {
@@ -728,7 +732,7 @@ const char* ROOT::TTreeReaderArrayBase::GetBranchContentDataType(TBranch* branch
          TLeaf *myLeaf = branch->GetLeaf(branch->GetName());
          if (myLeaf){
             TDictionary *myDataType = TDictionary::GetDictionary(myLeaf->GetTypeName());
-            if (myDataType->IsA() == TDataType::Class()){
+            if (myDataType && myDataType->IsA() == TDataType::Class()){
                dict = TDataType::GetDataType((EDataType)((TDataType*)myDataType)->GetType());
                contentTypeName = myLeaf->GetTypeName();
                return 0;

@@ -213,7 +213,7 @@ void ROOT::TTreeReaderValueBase::CreateProxy() {
                nameStack.push_back(leafName.Strip(TString::kBoth, '.'));
             }
 
-            if (branch->IsA() == TBranchElement::Class()){
+            if (branch && branch->IsA() == TBranchElement::Class()){
                TBranchElement *myBranchElement = (TBranchElement*)branch;
 
                TString traversingBranch = nameStack.back();
@@ -424,7 +424,7 @@ const char* ROOT::TTreeReaderValueBase::GetBranchDataType(TBranch* branch,
          TLeaf *myLeaf = branch->GetLeaf(branch->GetName());
          if (myLeaf){
             TDictionary *myDataType = TDictionary::GetDictionary(myLeaf->GetTypeName());
-            if (myDataType->IsA() == TDataType::Class()){
+            if (myDataType && myDataType->IsA() == TDataType::Class()){
                dict = TDataType::GetDataType((EDataType)((TDataType*)myDataType)->GetType());
                return myLeaf->GetTypeName();
             }
