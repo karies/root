@@ -2278,8 +2278,8 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
 
    private:
       const NamespaceDecl* getNamespace(cling::Interpreter& interp,
-                                               const char* name,
-                                               const DeclContext* Within = 0) {
+                                        const char* name,
+                                        const DeclContext* Within = 0) {
          NamespaceDecl* ret
             = cling::utils::Lookup::Namespace(&interp.getSema(), name, Within);
          if (!ret) {
@@ -2342,8 +2342,45 @@ static int GenerateModule(TModuleGenerator& modGen,
            iH != eH; ++iH) {
          headersCStr.push_back(iH->c_str());
       }
+      headersCStr.push_back(modGen.GetUmbrellaName().c_str());
+      headersCStr.push_back(modGen.GetContentName().c_str());
       headersCStr.push_back(0);
       module = TMetaUtils::declareModuleMap(CI, modGen.GetModuleFileName().c_str(), &headersCStr[0]);
+      if (!module) {
+         TMetaUtils::Error(0, "Cannot declare module %s\n",
+                           modGen.GetModuleFileName().c_str());
+         return 1;
+      }
+
+      // All imported modules are imported for this module.
+      // Update their import locations; see ASTWriter::WriteSubmodules().
+      const clang::FileEntry* umbrellaFE
+         = CI->getFileManager().getFile(modGen.GetUmbrellaName());
+      if (!umbrellaFE) {
+         TMetaUtils::Error(0, "Lookup of umbrella header %s failed\n",
+                           modGen.GetUmbrellaName().c_str());
+         return 1;
+      }
+      clang::FileID umbrellaFID
+         = CI->getSourceManager().translateFile(umbrellaFE);
+      if (umbrellaFID.isInvalid()) {
+         TMetaUtils::Error(0, "Cannot determine file ID of umbrella header %s\n",
+                           modGen.GetUmbrellaName().c_str());
+         return 1;
+      }
+      clang::SourceLocation startOfUmbrellaSL
+         =  CI->getSourceManager().getLocForStartOfFile(umbrellaFID);
+      for (clang::ASTContext::import_iterator I
+              = CI->getASTContext().local_import_begin(),
+              IEnd = CI->getASTContext().local_import_end();
+           I != IEnd; ++I) {
+         clang::Module* importedMod = I->getImportedModule();
+         if (!importedMod->Parent || importedMod->Parent == module) {
+            I->setLocation(startOfUmbrellaSL);
+            importedMod->Parent = module;
+         }
+         //module->Imports.push_back(I->getImportedModule());
+      }
    }
 
    // From PCHGenerator and friends:
@@ -2989,20 +3026,22 @@ int RootCling(int argc,
             // GetRelocatableHeaderName is likely to be too aggressive and the
             // ROOTBUILD part should really be removed by changing the ROOT makefile
             // to pass -I and path relative to the include path.
-            interpPragmaSource += std::string("#include \"") + header + "\"\n";
+            if (!IsSelectionXml(argv[i])) {
+               interpPragmaSource += std::string("#include \"") + header + "\"\n";
+            }
             if (!isSelectionFile) {
                includeForSource += std::string("#include \"") + header + "\"\n";
                pcmArgs.push_back(header);
-            } else if (!IsSelectionXml(argv[i]) && interp.declare(std::string("#include \"") + header + "\"\n")
-                     != cling::Interpreter::kSuccess) {
-               ROOT::TMetaUtils::Error(0, "%s: Linkdef compilation failure\n", argv[0]);
-               CleanupOnExit(1);
-               return 1;
             }
          }
       }
    }
 
+   if (interp.declare(interpPragmaSource) != cling::Interpreter::kSuccess) {
+      ROOT::TMetaUtils::Error(0, "%s: Linkdef compilation failure\n", argv[0]);
+      CleanupOnExit(1);
+      return 1;
+   }
    if (!firstInputFile) {
       ROOT::TMetaUtils::Error(0, "%s: no input files specified\n", argv[0]);
       CleanupOnExit(1);
