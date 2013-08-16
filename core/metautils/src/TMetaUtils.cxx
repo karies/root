@@ -1073,7 +1073,7 @@ void ROOT::TMetaUtils::WriteClassInit(std::ostream& finalString, const ROOT::TMe
    std::string classname = TClassEdit::GetLong64_Name(cl.GetNormalizedName());
 
    std::string mappedname;
-   ROOT::TMetaUtils::GetCppName(mappedname,classname.c_str());
+   ROOT::TMetaUtils::GetCppName(mappedname, classname.c_str());
    std::string csymbol = classname;
    std::string args;  
 
@@ -1348,9 +1348,8 @@ void ROOT::TMetaUtils::WriteClassInit(std::ostream& finalString, const ROOT::TMe
    finalString << "   // Static variable to force the class initialization" << "\n";
    // must be one long line otherwise R__UseDummy does not work
 
+   finalString << "   static ::ROOT::TGenericClassInfo *_R__UNIQUE_(Init" << mappedname.c_str() << ") = GenerateInitInstanceLocal((const " << csymbol.c_str() << "*)0x0); R__UseDummy(_R__UNIQUE_(Init" << mappedname.c_str() << "));" << "\n";
 
-   finalString << "   static ::ROOT::TGenericClassInfo *_R__UNIQUE_(Init) = GenerateInitInstanceLocal((const " << csymbol.c_str() << "*)0x0); R__UseDummy(_R__UNIQUE_(Init));" << "\n";
-  
    if (!ClassInfo__HasMethod(decl,"Dictionary") || R__IsTemplate(*decl)) {
       const char* cSymbolStr = csymbol.c_str();
       finalString <<  "\n" << "   // Dictionary for non-ClassDef classes" << "\n"
