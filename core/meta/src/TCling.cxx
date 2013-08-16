@@ -2635,8 +2635,27 @@ Int_t TCling::GenerateDictionary(const clang::Decl* decl)
    // Generate dictionary using methods in TMetaUtils
    std::ostringstream finalString;
    
+   // See if we can cast the decl to a RecordDecl
    const clang::RecordDecl* recDecl = dyn_cast<clang::RecordDecl>(decl);
    if(!recDecl)
+   {
+      return 1;
+   }
+
+   // Check if the class is private?
+   if(recDecl->getAccess() == clang::AS_private || recDecl->getAccess() == clang::AS_protected)
+   {
+      return 1;
+   }
+
+   // Check if the decl has all members defined
+   if(!recDecl->isCompleteDefinition())
+   {
+      return 1;
+   }
+
+   // Veto this for now "_Bvector_base<bool>"
+   if(recDecl->getName().compare("_Bvector_base") == 0)
    {
       return 1;
    }
