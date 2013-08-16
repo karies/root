@@ -1102,8 +1102,6 @@ void TClass::Init(const char *name, Version_t cversion,
 
    if ( !fCollectionProxy && isStl || !strncmp(GetName(),"stdext::hash_",13) || !strncmp(GetName(),"__gnu_cxx::hash_",16) ) {
       fCollectionProxy = TVirtualStreamerInfo::Factory()->GenEmulatedProxy( GetName(), silent );
-      //KEEP:
-      Warning("Init", "Should we still be generating an emulated collection proxy given runtime dictionaries?");
       
       if (fCollectionProxy) {
          fSizeof = fCollectionProxy->Sizeof();
