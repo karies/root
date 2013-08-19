@@ -3189,12 +3189,11 @@ std::string ROOT::TMetaUtils::GetModuleFileName(const char* moduleName)
 }
 
 //////////////////////////////////////////////////////////////////////////
-clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
-                                                  const char* moduleFileName,
-                                                  const char* headers[],
-                                                  bool update /*= false*/)
+clang::Module* ROOT::TMetaUtils::createModule(clang::CompilerInstance* CI,
+                                              const char* moduleFileName,
+                                              bool& created)
 {
-   // Declare a virtual module.map to clang. Returns Module on success.
+   // Get or create a module object.
    clang::Preprocessor& PP = CI->getPreprocessor();
    clang::ModuleMap& ModuleMap = PP.getHeaderSearchInfo().getModuleMap();
 
@@ -3204,15 +3203,24 @@ clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
 
    llvm::StringRef moduleName = llvm::sys::path::filename(moduleFileName);
    moduleName = llvm::sys::path::stem(moduleName);
-
-   std::pair<clang::Module*, bool> modCreation;
-
-   modCreation
-      = ModuleMap.findOrCreateModule(moduleName.str().c_str(),
-                                     0 /*ActiveModule*/,
+   std::pair<clang::Module*, bool> modCreation
+      = ModuleMap.findOrCreateModule(moduleName.str().c_str(), 0 /*parent*/,
                                      false /*Framework*/, false /*Explicit*/);
-   if (!update && !modCreation.second
-       && !strstr(moduleFileName, "/allDict_rdict.pcm")) {
+   created = modCreation.second;
+   return modCreation.first;
+}
+
+//////////////////////////////////////////////////////////////////////////
+clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
+                                                  const char* moduleFileName,
+                                                  const char* headers[],
+                                                  bool update /*= false*/)
+{
+   // Declare a virtual module.map to clang. Returns Module on success.
+   bool created = false;
+   clang::Module* module = createModule(CI, moduleFileName, created);
+
+   if (!update && !created && !strstr(moduleFileName, "/allDict_rdict.pcm")) {
       std::cerr << "TMetaUtils::declareModuleMap: "
          "Duplicate definition of dictionary module "
                 << moduleFileName << std::endl;
@@ -3220,7 +3228,9 @@ clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
       // Go on, add new headers nonetheless.
    }
 
+   clang::Preprocessor& PP = CI->getPreprocessor();
    clang::HeaderSearch& HdrSearch = PP.getHeaderSearchInfo();
+   clang::ModuleMap& ModuleMap = HdrSearch.getModuleMap();
    for (const char** hdr = headers; hdr && *hdr; ++hdr) {
       const clang::DirectoryLookup* CurDir;
       const clang::FileEntry* hdrFileEntry
@@ -3231,7 +3241,7 @@ clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
          std::cerr << "TMetaUtils::declareModuleMap: "
             "Cannot find header file " << *hdr
                    << " included in dictionary module "
-                   << moduleName.data()
+                   << module->Name
                    << " in include search path!" << std::endl;
          hdrFileEntry = PP.getFileManager().getFile(*hdr, /*OpenFile=*/false,
                                                     /*CacheFailure=*/false);
@@ -3247,17 +3257,17 @@ clang::Module* ROOT::TMetaUtils::declareModuleMap(clang::CompilerInstance* CI,
       }
 
       if (hdrFileEntry) {
-         ModuleMap.addHeader(modCreation.first, hdrFileEntry, /*Excluded=*/ false);
-         HS.MarkFileModuleHeader(hdrFileEntry);
+         ModuleMap.addHeader(module, hdrFileEntry, /*Excluded=*/ false);
+         HdrSearch.MarkFileModuleHeader(hdrFileEntry);
       }
-      if (!HS.hasModuleMap(hdrFileEntry->getName(), 0)) {
+      if (!HdrSearch.hasModuleMap(hdrFileEntry->getName(), 0)) {
          std::cerr << "TMetaUtils::declareModuleMap: "
             "Header file " << *hdr
                    << " still not associated with dictionary module "
-                   << moduleName.data() << "!" << std::endl;
+                   << module->Name << "!" << std::endl;
       }
    } // for headers
-   return modCreation.first;
+   return module;
 }
 
 //////////////////////////////////////////////////////////////////////////

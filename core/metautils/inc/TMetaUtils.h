@@ -289,6 +289,11 @@ namespace ROOT {
       // Return the dictionary file name for a module
       std::string GetModuleFileName(const char* moduleName);
 
+      // Get or create a module object.
+      clang::Module* createModule(clang::CompilerInstance* CI,
+                                  const char* moduleFileName,
+                                  bool& created);
+
       // Declare a virtual module.map to clang. Returns Module on success.
       clang::Module* declareModuleMap(clang::CompilerInstance* CI,
                                       const char* moduleFileName,
