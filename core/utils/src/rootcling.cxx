@@ -2224,7 +2224,8 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
                                    const std::string& contentHdr) const {
          const char* contentHeaders[] = { contentHdr.c_str(), 0};
          if (!TMetaUtils::declareModuleMap(interp.getCI(), modName,
-                                           contentHeaders, true /*update*/)) {
+                                           contentHeaders,
+                                           true /*update*/)) {
             TMetaUtils::Error(0, "Cannot open %s\n", modName);
             return false;
          }
@@ -2297,7 +2298,8 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
            eM = baseModules.end(); iM != eM; ++iM) {
       if (!LoadSteps().findPCM(*iM)) return false;
       std::string contentHdr = LoadSteps().getContentHdr(*iM);
-      if (!LoadSteps().declareContentModuleMap(interp, iM->c_str(), contentHdr))
+      if (!LoadSteps().declareContentModuleMap(interp,
+                                               iM->c_str(), contentHdr))
          return false;
       const VarDecl* arrIncludesVar = LoadSteps().getIncludesVar(interp, *iM);
       if (!arrIncludesVar) return false;
@@ -2308,7 +2310,8 @@ static bool LoadDependentPCMs(cling::Interpreter& interp,
          const CastExpr *cast = llvm::dyn_cast<CastExpr>(initAddr->getInit(i));
          const StringLiteral *lit = llvm::dyn_cast<StringLiteral>(cast->getSubExpr());
          if (lit) {
-            if (!LoadSteps().declareContentModuleMap(interp, iM->c_str(), lit->getString().str()))
+            if (!LoadSteps().declareContentModuleMap(interp, iM->c_str(),
+                                                     lit->getString().str()))
                return false;
          } else {
             TMetaUtils::Error(0, "Unexpected initializer array element [%d] in %s's %s\n",
@@ -2377,7 +2380,6 @@ static int GenerateModule(TModuleGenerator& modGen,
          clang::Module* importedMod = I->getImportedModule();
          if (!importedMod->Parent || importedMod->Parent == module) {
             I->setLocation(startOfUmbrellaSL);
-            importedMod->Parent = module;
          }
          //module->Imports.push_back(I->getImportedModule());
       }
@@ -2922,58 +2924,8 @@ int RootCling(int argc,
 
    cling::Interpreter interp(clingArgsC.size(), &clingArgsC[0],
                              gResourceDir.c_str());
-   if (!LoadDependentPCMs(interp, baseModules)) {
-      CleanupOnExit(1);
-      return 1;
-   }
+   clang::CompilerInstance* CI = interp.getCI();
 
-   if (interp.declare("namespace std {} using namespace std;") != cling::Interpreter::kSuccess
-// CINT uses to define a few headers implicitly, we need to do it explicitly.
-       || interp.declare("#include <assert.h>\n"
-                         "#include <stdlib.h>\n"
-                         "#include <stddef.h>\n"
-                         "#include <math.h>\n"
-                         "#include <string.h>\n"
-                         ) != cling::Interpreter::kSuccess
-#ifdef ROOTBUILD
-       || interp.declare("#include \"Rtypes.h\"") != cling::Interpreter::kSuccess
-       || interp.declare("#include \"TClingRuntime.h\"") != cling::Interpreter::kSuccess
-       || interp.declare("#include \"TObject.h\"") != cling::Interpreter::kSuccess
-#else
-# ifndef ROOTINCDIR
-       || interp.declare("#include \"Rtypes.h\"") != cling::Interpreter::kSuccess
-       || interp.declare("#include \"TClingRuntime.h\"") != cling::Interpreter::kSuccess
-       || interp.declare("#include \"TObject.h\"") != cling::Interpreter::kSuccess
-# else
-       || interp.declare("#include \"" ROOTINCDIR "/Rtypes.h\"") != cling::Interpreter::kSuccess
-       || interp.declare("#include \"" ROOTINCDIR "/TClingRuntime.h\"") != cling::Interpreter::kSuccess
-       || interp.declare("#include \"" ROOTINCDIR "/TObject.h\"") != cling::Interpreter::kSuccess
-# endif
-#endif
-       ) {
-      // There was an error.
-      ROOT::TMetaUtils::Error(0,"Error loading the default header files.\n");
-      CleanupOnExit(1);
-      return 1;
-   }
-
-   gInterp = &interp;
-
-   // For the list of 'opaque' typedef to also include string, we have to include it now.
-   interp.declare("#include <string>");
-
-   // We are now ready (enough is loaded) to init the list of opaque typedefs.
-   ROOT::TMetaUtils::TNormalizedCtxt normCtxt(interp.getLookupHelper());
-   ROOT::TMetaUtils::TClingLookupHelper helper(interp, normCtxt);
-   TClassEdit::Init(&helper);
-
-   // flags used only for the pragma parser:
-   clingArgs.push_back("-D__CINT__");
-   clingArgs.push_back("-D__MAKECINT__");
-
-   AddPlatformDefines(clingArgs);
-
-   
    std::string interpPragmaSource;
    std::string includeForSource;
    string esc_arg;
@@ -3037,19 +2989,75 @@ int RootCling(int argc,
       }
    }
 
-   if (interp.declare(interpPragmaSource) != cling::Interpreter::kSuccess) {
-      ROOT::TMetaUtils::Error(0, "%s: Linkdef compilation failure\n", argv[0]);
-      CleanupOnExit(1);
-      return 1;
-   }
    if (!firstInputFile) {
       ROOT::TMetaUtils::Error(0, "%s: no input files specified\n", argv[0]);
       CleanupOnExit(1);
       return 1;
    }
 
+   if (interp.declare("namespace std {} using namespace std;") != cling::Interpreter::kSuccess
+// CINT uses to define a few headers implicitly, we need to do it explicitly.
+       || interp.declare("#include <assert.h>\n"
+                         "#include <stdlib.h>\n"
+                         "#include <stddef.h>\n"
+                         "#include <math.h>\n"
+                         "#include <string.h>\n"
+                         ) != cling::Interpreter::kSuccess
+#ifdef ROOTBUILD
+       || interp.declare("#include \"Rtypes.h\"") != cling::Interpreter::kSuccess
+       || interp.declare("#include \"TClingRuntime.h\"") != cling::Interpreter::kSuccess
+       || interp.declare("#include \"TObject.h\"") != cling::Interpreter::kSuccess
+#else
+# ifndef ROOTINCDIR
+       || interp.declare("#include \"Rtypes.h\"") != cling::Interpreter::kSuccess
+       || interp.declare("#include \"TClingRuntime.h\"") != cling::Interpreter::kSuccess
+       || interp.declare("#include \"TObject.h\"") != cling::Interpreter::kSuccess
+# else
+       || interp.declare("#include \"" ROOTINCDIR "/Rtypes.h\"") != cling::Interpreter::kSuccess
+       || interp.declare("#include \"" ROOTINCDIR "/TClingRuntime.h\"") != cling::Interpreter::kSuccess
+       || interp.declare("#include \"" ROOTINCDIR "/TObject.h\"") != cling::Interpreter::kSuccess
+# endif
+#endif
+       ) {
+      // There was an error.
+      ROOT::TMetaUtils::Error(0,"Error loading the default header files.\n");
+      CleanupOnExit(1);
+      return 1;
+   }
+
+   // For the list of 'opaque' typedef to also include string, we have to include it now.
+   interp.declare("#include <string>");
+
+   // We are now ready (enough is loaded) to init the list of opaque typedefs.
+   ROOT::TMetaUtils::TNormalizedCtxt normCtxt(interp.getLookupHelper());
+   ROOT::TMetaUtils::TClingLookupHelper helper(interp, normCtxt);
+   TClassEdit::Init(&helper);
+
    if (sharedLibraryPathName.empty()) {
       sharedLibraryPathName = dictpathname;
+   }
+   TModuleGenerator modGen(interp.getCI(), sharedLibraryPathName.c_str());
+   bool moduleCreated = false;
+   //clang::Module* parentModule =
+      ROOT::TMetaUtils::createModule(CI, modGen.GetModuleFileName().c_str(),
+                                       moduleCreated);
+   if (!LoadDependentPCMs(interp, baseModules)) {
+      CleanupOnExit(1);
+      return 1;
+   }
+
+   // flags used only for the pragma parser:
+   clingArgs.push_back("-D__CINT__");
+   clingArgs.push_back("-D__MAKECINT__");
+
+   AddPlatformDefines(clingArgs);
+
+   gInterp = &interp;
+
+   if (interp.declare(interpPragmaSource) != cling::Interpreter::kSuccess) {
+      ROOT::TMetaUtils::Error(0, "%s: Linkdef compilation failure\n", argv[0]);
+      CleanupOnExit(1);
+      return 1;
    }
 
    // Until the module are actually enabled in ROOT, we need to register
@@ -3059,7 +3067,6 @@ int RootCling(int argc,
    incCurDir += currentDirectory;
    pcmArgs.push_back(incCurDir);
 
-   TModuleGenerator modGen(interp.getCI(), sharedLibraryPathName.c_str());
    modGen.ParseArgs(pcmArgs);
    if (!InjectModuleUtilHeader(argv[0], modGen, interp, true)
        || !InjectModuleUtilHeader(argv[0], modGen, interp, false)) {
@@ -3266,8 +3273,6 @@ int RootCling(int argc,
    }
 
    selectionRules.SearchNames(interp);
-
-   clang::CompilerInstance* CI = interp.getCI();
 
    RScanner scan(selectionRules,interp,normCtxt,verbosityLevel);
    // If needed initialize the autoloading hook
