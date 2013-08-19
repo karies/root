@@ -59,6 +59,10 @@ TModuleGenerator::TModuleGenerator(CompilerInstance* CI,
 
    fUmbrellaName = fModuleDirName + fDictionaryName + "_rdictUmbrella.h";
    fContentName = fModuleDirName + fDictionaryName + "_rdictContent.h";
+
+   // Tell clang that this is the module we are currently building
+   // - i.e. that it should not try to load it.
+   CI->getLangOpts().CurrentModule = fDictionaryName;
 }
 
 TModuleGenerator::~TModuleGenerator() {
