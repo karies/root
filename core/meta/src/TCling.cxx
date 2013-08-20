@@ -2374,6 +2374,11 @@ void TCling::CreateListOfBaseClasses(TClass* cl) const
       return;
    }
    cl->fBase = new TList;
+   if (cl->GetCollectionProxy()
+       && cl->GetCollectionProxy()->GetCollectionType() != TClassEdit::kNotSTL) {
+      // We do not care about bases of STL:
+      return;
+   }
    TClingClassInfo tci(fInterpreter, cl->GetName());
    TClingBaseClassInfo t(fInterpreter, &tci);
    while (t.Next()) {
@@ -2658,6 +2663,14 @@ Int_t TCling::GenerateDictionary(const clang::Decl* decl)
    if(recDecl->getName().compare("_Bvector_base") == 0)
    {
       return 1;
+   }
+
+   if(TClassEdit::STLKind(recDecl->getName().str().c_str()) == 0)
+   {
+      if (fInterpreter->getLookupHelper().findFunctionProto(decl, "Streamer", "TBuffer&"))
+      {
+         return 1;
+      }
    }
 
    //ROOT::TMetaUtils::AnnotatedRecordDecl annoDecl(long index, const clang::RecordDecl *decl, bool rStreamerInfo, bool rNoStreamer, bool rRequestNoInputOperator, bool rRequestOnlyTClass, int rRequestedVersionNumber, const cling::Interpreter &interpret, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt);
