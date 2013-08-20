@@ -90,13 +90,29 @@ public:
             // Save state of the preprocessor
             Preprocessor::CleanupAndRestoreCacheRAII cleanupRAII(*fPreprocessor);
             Parser& P = const_cast<Parser&>(fInterpreter->getParser());
-            Parser::ParserCurTokRestoreRAII savedCurToken(P);
-
             // After we have saved the token reset the current one to
             // something which is safe (semi colon usually means empty decl)
             Token& Tok = const_cast<Token&>(P.getCurToken());
+            // We parsed 'include' token. We don't need to restore it, because
+            // we provide our own way of handling the entire #include "file.c+"
+            // Thus if we reverted the token back to the parser, we are in
+            // a trouble.
             Tok.setKind(tok::semi);
-
+            // We can't PushDeclContext, because we go up and the routine that pops 
+            // the DeclContext assumes that we drill down always.
+            // We have to be on the global context. At that point we are in a 
+            // wrapper function so the parent context must be the global.
+            // This is needed to solve potential issues wen using #include "myFile.C+"
+            // after a scope declaration like:
+            // void Check(TObject* obj) {
+            //   if (obj) cout << "Found the referenced object\n";
+            //   else cout << "Error: Could not find the referenced object\n";
+            // }
+            // #include "A.C+"
+            Sema& SemaR = fInterpreter->getSema();
+            ASTContext& C = SemaR.getASTContext();
+            Sema::ContextAndScopeRAII pushedDCAndS(SemaR, C.getTranslationUnitDecl(), 
+                                                   SemaR.TUScope);
             int retcode = TCling__CompileMacro(fname.c_str(), options.c_str());
             if (retcode) {
                // complation was successful, let's remember the original
@@ -106,7 +122,7 @@ public:
                fPreprocessor->SetSuppressIncludeNotFoundError(true);
                fChanged = true;
             }
-            return true;
+            return false;
          }
       }
       if (fChanged) {
