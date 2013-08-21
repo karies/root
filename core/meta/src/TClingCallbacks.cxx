@@ -102,7 +102,7 @@ public:
             // the DeclContext assumes that we drill down always.
             // We have to be on the global context. At that point we are in a 
             // wrapper function so the parent context must be the global.
-            // This is needed to solve potential issues wen using #include "myFile.C+"
+            // This is needed to solve potential issues when using #include "myFile.C+"
             // after a scope declaration like:
             // void Check(TObject* obj) {
             //   if (obj) cout << "Found the referenced object\n";
