@@ -631,7 +631,14 @@ bool TClingClassInfo::IsLoaded() const
 
 bool TClingClassInfo::IsValid() const
 {
-   return fDecl;
+   if(fType)
+   {
+      return fDecl && !fType->isIncompleteType(0);
+   }
+   else
+   {
+      return fDecl;
+   }
 }
 
 bool TClingClassInfo::IsValidMethod(const char *method, const char *proto,

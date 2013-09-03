@@ -199,7 +199,7 @@ namespace ROOT {
       };
 
       bool CheckConstructor(const clang::CXXRecordDecl*, ROOT::TMetaUtils::RConstructorType&);
-      bool ClassInfo__HasMethod(const clang::RecordDecl *cl, char const*);
+      bool ClassInfo__HasMethod(const clang::RecordDecl *cl, char const*, const cling::Interpreter &interp);
       void CreateNameTypeMap(clang::CXXRecordDecl const&, std::map<std::string, ROOT::TSchemaType, std::less<std::string>, std::allocator<std::pair<std::string const, ROOT::TSchemaType> > >&);
 
       int ElementStreamer(std::ostream& finalString, const clang::NamedDecl &forcontext, const clang::QualType &qti, const char *R__t,int rwmode, const cling::Interpreter &gInterp, const char *tcl=0);
@@ -241,13 +241,13 @@ namespace ROOT {
       // void WriteStreamer(const AnnotatedRecordDecl &cl, const cling::Interpreter &interp, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt);
 
       void WritePointersSTL(const ROOT::TMetaUtils::AnnotatedRecordDecl &cl, const cling::Interpreter &interp, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt);
-      int GetClassVersion(const clang::RecordDecl *cl);
+      int GetClassVersion(const clang::RecordDecl *cl, const cling::Interpreter &interp);
       int IsSTLContainer(const ROOT::TMetaUtils::AnnotatedRecordDecl &annotated);
       TClassEdit::ESTLType IsSTLContainer(const clang::FieldDecl &m);
       int IsSTLContainer(const clang::CXXBaseSpecifier &base);
       const char *ShortTypeName(const char *typeDesc);
       std::string ShortTypeName(const clang::FieldDecl &m);
-      bool IsStreamableObject(const clang::FieldDecl &m);
+      bool IsStreamableObject(const clang::FieldDecl &m, const cling::Interpreter &interp);
       clang::RecordDecl *R__GetUnderlyingRecordDecl(clang::QualType type);
 
       std::string R__TrueName(const clang::FieldDecl &m);

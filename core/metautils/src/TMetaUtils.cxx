@@ -276,13 +276,15 @@ inline bool R__IsTemplate(const clang::Decl &cl)
 
 // THE CODE I HAVE INSERTED STARTS FROM HERE....
 
-bool ROOT::TMetaUtils::ClassInfo__HasMethod(const clang::RecordDecl *cl, const char* name)
+bool ROOT::TMetaUtils::ClassInfo__HasMethod(const clang::RecordDecl *cl, const char* name, const cling::Interpreter &interp)
 {
    const clang::CXXRecordDecl* CRD = llvm::dyn_cast<clang::CXXRecordDecl>(cl);
    if (!CRD) {
       return false;
    }
    std::string given_name(name);
+   cling::Interpreter::PushTransactionRAII deserRAII(const_cast<cling::Interpreter*>(&interp));
+
    for (
         clang::CXXRecordDecl::method_iterator M = CRD->method_begin(),
         MEnd = CRD->method_end();
@@ -384,7 +386,7 @@ int ROOT::TMetaUtils::ElementStreamer(std::ostream& finalString, const clang::Na
    ROOT::TMetaUtils::R__GetQualifiedName(rawname, clang::QualType(rawtype,0), forcontext);
 
    clang::CXXRecordDecl *cxxtype = rawtype->getAsCXXRecordDecl() ;
-   int isStre = cxxtype && ROOT::TMetaUtils::ClassInfo__HasMethod(cxxtype,"Streamer");
+   int isStre = cxxtype && ROOT::TMetaUtils::ClassInfo__HasMethod(cxxtype,"Streamer", gInterp);
    int isTObj = cxxtype && (R__IsBase(cxxtype,TObject_decl) || rawname == "TObject");
 
    long kase = 0;
@@ -988,7 +990,7 @@ bool ROOT::TMetaUtils::NeedExternalShowMember(const ROOT::TMetaUtils::AnnotatedR
    // This means templated classes hiding members won't have
    // a proper shadow class, and the user has no chance of
    // veto-ing a shadow, as we need it for ShowMembers :-/
-   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"ShowMembers"))
+   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"ShowMembers", interp))
       return R__IsTemplate(*cl);
 
    // no streamer, no shadow
@@ -1090,7 +1092,7 @@ void ROOT::TMetaUtils::WriteClassInit(std::ostream& finalString, const ROOT::TMe
 
    finalString << "namespace ROOT {" << "\n" << "   void " << mappedname.c_str() << "_ShowMembers(void *obj, TMemberInspector &R__insp);" << "\n";
 
-   if (!ClassInfo__HasMethod(decl,"Dictionary") || R__IsTemplate(*decl))
+   if (!ClassInfo__HasMethod(decl,"Dictionary", interp) || R__IsTemplate(*decl))
    {
       finalString << "   static void " << mappedname.c_str() << "_Dictionary();\n"
                   << "   static void " << mappedname.c_str() << "_TClassManip(TClass*);\n";
@@ -1202,7 +1204,7 @@ void ROOT::TMetaUtils::WriteClassInit(std::ostream& finalString, const ROOT::TMe
    finalString << "      " << csymbol.c_str() << " *ptr = 0;" << "\n";
 
    //fprintf(fp, "      static ::ROOT::ClassInfo< %s > \n",classname.c_str());
-   if (ClassInfo__HasMethod(decl,"IsA") ) {
+   if (ClassInfo__HasMethod(decl,"IsA", interp) ) {
       finalString << "      static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< "  << csymbol.c_str() << " >(0);" << "\n";
    }
    else {
@@ -1210,7 +1212,7 @@ void ROOT::TMetaUtils::WriteClassInit(std::ostream& finalString, const ROOT::TMe
    }
    finalString << "      static ::ROOT::TGenericClassInfo " << "\n" << "         instance(\"" << classname.c_str() << "\", ";
 
-   if (ClassInfo__HasMethod(decl,"Class_Version")) {
+   if (ClassInfo__HasMethod(decl,"Class_Version", interp)) {
       finalString << csymbol.c_str() << "::Class_Version(), ";
    } else if (bset) {
       finalString << "2, "; // bitset 'version number'
@@ -1253,13 +1255,13 @@ void ROOT::TMetaUtils::WriteClassInit(std::ostream& finalString, const ROOT::TMe
    finalString << "\"" << filename << "\", " << ROOT::TMetaUtils::R__GetLineNumber(cl) << "," << "\n" << "                  typeid(" << csymbol.c_str() << "), DefineBehavior(ptr, ptr)," << "\n" << "                  ";
 
    if (!ROOT::TMetaUtils::NeedExternalShowMember(cl, decl, interp, normCtxt)) {
-      if (!ClassInfo__HasMethod(decl,"ShowMembers")) finalString << "0, ";
+      if (!ClassInfo__HasMethod(decl,"ShowMembers", interp)) finalString << "0, ";
    } else {
-      if (!ClassInfo__HasMethod(decl,"ShowMembers"))
+      if (!ClassInfo__HasMethod(decl,"ShowMembers", interp))
          finalString << "&" << mappedname.c_str() << "_ShowMembers, ";
    }
 
-   if (ClassInfo__HasMethod(decl,"Dictionary") && !R__IsTemplate(*decl)) {
+   if (ClassInfo__HasMethod(decl,"Dictionary", interp) && !R__IsTemplate(*decl)) {
       finalString << "&" << csymbol.c_str() << "::Dictionary, ";
    } else {
       finalString << "&" << mappedname.c_str() << "_Dictionary, ";
@@ -1350,7 +1352,7 @@ void ROOT::TMetaUtils::WriteClassInit(std::ostream& finalString, const ROOT::TMe
 
    finalString << "   static ::ROOT::TGenericClassInfo *_R__UNIQUE_(Init" << mappedname.c_str() << ") = GenerateInitInstanceLocal((const " << csymbol.c_str() << "*)0x0); R__UseDummy(_R__UNIQUE_(Init" << mappedname.c_str() << "));" << "\n";
 
-   if (!ClassInfo__HasMethod(decl,"Dictionary") || R__IsTemplate(*decl)) {
+   if (!ClassInfo__HasMethod(decl,"Dictionary", interp) || R__IsTemplate(*decl)) {
       const char* cSymbolStr = csymbol.c_str();
       finalString <<  "\n" << "   // Dictionary for non-ClassDef classes" << "\n"
                   << "   static void " << mappedname.c_str() << "_Dictionary() {\n"
@@ -1468,7 +1470,7 @@ void ROOT::TMetaUtils::WriteBodyShowMembers(std::ostream& finalString, const ROO
    }
 
    std::string getClass;
-   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"IsA") && !outside) {
+   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"IsA", interp) && !outside) {
       getClass = csymbol + "::IsA()";
    } else {
       getClass = "::ROOT::GenerateInitInstanceLocal((const ";
@@ -1810,7 +1812,7 @@ void ROOT::TMetaUtils::WritePointersSTL(const ROOT::TMetaUtils::AnnotatedRecordD
    std::string a;
    std::string clName;
    TMetaUtils::GetCppName(clName, ROOT::TMetaUtils::GetFileName(cl.GetRecordDecl()).str().c_str());
-   int version = ROOT::TMetaUtils::GetClassVersion(cl.GetRecordDecl());
+   int version = ROOT::TMetaUtils::GetClassVersion(cl.GetRecordDecl(), interp);
    if (version == 0) return;
    if (version < 0 && !(cl.RequestStreamerInfo()) ) return;
 
@@ -1845,7 +1847,7 @@ void ROOT::TMetaUtils::WritePointersSTL(const ROOT::TMetaUtils::AnnotatedRecordD
          }
       }
 
-      if (!ROOT::TMetaUtils::IsStreamableObject(**field_iter)) continue;
+      if (!ROOT::TMetaUtils::IsStreamableObject(**field_iter, interp)) continue;
 
       int k = ROOT::TMetaUtils::IsSTLContainer( **field_iter );
       if (k!=0) {
@@ -1871,12 +1873,12 @@ std::string ROOT::TMetaUtils::R__TrueName(const clang::FieldDecl &m)
    return result;
 }
 
-int ROOT::TMetaUtils::GetClassVersion(const clang::RecordDecl *cl)
+int ROOT::TMetaUtils::GetClassVersion(const clang::RecordDecl *cl, const cling::Interpreter &interp)
 {
    // Return the version number of the class or -1
    // if the function Class_Version does not exist.
 
-   if (!ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"Class_Version")) return -1;
+   if (!ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"Class_Version", interp)) return -1;
 
    const clang::CXXRecordDecl* CRD = llvm::dyn_cast<clang::CXXRecordDecl>(cl);
    if (!CRD) {
@@ -1996,7 +1998,7 @@ const char *ROOT::TMetaUtils::ShortTypeName(const char *typeDesc)
    return t;
 }
 
-bool ROOT::TMetaUtils::IsStreamableObject(const clang::FieldDecl &m)
+bool ROOT::TMetaUtils::IsStreamableObject(const clang::FieldDecl &m, const cling::Interpreter &interp)
 {
    const char *comment = ROOT::TMetaUtils::GetComment( m ).data();
 
@@ -2039,9 +2041,9 @@ bool ROOT::TMetaUtils::IsStreamableObject(const clang::FieldDecl &m)
    }
 
    const clang::CXXRecordDecl *cxxdecl = rawtype->getAsCXXRecordDecl();
-   if (cxxdecl && ROOT::TMetaUtils::ClassInfo__HasMethod(cxxdecl,"Streamer")) {
-      if (!(ROOT::TMetaUtils::ClassInfo__HasMethod(cxxdecl,"Class_Version"))) return true;
-      int version = ROOT::TMetaUtils::GetClassVersion(cxxdecl);
+   if (cxxdecl && ROOT::TMetaUtils::ClassInfo__HasMethod(cxxdecl,"Streamer", interp)) {
+      if (!(ROOT::TMetaUtils::ClassInfo__HasMethod(cxxdecl,"Class_Version", interp))) return true;
+      int version = ROOT::TMetaUtils::GetClassVersion(cxxdecl, interp);
       if (version > 0) return true;
    }
    return false;
@@ -2095,7 +2097,7 @@ void ROOT::TMetaUtils::WriteClassCode(ROOT::TMetaUtils::CallWriteStreamer_t Writ
      return;
    }
 
-   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"Streamer")) {
+   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"Streamer", interp)) {
       if (cl.RootFlag()) ROOT::TMetaUtils::WritePointersSTL(cl, interp, normCtxt); // In particular this detect if the class has a version number.
       if (!(cl.RequestNoStreamer())) {
          (*WriteStreamerFunc)(cl, interp, normCtxt, cl.RequestStreamerInfo() /*G__AUTOSTREAMER*/);
@@ -2114,7 +2116,7 @@ void ROOT::TMetaUtils::WriteClassCode(ROOT::TMetaUtils::CallWriteStreamer_t Writ
 
       if (cl.RequestStreamerInfo()) ROOT::TMetaUtils::WritePointersSTL(cl, interp, normCtxt);
    }
-   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"ShowMembers")) {
+   if (ROOT::TMetaUtils::ClassInfo__HasMethod(cl,"ShowMembers", interp)) {
       ROOT::TMetaUtils::WriteShowMembers(finalString, cl, decl, interp, normCtxt);
    } else {
       if (ROOT::TMetaUtils::NeedExternalShowMember(cl, decl, interp, normCtxt)) {

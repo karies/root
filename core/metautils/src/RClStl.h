@@ -48,6 +48,7 @@ namespace ROOT {
    private:
       typedef std::set<ROOT::TMetaUtils::AnnotatedRecordDecl,ROOT::TMetaUtils::AnnotatedRecordDecl::CompareByName> list_t;
       list_t fList;
+      list_t fGeneratedList;
 
    public:
       static RStl& Instance();
@@ -61,7 +62,7 @@ namespace ROOT {
       void WriteStreamer(FILE *file);
       
    private:
-      RStl() : fList() {};
+      RStl() : fList(), fGeneratedList() {};
       RStl(const RStl&);
       RStl& operator=(const RStl&);
    };

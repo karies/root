@@ -833,9 +833,10 @@ ClassImp(TCling)
 
 //______________________________________________________________________________
 TCling::TCling(const char *name, const char *title)
-: TInterpreter(name, title), fGlobalsListSerial(-1), fInterpreter(0),
+: TInterpreter(name, title), fGlobalsListSerial(-1), fLockProcessLine(kTRUE), fInterpreter(0),
    fMetaProcessor(0), fNormalizedCtxt(0), fPrevLoadedDynLibInfo(0),
    fClingCallbacks(0), fHaveSinglePCM(kFALSE)
+
 {
    // Initialize the cling interpreter interface.
 
@@ -935,7 +936,6 @@ TCling::TCling(const char *name, const char *title)
    fMapfile   = 0;
    fMapNamespaces   = 0;
    fRootmapFiles = 0;
-   fLockProcessLine = kTRUE;
    // Disable the autoloader until it is explicitly enabled.
    SetClassAutoloading(false);
 
@@ -2286,8 +2286,8 @@ Bool_t TCling::CheckClassInfo(const char* name, Bool_t autoload /*= kTRUE*/)
    delete[] classname;
 
    if (type) {
-      // If decl==0 and the type is valid, then we have a forward declaration.
-      if (!decl) {
+      // If decl==0 or the type is incomplete, then we have a forward declaration.
+      if (!decl || type->isIncompleteType(0)) {
          // If we have a forward declaration for a class template instantiation,
          // we want to ignore it if it was produced/induced by the call to
          // findScope, however we can not distinguish those from the
@@ -2301,8 +2301,12 @@ Bool_t TCling::CheckClassInfo(const char* name, Bool_t autoload /*= kTRUE*/)
          clang::ClassTemplateSpecializationDecl *tmpltDecl =
             llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>
                (type->getAsCXXRecordDecl());
-         if (tmpltDecl && !tmpltDecl->getPointOfInstantiation().isValid()) {
-            // Since the point of instantiation is invalid, we 'guess' that
+
+         const clang::SourceManager& SM = fInterpreter->getCI()->getSourceManager();
+         if (tmpltDecl
+            && (!tmpltDecl->getPointOfInstantiation().isValid()
+               || !SM.getIncludeLoc(SM.getFileID(tmpltDecl->getPointOfInstantiation())).isValid())) {
+            // Since the point of instantiation is invalid (or its include loc), we 'guess' that
             // the 'instantiation' of the forwarded type appended in
             // findscope.
             bool isStd = tmpltDecl->getDeclContext()->Equals(fInterpreter->getSema().getStdNamespace());
@@ -2651,6 +2655,37 @@ Int_t TCling::GenerateDictionary(const clang::Decl* decl)
    if(recDecl->getAccess() == clang::AS_private || recDecl->getAccess() == clang::AS_protected)
    {
       return 1;
+   }
+
+   // for X<Y, Z> check accessibility of Y and Z
+   // cast to ClassTemplateSpecializationDecl
+
+   if(clang::ClassTemplateSpecializationDecl *tmplt_specialization = dyn_cast<clang::ClassTemplateSpecializationDecl>(const_cast<clang::Decl*>(decl)))
+   {
+      // loop over template args
+      for(unsigned int i = 0; i <  tmplt_specialization->getTemplateArgs().size(); ++i) {
+         const clang::TemplateArgument &arg( tmplt_specialization->getTemplateArgs().get(i) );
+         
+         // Check if it is a Type
+         if(arg.getKind() == clang::TemplateArgument::Type)
+         {
+            clang::QualType tmplti = arg.getAsType();
+            const clang::Type *type = ROOT::TMetaUtils::GetUnderlyingType(tmplti);
+         
+            if (type->isFundamentalType() || type->isEnumeralType()) {
+               continue;
+            }
+            
+            // Determine the access of the decl
+            clang::RecordDecl *tdecl = type->getAsCXXRecordDecl();
+            if (tdecl->getAccess() != AS_public && tdecl->getAccess() != AS_none)
+               return 1;
+
+            // Check if the template parameter has a definition
+            if(!tdecl->getDefinition())
+               return 1;
+         }
+      }
    }
 
    // Check if the decl has all members defined

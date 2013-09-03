@@ -215,12 +215,19 @@ void ROOT::RStl::WriteClassInit(std::ostream &ostr, const cling::Interpreter &in
          result = llvm::dyn_cast<clang::CXXRecordDecl>(iter->GetRecordDecl());
       }
 
-      // std::string fullname = R__GetQualifiedName(*iter->GetRecordDecl());      
-      // fprintf(stderr,"RStl is generating TClass for %ld %s %s %s\n",iter->GetRuleIndex(),iter->GetRequestedName(),iter->GetNormalizedName(),fullname.c_str());
+      if(fGeneratedList.find(*iter) != fGeneratedList.end())
+      {
+         // This dictionary is already generated, so don't do it again
+         continue;
+      }
 
       ROOT::TMetaUtils::WriteClassInit(ostr, *iter, result, interp, normCtxt, needCollectionProxy);
       ROOT::TMetaUtils::WriteAuxFunctions(ostr, *iter, result, interp, normCtxt);
+
+      // Add the dictionary to the list of already generated dictionaries
+      fGeneratedList.insert(*iter);
    }
+
    fList.clear();
 }
 
