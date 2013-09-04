@@ -76,7 +76,7 @@ public:
    virtual TClass  *GenerateTClass(const char *classname, Bool_t emulation, Bool_t silent = kFALSE) = 0;
    virtual TClass  *GenerateTClass(ClassInfo_t *classinfo, Bool_t silent = kFALSE) = 0;
    virtual Int_t    GenerateDictionary(const char *classes, const char *includes = 0, const char *options = 0) = 0; 
-   virtual Int_t    GenerateDictionary(const clang::Decl* decl) = 0;
+   virtual Int_t    CreateJITDictionary(const clang::Decl* decl) = 0;
    virtual char    *GetPrompt() = 0;
    virtual const char *GetSharedLibs() = 0;
    virtual const char *GetClassSharedLibs(const char *cls) = 0;

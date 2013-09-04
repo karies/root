@@ -2533,7 +2533,7 @@ TClass *TCling::GenerateTClass(const char *classname, Bool_t emulation, Bool_t s
       // Ask the interpreter to runtime-generate the dictionary
       TClingClassInfo tci(fInterpreter, classname);
       if (tci.IsValid() && isa<clang::RecordDecl>(tci.GetDecl())) {  
-         TCling::GenerateDictionary(tci.GetDecl());
+         TCling::CreateJITDictionary(tci.GetDecl());
          VoidFuncPtr_t dict = TClassTable::GetDict(classname);
          if (dict) {
             (dict)();
@@ -2639,7 +2639,7 @@ void GenerateStreamerError(const ROOT::TMetaUtils::AnnotatedRecordDecl &cl, cons
 }
 
 //______________________________________________________________________________
-Int_t TCling::GenerateDictionary(const clang::Decl* decl)
+Int_t TCling::CreateJITDictionary(const clang::Decl* decl)
 {
    // Generate dictionary using methods in TMetaUtils
    std::ostringstream finalString;
@@ -2712,7 +2712,7 @@ Int_t TCling::GenerateDictionary(const clang::Decl* decl)
    //AnnotatedRecordDecl(long index, const clang::RecordDecl *decl, bool rStreamerInfo, bool rNoStreamer, bool rRequestNoInputOperator, bool rRequestOnlyTClass, int rRequestedVersionNumber, const cling::Interpreter &interpret, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt);
    ROOT::TMetaUtils::AnnotatedRecordDecl annoDecl(0L /*long index*/, recDecl, true /*bool rStreamerInfo*/, false /*bool rNoStreamer*/, false /*rRequestNoInputOperator*/, false /*rRequestOnlyTClass*/, -1 /*rRequestedVersionNumber*/, *fInterpreter, *TCling::fNormalizedCtxt);
 
-   ROOT::TMetaUtils::WriteEverything(GenerateStreamerError, finalString, annoDecl, *fInterpreter, *TCling::fNormalizedCtxt);
+   ROOT::TMetaUtils::GetDictionarySource(GenerateStreamerError, finalString, annoDecl, *fInterpreter, *TCling::fNormalizedCtxt);
 
    LoadText(finalString.str().c_str());
 
