@@ -1098,11 +1098,14 @@ void TClass::Init(const char *name, Version_t cversion,
       }
    }
 
-   ResetBit(kLoading);
-
-   if ( !fCollectionProxy && isStl || !strncmp(GetName(),"stdext::hash_",13) || !strncmp(GetName(),"__gnu_cxx::hash_",16) ) {
+   if (!strncmp(GetName(),"std::pair<",10) || !strncmp(GetName(),"pair<",5) ) {
+      // std::pairs have implicit conversions
+      GetSchemaRules(kTRUE);
+   } else if ( !fCollectionProxy && (isStl || !strncmp(GetName(),"stdext::hash_",13) || !strncmp(GetName(),"__gnu_cxx::hash_",16)) ) {
       fCollectionProxy = TVirtualStreamerInfo::Factory()->GenEmulatedProxy( GetName(), silent );
       
+      ResetBit(kLoading);
+
       if (fCollectionProxy) {
          fSizeof = fCollectionProxy->Sizeof();
 
@@ -1115,11 +1118,9 @@ void TClass::Init(const char *name, Version_t cversion,
       if (fStreamer==0) {
          fStreamer =  TVirtualStreamerInfo::Factory()->GenEmulatedClassStreamer( GetName(), silent );
       }
-   } else if (!strncmp(GetName(),"std::pair<",10) || !strncmp(GetName(),"pair<",5) ) {
-      // std::pairs have implicit conversions
-      GetSchemaRules(kTRUE);
    }
 
+   ResetBit(kLoading);
 }
 
 //______________________________________________________________________________
@@ -2561,7 +2562,9 @@ TClass *TClass::GetClass(const char *name, Bool_t load, Bool_t silent)
                // since the name are different but we got a TClass, we assume
                // we need to replace and delete this class.
                assert(newcl!=cl);
-               newcl->ForceReload(cl);
+               if (!cl->TestBit(kLoading)) {
+                  newcl->ForceReload(cl);
+               }
                return newcl;
             }
          }
