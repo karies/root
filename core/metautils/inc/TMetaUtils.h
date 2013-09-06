@@ -196,6 +196,8 @@ namespace ROOT {
 
             const char *GetName();
             const clang::CXXRecordDecl *GetType();
+            bool operator ==(const RConstructorType& other) { return fArgTypeName == other.fArgTypeName; }
+            bool operator <(const RConstructorType& other) { return fArgTypeName < other.fArgTypeName; }
       };
 
       bool CheckConstructor(const clang::CXXRecordDecl*, ROOT::TMetaUtils::RConstructorType&);

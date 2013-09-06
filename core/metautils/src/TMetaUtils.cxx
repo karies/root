@@ -2128,7 +2128,13 @@ void ROOT::TMetaUtils::WriteClassCode(ROOT::TMetaUtils::CallWriteStreamer_t Writ
 
 void ROOT::TMetaUtils::AddConstructorType(const char *arg, const cling::Interpreter &interp)
 {
-   if (arg) gIoConstructorTypes.push_back(ROOT::TMetaUtils::RConstructorType(arg, interp));
+   if (arg)
+   {
+      if(std::find(gIoConstructorTypes.begin(), gIoConstructorTypes.end(), ROOT::TMetaUtils::RConstructorType(arg, interp)) == gIoConstructorTypes.end())
+      {
+         gIoConstructorTypes.push_back(ROOT::TMetaUtils::RConstructorType(arg, interp)); 
+      }
+   }
 }
 
 
@@ -2664,6 +2670,9 @@ void ROOT::TMetaUtils::GetDictionarySource(ROOT::TMetaUtils::CallWriteStreamer_t
    bool needCollectionProxy = false;
    const clang::CXXRecordDecl* decl = llvm::dyn_cast<clang::CXXRecordDecl>(cl.GetRecordDecl());
    
+   ROOT::TMetaUtils::AddConstructorType("TRootIOCtor", interp);
+   ROOT::TMetaUtils::AddConstructorType("", interp);
+
    if (TMetaUtils::IsStdClass(*decl) && 0 != TClassEdit::STLKind(decl->getName().str().c_str()) ) {
       RStl::Instance().GenerateTClassFor( cl.GetNormalizedName(), decl, interp, normCtxt);
    } else {
