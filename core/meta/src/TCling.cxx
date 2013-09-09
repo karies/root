@@ -922,6 +922,8 @@ TCling::TCling(const char *name, const char *title)
 
    // For the list to also include string, we have to include it now.
    fInterpreter->declare("#include \"Rtypes.h\"\n"
+                         "#define G__DICTIONARY\n"
+                         "#include \"RtypesImp.h\"\n"
                          "#include <string>\n"
                          "using namespace std;");
 
