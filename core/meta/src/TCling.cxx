@@ -2809,48 +2809,16 @@ Bool_t TCling::HasDictionary(TClass* cl)
 }
 
 //______________________________________________________________________________
-bool TCling::GetUnderlyingQualType(clang::QualType& qType)
-{
-
-   // Utility function to be able to obtain the underlying QualType for a given Type.
-
-   bool changed = true;
-   while (changed) {
-      changed = false;
-      if (qType->isPointerType()) {
-         qType = qType->getPointeeType();
-         changed = true;
-      }
-      if (qType->isReferenceType()) {
-         qType = qType->getPointeeType();
-         changed = true;
-      }
-      if (qType->isArrayType()) {
-         const Type* elementType = qType->getArrayElementTypeNoTypeQual();
-         qType = QualType(elementType, 0);
-         changed = true;
-      }
-      // Already checked in the template parameter list.
-      if (isa<clang::TemplateTypeParmType>(qType.getTypePtr())) {
-         return false;
-      }
-      // Already checked in the template parameter list.
-      if (isa<clang::SubstTemplateTypeParmType>(qType.getTypePtr())) {
-         return false;
-      }
-      if (qType->isRecordType()) {
-         return true;
-      }
-   }
-   return false;
-}
-
-//______________________________________________________________________________
-bool TCling::InsertMissingDictionaryDecl(const clang::Decl* D, std::set<const clang::Type*> &netD, clang::QualType& qType, bool recurse)
+bool TCling::InsertMissingDictionaryDecl(const clang::Decl* D, std::set<const clang::Type*> &netD, clang::QualType qType, bool recurse)
 {
 
    // Utility function to insert a type pointer to a decl that does not have a dictionary
    // In the set of pointer for teh classes without dictionaries.
+
+   // No need to check data members that substitute a template parameter as the parameters were already checked.
+   if (isa<clang::TemplateTypeParmType>(qType.getTypePtr())
+      || isa<clang::SubstTemplateTypeParmType>(qType.getTypePtr()))
+      return false;
 
    // Check whether the type pointer is not already in the set.
    std::set<const clang::Type*>::iterator it = netD.find(qType.getTypePtr());
@@ -2900,11 +2868,14 @@ bool TCling::InsertMissingDictionaryDecl(const clang::Decl* D, std::set<const cl
             if (TIB) {
                clang::TemplateArgument::ArgKind tmpltArgKind = TIB->getKind();
                if (tmpltArgKind == clang::TemplateArgument::Type) {
-                  qType = TIB->getAsType();
-                  if (GetUnderlyingQualType(qType)) {
-                     clang::Decl* tmplD = qType->getAsCXXRecordDecl();
+                  //qType = TIB->getAsType();
+                  if (const clang::Type* tt = ROOT::TMetaUtils::GetUnderlyingType(TIB->getAsType())) {
+                     clang::Decl* tmplD = tt->getAsCXXRecordDecl();
                      if (tmplD) {
-                        GetMissingDictionariesForDecl(tmplD, netD, qType, recurse);
+                        if (const clang::TypedefType* TD = dyn_cast<clang::TypedefType>(tt)) {
+                           tt = (TD->desugar()).getTypePtr();
+                        }
+                        GetMissingDictionariesForDecl(tmplD, netD, QualType(tt, 0), recurse);
                      }
                   }
                }
@@ -2930,16 +2901,20 @@ void TCling::GetMissingDictionariesForDecl(const clang::Decl* D, std::set<const 
       for (clang::RecordDecl::field_iterator iField = RD->field_begin(),
            eField = RD->field_end(); iField != eField; ++iField) {
 
-         clang::QualType fieldQType = (*iField)->getType();
-         if (!fieldQType.isNull()) {
+         clang::QualType fieldQualType = (*iField)->getType();
+         if (!fieldQualType.isNull()) {
             // Check if not NullType.
-            if (GetUnderlyingQualType(fieldQType)) {
-               clang::Decl* FD = fieldQType->getAsCXXRecordDecl();
+            //if (const clang::TypedefType* TD = dyn_cast<clang::TypedefType>(fieldQualType.getTypePtr())) {
+            if (const clang::Type* t = ROOT::TMetaUtils::GetUnderlyingType(fieldQualType)) {
+               clang::Decl* FD = t->getAsCXXRecordDecl();
                if (FD) {
+                  if (const clang::TypedefType* TD = dyn_cast<clang::TypedefType>(t)) {
+                     t = (TD->desugar()).getTypePtr();
+                  }
                   if(recurse) {
-                     GetMissingDictionariesForDecl(FD, netD, fieldQType, recurse);
+                     GetMissingDictionariesForDecl(FD, netD, QualType(t, 0), recurse);
                   } else {
-                     InsertMissingDictionaryDecl(FD, netD, fieldQType, recurse);
+                     InsertMissingDictionaryDecl(FD, netD, QualType(t, 0), recurse);
                   }
                }
             }
