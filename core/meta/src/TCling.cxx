@@ -4615,6 +4615,10 @@ Long_t TCling::ClassInfo_GetBaseOffset(ClassInfo_t* derived, ClassInfo_t* target
 {
    TClingClassInfo* TClinginfo = (TClingClassInfo*) derived;
    TClingClassInfo* TClinginfoTarget = (TClingClassInfo*) target;
+   // Offset to the class itself.
+   if (TClinginfo->GetDecl() == TClinginfoTarget->GetDecl()) {
+      return 0;
+   }
    TClingBaseClassInfo* binfo =  new TClingBaseClassInfo(fInterpreter, TClinginfo, TClinginfoTarget);
    return binfo->Offset(address);
 }
