@@ -68,7 +68,8 @@ public:
    bool          IsValid() const;
    int           Next();
    int           Next(int onlyDirect);
-   long          Offset(void * address = 0) const;
+   long          Offset(const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                        void * address = 0) const;
    long          Property() const;
    long          Tagnum() const;
    const char   *FullName(const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt) const;

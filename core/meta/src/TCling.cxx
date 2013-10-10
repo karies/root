@@ -4772,7 +4772,7 @@ int TCling::BaseClassInfo_Next(BaseClassInfo_t* bcinfo, int onlyDirect) const
 Long_t TCling::BaseClassInfo_Offset(BaseClassInfo_t* bcinfo, void * address) const
 {
    TClingBaseClassInfo* TClinginfo = (TClingBaseClassInfo*) bcinfo;
-   return TClinginfo->Offset(address);
+   return TClinginfo->Offset(*fNormalizedCtxt, address);
 }
 
 //______________________________________________________________________________
@@ -4785,7 +4785,7 @@ Long_t TCling::ClassInfo_GetBaseOffset(ClassInfo_t* derived, ClassInfo_t* target
       return 0;
    }
    TClingBaseClassInfo binfo(fInterpreter, TClinginfo, TClinginfoTarget);
-   return binfo.Offset(address);
+   return binfo.Offset(*fNormalizedCtxt, address);
 }
 
 //______________________________________________________________________________

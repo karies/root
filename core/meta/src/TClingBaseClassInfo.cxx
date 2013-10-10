@@ -426,7 +426,8 @@ static clang::CharUnits computeOffsetHint(clang::ASTContext &Context,
    return Offset;
  }
 
-long TClingBaseClassInfo::Offset(void * address) const
+long TClingBaseClassInfo::Offset(const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                 void * address) const
 {
    // Compute the offset of the derived class to the base class.
 
@@ -450,25 +451,8 @@ long TClingBaseClassInfo::Offset(void * address) const
       }
       long clang_val = computeOffsetHint(Context, Base, RD).getQuantity();
       if (clang_val == -2 || clang_val == -3) {
-         TString baseName;
-         TString derivedName;
-         {
-            // Need TNormalizedCtxt otherwise...
-            std::string buf;
-            PrintingPolicy Policy(fBaseInfo->GetDecl()->getASTContext().
-                                  getPrintingPolicy());
-            llvm::raw_string_ostream stream(buf);
-            ((const clang::NamedDecl*)fBaseInfo->GetDecl())
-               ->getNameForDiagnostic(stream, Policy, /*Qualified=*/true);
-            stream.flush();
-            baseName = buf;
-
-            buf.clear();
-            ((const clang::NamedDecl*)fClassInfo->GetDecl())
-               ->getNameForDiagnostic(stream, Policy, /*Qualified=*/true);
-            stream.flush();
-            derivedName = buf;
-         }
+         TString baseName(fBaseInfo->FullName(normCtxt));
+         TString derivedName(fClassInfo->FullName(normCtxt));
          if (clang_val == -2) {
             Error("TClingBaseClassInfo::Offset",
                   "The class %s does not derive from the base %s.",

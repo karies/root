@@ -241,16 +241,21 @@ OffsetPtrFunc_t TClingClassInfo::FindBaseOffsetFunction(const clang::Decl* decl)
 }
 
 TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
-      const char *proto, long *poffset, EFunctionMatchMode mode /*= kConversionMatch*/,
-      InheritanceMode imode /*= WithInheritance*/) const
+      const char *proto, long *poffset,
+      const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+      EFunctionMatchMode mode /*= kConversionMatch*/,
+      InheritanceMode imode /*= WithInheritance*/,
+      void* address /*=0*/) const
 {
-   return GetMethod(fname,proto,false,poffset,mode,imode);
+   return GetMethod(fname,proto,false /*IsConst*/,poffset,normCtxt,mode,imode);
 }
 
 TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
-      const char *proto, bool objectIsConst,
-      long *poffset, EFunctionMatchMode mode /*= kConversionMatch*/,
-      InheritanceMode imode /*= WithInheritance*/) const
+      const char *proto, bool objectIsConst, long *poffset,
+      const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+      EFunctionMatchMode mode /*= kConversionMatch*/,
+      InheritanceMode imode /*= WithInheritance*/,
+      void* address /*=0*/) const
 {
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
@@ -261,7 +266,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
             if (ndecl && !ndecl->getName().equals(fname)) {
                // Constructor name matching the typedef type, use the decl name instead.
                return GetMethod(ndecl->getName().str().c_str(),proto,objectIsConst,poffset,
-                                mode,imode);
+                                normCtxt,mode,imode,address);
             }
          }
       }
@@ -296,7 +301,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
      if (const CXXMethodDecl *md =
            llvm::dyn_cast<CXXMethodDecl>(fd)) {
         // This is a class member function.
-        *poffset = GetOffset(md);
+        *poffset = GetOffset(normCtxt, md, address);
      }
    }
    TClingMethodInfo tmi(fInterp);
@@ -306,16 +311,20 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
 
 TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
                                             const llvm::SmallVector<clang::QualType, 4> &proto,
-                                            long *poffset, EFunctionMatchMode mode /*= kConversionMatch*/,
-                                            InheritanceMode imode /*= WithInheritance*/) const
+                                            long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                            EFunctionMatchMode mode /*= kConversionMatch*/,
+                                            InheritanceMode imode /*= WithInheritance*/,
+                                            void* address /*=0*/) const
 {
-   return GetMethod(fname,proto,false,poffset,mode,imode);
+   return GetMethod(fname,proto,false,poffset,normCtxtmode,imode, address);
 }
 
 TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
                                             const llvm::SmallVector<clang::QualType, 4> &proto, bool objectIsConst,
-                                            long *poffset, EFunctionMatchMode mode /*= kConversionMatch*/,
-                                            InheritanceMode imode /*= WithInheritance*/) const
+                                            long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                            EFunctionMatchMode mode /*= kConversionMatch*/,
+                                            InheritanceMode imode /*= WithInheritance*/,
+                                            void* address /*=0*/) const
 {
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
@@ -326,7 +335,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
             if (ndecl && !ndecl->getName().equals(fname)) {
                // Constructor name matching the typedef type, use the decl name instead.
                return GetMethod(ndecl->getName().str().c_str(),proto,objectIsConst,poffset,
-                                mode,imode);
+                                normCtxt,mode,imode,address);
             }
          }
       }
@@ -361,7 +370,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
       if (const CXXMethodDecl *md =
           llvm::dyn_cast<CXXMethodDecl>(fd)) {
          // This is a class member function.
-         *poffset = GetOffset(md);
+         *poffset = GetOffset(normCtxt, md, address);
       }
    }
    TClingMethodInfo tmi(fInterp);
@@ -370,16 +379,18 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
 }
 
 TClingMethodInfo TClingClassInfo::GetMethodWithArgs(const char *fname,
-      const char *arglist, long *poffset, EFunctionMatchMode mode /* = kConversionMatch*/,
-      InheritanceMode imode /* = WithInheritance*/) const
+      const char *arglist, long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+      EFunctionMatchMode mode /* = kConversionMatch*/,
+      InheritanceMode imode /* = WithInheritance*/, void* address /*= 0*/) const
 {
-   return GetMethodWithArgs(fname,arglist,false,poffset,mode,imode);
+   return GetMethodWithArgs(fname,arglist,false,poffset,normCtxt,mode,imode,address);
 }
 
 TClingMethodInfo TClingClassInfo::GetMethodWithArgs(const char *fname,
       const char *arglist, bool objectIsConst,
-      long *poffset, EFunctionMatchMode /*mode = kConversionMatch*/,
-      InheritanceMode /* imode = WithInheritance*/) const
+      long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+      EFunctionMatchMode /*mode = kConversionMatch*/,
+      InheritanceMode /* imode = WithInheritance*/, void* address /*= 0*/) const
 {
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
@@ -420,7 +431,7 @@ TClingMethodInfo TClingClassInfo::GetMethodWithArgs(const char *fname,
      if (const CXXMethodDecl *md =
            llvm::dyn_cast<CXXMethodDecl>(fd)) {
         // This is a class member function.
-        *poffset = GetOffset(md);
+        *poffset = GetOffset(normCtxt, md, address);
      }
    }
    TClingMethodInfo tmi(fInterp);
@@ -430,6 +441,7 @@ TClingMethodInfo TClingClassInfo::GetMethodWithArgs(const char *fname,
 
 int TClingClassInfo::GetMethodNArg(const char *method, const char *proto,
                                    Bool_t objectIsConst,
+                                   const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
                                    EFunctionMatchMode mode /*= kConversionMatch*/) const
 {
    // Note: Used only by TQObject.cxx:170 and only for interpreted classes.
@@ -445,7 +457,8 @@ int TClingClassInfo::GetMethodNArg(const char *method, const char *proto,
    return clang_val;
 }
 
-long TClingClassInfo::GetOffset(const CXXMethodDecl* md) const
+long TClingClassInfo::GetOffset(const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                const CXXMethodDecl* md, void * address /*= 0*/) const
 {
    long offset = 0L;
    const CXXRecordDecl* definer = md->getParent();
@@ -461,7 +474,7 @@ long TClingClassInfo::GetOffset(const CXXMethodDecl* md) const
          if (bci->GetDecl() == definer) {
             // We have found the right base class, now get the
             // necessary adjustment.
-            offset = bi.Offset();
+            offset = bi.Offset(normCtxt, address);
             break;
          }
       }
@@ -655,9 +668,10 @@ bool TClingClassInfo::IsValid() const
 }
 
 bool TClingClassInfo::IsValidMethod(const char *method, const char *proto,
-                                    Bool_t objectIsConst,
-                                    long *offset,
-                                    EFunctionMatchMode mode /*= kConversionMatch*/) const
+                                    Bool_t objectIsConst, long *offset,
+                                    const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                    EFunctionMatchMode mode /*= kConversionMatch*/,
+                                    void* address /*= 0*/) const
 {
    // Check if the method with the given prototype exist.
    if (!IsLoaded()) {

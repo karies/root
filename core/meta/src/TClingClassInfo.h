@@ -85,25 +85,34 @@ public:
    OffsetPtrFunc_t      FindBaseOffsetFunction(const clang::Decl* decl) const;
    const clang::Decl   *GetDecl() const { return fDecl; } // Underlying representation without Double32_t
    TClingMethodInfo     GetMethod(const char *fname, const char *proto,
-                                  long *poffset, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
-                                  InheritanceMode imode = WithInheritance) const;
+                                  long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                  ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
+                                  InheritanceMode imode = WithInheritance, void* address = 0) const;
    TClingMethodInfo     GetMethodWithArgs(const char *fname, const char *arglist,
-                                  long *poffset, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
-                                  InheritanceMode imode = WithInheritance) const;
+                                  long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                  ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
+                                  InheritanceMode imode = WithInheritance, void* address = 0) const;
    TClingMethodInfo     GetMethod(const char *fname, const char *proto, bool objectIsConst,
-                                  long *poffset, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
-                                  InheritanceMode imode = WithInheritance) const;
+                                  long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                  ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
+                                  InheritanceMode imode = WithInheritance, void* address = 0) const;
    TClingMethodInfo     GetMethodWithArgs(const char *fname, const char *arglist, bool objectIsConst,
-                                  long *poffset, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
-                                  InheritanceMode imode = WithInheritance) const;
+                                  long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                  ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
+                                  InheritanceMode imode = WithInheritance, void* address = 0) const;
    TClingMethodInfo     GetMethod(const char *fname, const llvm::SmallVector<clang::QualType, 4> &proto,
-                                  long *poffset, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
-                                  InheritanceMode imode = WithInheritance) const;
+                                  long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                  ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
+                                  InheritanceMode imode = WithInheritance, void* address = 0) const;
    TClingMethodInfo     GetMethod(const char *fname, const llvm::SmallVector<clang::QualType, 4> &proto, bool objectIsConst,
-                                  long *poffset, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
-                                  InheritanceMode imode = WithInheritance) const;
-   int                  GetMethodNArg(const char *method, const char *proto, Bool_t objectIsConst, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch) const;
-   long                 GetOffset(const clang::CXXMethodDecl* md) const;
+                                  long *poffset, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                  ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
+                                  InheritanceMode imode = WithInheritance, void* address =0) const;
+   int                  GetMethodNArg(const char *method, const char *proto, Bool_t objectIsConst,
+                                      const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                      ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch) const;
+   long                 GetOffset(const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                  const clang::CXXMethodDecl* md, void* address = 0) const;
    const clang::Type   *GetType() const { return fType; } // Underlying representation with Double32_t
    bool                 HasDefaultConstructor() const;
    bool                 HasMethod(const char *name) const;
@@ -115,7 +124,10 @@ public:
    static bool          IsEnum(cling::Interpreter *interp, const char *name);
    bool                 IsLoaded() const;
    bool                 IsValid() const;
-   bool                 IsValidMethod(const char *method, const char *proto, Bool_t objectIsConst, long *offset, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch) const;
+   bool                 IsValidMethod(const char *method, const char *proto, Bool_t objectIsConst, long *offset,
+                                      const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt,
+                                      ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch,
+                                      void* address = 0) const;
    int                  InternalNext();
    int                  Next();
    void                *New() const;
