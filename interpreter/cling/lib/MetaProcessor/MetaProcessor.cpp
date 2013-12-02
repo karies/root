@@ -19,7 +19,9 @@
 #include "clang/Lex/Preprocessor.h"
 
 #include "llvm/Support/Path.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <algorithm>
 #include <fstream>
 #include <cstdlib>
 #include <cctype>
@@ -163,7 +165,8 @@ namespace cling {
     size_t size = in.tellg();
     std::string content(size, ' ');
     in.seekg(0);
-    in.read(&content[0], size); 
+    in.read(&content[0], size);
+    unsigned lineNum = 1;
 
     if (ignoreOutmostBlock && !content.empty()) {
       static const char whitespace[] = " \t\r\n";
@@ -176,6 +179,8 @@ namespace cling {
           // and the matching closing '}'
           posNonWS = content.find_last_not_of(whitespace);
           if (posNonWS != std::string::npos) {
+            lineNum += std::count(content.begin(), content.begin() + posNonWS, '\n');
+
             if (content[posNonWS] == ';' && content[posNonWS-1] == '}') {
               content[posNonWS--] = ' '; // replace ';' and enter next if
             }
@@ -207,6 +212,12 @@ namespace cling {
     if (topmost)
       m_TopExecutingFile = m_CurrentlyExecutingFile;
     Interpreter::CompilationResult ret;
+    std::string lineDirective;
+    {
+      llvm::raw_string_ostream osLineDirective(lineDirective);
+      osLineDirective << "#line " << lineNum << " \"" << filename << "\"\n";
+    }
+    content = lineDirective + content;
     if (process(content.c_str(), ret, result)) {
       // Input file has to be complete.
        llvm::errs() 
