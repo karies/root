@@ -1351,6 +1351,31 @@ TObject *TROOT::GetGeometry(const char *name) const
    return GetListOfGeometries()->FindObject(name);
 }
 
+namespace {
+   class TGlobalMappedFunction: public TGlobal {
+   public:
+      typedef void* (*GlobalFunc_t)();
+      TGlobalMappedFunction(const char* name, const char* type,
+                            GlobalFunc_t funcPtr):
+         fFuncPtr(funcPtr)
+      { SetNameTitle(name, type); }
+      virtual       ~TGlobalMappedFunction() {}
+      Int_t          GetArrayDim() const { return 0;}
+      DeclId_t       GetDeclId() const { return 0; }
+      Int_t          GetMaxIndex(Int_t /*dim*/) const { return -1; }
+      void          *GetAddress() const { return (*fFuncPtr)(); }
+      const char    *GetTypeName() const { return fTitle; }
+      const char    *GetFullTypeName() const { return fTitle; }
+      Long_t         Property() const { return 0; }
+      virtual bool   Update(DataMemberInfo_t * /*info*/) { return false; }
+
+   private:
+      GlobalFunc_t fFuncPtr; // Function to call to get the address
+
+      TGlobalMappedFunction &operator=(const TGlobal &); // not implemented.
+   };
+}
+
 //______________________________________________________________________________
 TCollection *TROOT::GetListOfGlobals(Bool_t load)
 {
@@ -1363,6 +1388,8 @@ TCollection *TROOT::GetListOfGlobals(Bool_t load)
 
    if (!fGlobals) {
       fGlobals = new TListOfDataMembers(0);
+      fGlobals->Add(new TGlobalMappedFunction("gROOT", "TROOT*",
+                                              (TGlobalMappedFunction::GlobalFunc_t)&ROOT::GetROOT));
    }
 
    if (!fInterpreter)

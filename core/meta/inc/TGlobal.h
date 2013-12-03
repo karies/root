@@ -37,13 +37,13 @@ public:
    TGlobal &operator=(const TGlobal &);
    
    virtual       ~TGlobal();
-   Int_t          GetArrayDim() const;
-   DeclId_t       GetDeclId() const;
-   Int_t          GetMaxIndex(Int_t dim) const;
-   void          *GetAddress() const;
-   const char    *GetTypeName() const;
-   const char    *GetFullTypeName() const;
-   Long_t         Property() const;
+   virtual Int_t  GetArrayDim() const;
+   virtual DeclId_t GetDeclId() const;
+   virtual Int_t  GetMaxIndex(Int_t dim) const;
+   virtual void  *GetAddress() const;
+   virtual const char *GetTypeName() const;
+   virtual const char *GetFullTypeName() const;
+   virtual Long_t Property() const;
    virtual bool   Update(DataMemberInfo_t *info);
 
    ClassDef(TGlobal,0)  //Global variable class
