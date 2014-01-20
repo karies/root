@@ -62,6 +62,11 @@ namespace cling {
     ///
     std::string m_FileErr;
 
+    ///brief Stores the terminal name for after the redirection
+    llvm::SmallVector<llvm::SmallString<128>, 2> m_PrevStdoutFileName;
+    ///brief Stores the terminal name for after the redirection
+    llvm::SmallVector<llvm::SmallString<128>, 2> m_PrevStderrFileName;
+
   public:
     enum RedirectionScope {
       kSTDOUT = 1,
@@ -75,21 +80,12 @@ namespace cling {
     class MaybeRedirectOutputRAII {
     private:
       MetaProcessor* m_MetaProcessor;
-      ///brief Stores the terminal name for after the redirection
-      /// when nested redirection - should change name to
-      /// previousOutFile.
-      llvm::SmallString<1024> m_PrevStdoutFileName;
-      ///brief Stores the terminal name for after the redirection
-      /// when nested redirection - should change name to
-      /// previousErrFile.
-      llvm::SmallString<1024> m_PrevStderrFileName;
 
     public:
       MaybeRedirectOutputRAII(MetaProcessor* p);
       ~MaybeRedirectOutputRAII() { pop(); }
     private:
       void pop();
-      bool cacheStd(int fd, llvm::SmallVectorImpl<char>& prevFile);
       void redirect(int fd, llvm::SmallVectorImpl<char>& prevFile,
                     std::string fileName, FILE* standard);
       void unredirect(llvm::SmallVectorImpl<char>& prevFile,
@@ -172,6 +168,8 @@ namespace cling {
                       StoredValueRef* result,
                       bool ignoreOutmostBlock = false);
 
+    bool cacheStd(int fd, llvm::SmallVectorImpl<char>& prevFile);
+
     ///\brief Set the stdout and stderr stream to the appropriate file.
     ///
     ///\param [in] file - The file for the redirection.
@@ -185,7 +183,8 @@ namespace cling {
     ///
     ///\param [in] file - The file for the redirection.
     void setFileStream(std::string& fileStorage, llvm::StringRef file,
-                       bool append);
+                      bool append, int fd,
+                      llvm::SmallVector<llvm::SmallString<128> ,2>& prevFileStack);
   };
 } // end namespace cling
 
