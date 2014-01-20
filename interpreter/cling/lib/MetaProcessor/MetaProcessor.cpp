@@ -35,34 +35,37 @@ using namespace clang;
 namespace cling {
 
   MetaProcessor::MaybeRedirectOutputRAII::MaybeRedirectOutputRAII(
-                                          MetaProcessor* p)
-  :m_MetaProcessor(p) {
-      redirect(STDOUT_FILENO, m_MetaProcessor->m_PrevStdoutFileName.back(),
-               m_MetaProcessor->m_FileOut, stdout);
-      redirect(STDERR_FILENO, m_MetaProcessor->m_PrevStderrFileName.back(),
-               m_MetaProcessor->m_FileErr, stderr);
+                                          MetaProcessor* p,
+                                          bool isCurrentlyRedirecting)
+  :m_MetaProcessor(p), isCurrentlyRedirecting(false) {
+      redirect(STDOUT_FILENO, m_MetaProcessor->m_FileOut, stdout);
+      redirect(STDERR_FILENO, m_MetaProcessor->m_FileErr, stderr);
   }
 
   void MetaProcessor::MaybeRedirectOutputRAII::redirect(int fd,
-                                          llvm::SmallVectorImpl<char>& prevFile,
-                                          std::string fileName,
-                                          FILE* file) {
+                                                        std::string fileName,
+                                                        FILE* file) {
     if (!fileName.empty()) {
       FILE * redirectionFile = freopen(fileName.c_str(), "a", file);
       if (!redirectionFile) {
         llvm::errs()<<"cling::MetaProcessor Error: The file path is not valid.";
       } else {
         file = redirectionFile;
+        isCurrentlyRedirecting = true;
       }
     }
   }
 
   void MetaProcessor::MaybeRedirectOutputRAII::pop() {
-    if (m_MetaProcessor->m_PrevStdoutFileName.size() != 0) {
-      unredirect(m_MetaProcessor->m_PrevStdoutFileName.back(), stdout);
+    if (isCurrentlyRedirecting) {
+      SmallString<128> terminalNameOut;
+      m_MetaProcessor->getTerminal(STDOUT_FILENO, terminalNameOut);
+      unredirect(terminalNameOut, stdout);
     }
-    if (m_MetaProcessor->m_PrevStderrFileName.size() != 0) {
-      unredirect(m_MetaProcessor->m_PrevStderrFileName.back(), stderr);
+    if (isCurrentlyRedirecting) {
+      SmallString<128> terminalNameErr;
+      m_MetaProcessor->getTerminal(STDERR_FILENO, terminalNameErr);
+      unredirect(terminalNameErr, stderr);
     }
   }
 
@@ -70,11 +73,16 @@ namespace cling {
                                           llvm::SmallVectorImpl<char>& fileName,
                                           FILE* file) {
     //Switch back to previous file after line is processed.
+    // SmallVectorImpl<T> does not have a c_str(), thus instead of casting to a
+    // SmallString<T> we null terminate the data that we have and pop the 
+    // 0 char back.
+    fileName.push_back(0);
+    fileName.pop_back();
     if (fileName.data()) {
       FILE* redirectionFile = freopen(fileName.data(), "w", file);
       if (!redirectionFile) {
         llvm::errs() << "cling::MetaProcessor Error: "
-                     << "The file path for unredirection is not valid."
+                     << "The file path for terminal is not valid."
                      << fileName.data();
       } else {
         file = redirectionFile;
@@ -275,7 +283,7 @@ namespace cling {
     return ret;
   }
 
-  bool MetaProcessor::cacheStd(int fd,
+  bool MetaProcessor::getTerminal(int fd,
                                llvm::SmallVectorImpl<char>& file) {
 
     int ttyname_Result = ttyname_r(fd, const_cast<char*>(file.data()),
@@ -322,14 +330,13 @@ namespace cling {
     // If we have a fileName to redirect to store it.
     if (!file.empty()) {
       // If there was redirection before save the previous file.
-      llvm::SmallString<128> prevFile;
+      
       if (!fileStorage.empty()) {
+        llvm::SmallString<128> prevFile;
         prevFile = fileStorage;
         prevFile.set_size(strlen(prevFile.data()));
-      } else {
-        cacheStd(fd, prevFile);
-      }
-      prevFileStack.push_back(prevFile);
+        prevFileStack.push_back(prevFile);
+      }  
       fileStorage = file;
       if (!append) {
         if (!fopen(fileStorage.c_str(), "w")) {
@@ -339,13 +346,18 @@ namespace cling {
       }
     // Else unredirection, so switch to the previous file.
     } else {
-      // If there is not history, previously we had stdout/stderr
-      if (!prevFileStack.empty()) {
+      // If there is not history, previously we had stdout/stderr which is
+      // on the stack if we redirected at least once.
+      if (prevFileStack.size() > 0) {
         // Finish unredirection by storing the previous file as the current one.
         fileStorage = prevFileStack.back().data();
         // Pop the file.
         prevFileStack.pop_back();
-      }
+      } else {
+      // If the only element on the stack is the terminal name we do not need
+      // to do redirection anymore.
+        fileStorage = "";
+      }  
     }
   }
 
@@ -360,7 +372,7 @@ namespace cling {
       // Deal with the case 2>&1 and 2&>1
       if (strcmp(file.data(), "_IO_2_1_stdout_") == 0) {
         SmallString<1024> stdoutName;
-        cacheStd(STDERR_FILENO, stdoutName);
+        getTerminal(STDERR_FILENO, stdoutName);
         file = stdoutName.c_str();
       }
       setFileStream(m_FileErr, file, append, STDERR_FILENO,

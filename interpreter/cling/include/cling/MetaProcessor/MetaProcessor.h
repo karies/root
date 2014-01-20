@@ -80,14 +80,15 @@ namespace cling {
     class MaybeRedirectOutputRAII {
     private:
       MetaProcessor* m_MetaProcessor;
+      bool isCurrentlyRedirecting;
 
     public:
-      MaybeRedirectOutputRAII(MetaProcessor* p);
+      MaybeRedirectOutputRAII(MetaProcessor* p,
+                              bool isCurrentlyRedirecting = false);
       ~MaybeRedirectOutputRAII() { pop(); }
     private:
       void pop();
-      void redirect(int fd, llvm::SmallVectorImpl<char>& prevFile,
-                    std::string fileName, FILE* standard);
+      void redirect(int fd, std::string fileName, FILE* standard);
       void unredirect(llvm::SmallVectorImpl<char>& prevFile,
                       FILE* standard);
     };
@@ -168,8 +169,7 @@ namespace cling {
                       StoredValueRef* result,
                       bool ignoreOutmostBlock = false);
 
-    bool cacheStd(int fd, llvm::SmallVectorImpl<char>& prevFile);
-
+    bool getTerminal(int fd, llvm::SmallVectorImpl<char>& prevFile);
     ///\brief Set the stdout and stderr stream to the appropriate file.
     ///
     ///\param [in] file - The file for the redirection.
