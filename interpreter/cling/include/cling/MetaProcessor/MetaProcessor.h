@@ -72,7 +72,7 @@ namespace cling {
     class MaybeRedirectOutputRAII {
     private:
       MetaProcessor* m_MetaProcessor;
-      bool m_isCurrentlyRedirecting;
+      RedirectionScope m_isCurrentlyRedirecting;
 
     public:
       MaybeRedirectOutputRAII(MetaProcessor* p);

@@ -36,7 +36,7 @@ namespace cling {
 
   MetaProcessor::MaybeRedirectOutputRAII::MaybeRedirectOutputRAII(
                                           MetaProcessor* p)
-  :m_MetaProcessor(p), m_isCurrentlyRedirecting(false) {
+  :m_MetaProcessor(p) {
     SmallString<128> redirectionFile;
     if (m_MetaProcessor->m_PrevStdoutFileName.size()>1){
       redirectionFile = m_MetaProcessor->m_PrevStdoutFileName.back();
@@ -52,24 +52,41 @@ namespace cling {
                                                     const std::string& fileName,
                                                     FILE* file) {
     if (!fileName.empty()) {
-      m_isCurrentlyRedirecting = freopen(fileName.c_str(), "a", file);
-      if (!m_isCurrentlyRedirecting) {
+
+      FILE* redirectionFile = freopen(fileName.c_str(), "a", file);
+      if (!redirectionFile) {
         llvm::errs()<<"cling::MetaProcessor Error: The file path is not valid.";
+      } else {
+        // TO DO: Improve the condition.
+        if ((fd == STDOUT_FILENO && (m_isCurrentlyRedirecting & kSTDERR))
+             || (fd == STDERR_FILENO && (m_isCurrentlyRedirecting & kSTDOUT))) {
+          m_isCurrentlyRedirecting = kSTDBOTH;
+        } else if (fd == STDOUT_FILENO) {
+          m_isCurrentlyRedirecting = kSTDOUT;
+        } else {
+          m_isCurrentlyRedirecting = kSTDERR;
+        }
       }
     }
   }
 
   void MetaProcessor::MaybeRedirectOutputRAII::pop() {
     SmallString<128> terminalName;
-    if (m_isCurrentlyRedirecting
-        && m_MetaProcessor->m_PrevStdoutFileName.size()>1) {
-      terminalName = m_MetaProcessor->m_PrevStdoutFileName.front();
-      unredirect(terminalName, stdout);
+    if (m_isCurrentlyRedirecting & kSTDOUT) {
+      if (!m_MetaProcessor->m_PrevStderrFileName.empty()) {
+        terminalName = m_MetaProcessor->m_PrevStdoutFileName.front();
+        terminalName.push_back(0);
+        terminalName.pop_back();
+        unredirect(terminalName, stdout);
+      }
     }
-    if (m_isCurrentlyRedirecting
-        && m_MetaProcessor->m_PrevStderrFileName.size()>1) {
-      terminalName = m_MetaProcessor->m_PrevStderrFileName.front();
-      unredirect(terminalName, stderr);
+    if (m_isCurrentlyRedirecting & kSTDERR) {
+      if (!m_MetaProcessor->m_PrevStderrFileName.empty()) {
+        terminalName = m_MetaProcessor->m_PrevStderrFileName.front();
+        terminalName.push_back(0);
+        terminalName.pop_back();
+        unredirect(terminalName, stderr);
+      }
     }
   }
 
@@ -77,7 +94,7 @@ namespace cling {
                                           llvm::SmallVectorImpl<char>& fileName,
                                           FILE* file) {
     // Switch back to previous file after line is processed.
-    if (fileName.empty()) {
+    if (!fileName.empty()) {
       FILE* redirectionFile = freopen(fileName.data(), "w", file);
       if (!redirectionFile) {
         llvm::errs() << "cling::MetaProcessor::unredirect "
@@ -300,8 +317,6 @@ namespace cling {
 
     if (ttyname_Result == 0) {
       file.set_size(strlen(file.data()));
-      file.push_back(0);
-      file.pop_back();
       return true;
     } else if (ttyname_Result == EBADF) {
       llvm::errs() << "Error in cling::MetaProcessor::getTerminal: Bad file "
