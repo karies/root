@@ -54,17 +54,9 @@ namespace cling {
     ///
     llvm::raw_ostream& m_Outs;
 
-    //brief The file name for the redirection of the stdout.
-    ///
-    std::string m_FileOut;
-
-    ///brief The file name for the redirection of the stderr.
-    ///
-    std::string m_FileErr;
-
-    ///brief Stores the terminal name for after the redirection
+    ///brief Stores the stack for the redirect file paths for out.
     llvm::SmallVector<llvm::SmallString<128>, 2> m_PrevStdoutFileName;
-    ///brief Stores the terminal name for after the redirection
+    ///brief Stores the stack for the redirect file paths for err.
     llvm::SmallVector<llvm::SmallString<128>, 2> m_PrevStderrFileName;
 
   public:
@@ -80,15 +72,14 @@ namespace cling {
     class MaybeRedirectOutputRAII {
     private:
       MetaProcessor* m_MetaProcessor;
-      bool isCurrentlyRedirecting;
+      bool m_isCurrentlyRedirecting;
 
     public:
-      MaybeRedirectOutputRAII(MetaProcessor* p,
-                              bool isCurrentlyRedirecting = false);
+      MaybeRedirectOutputRAII(MetaProcessor* p);
       ~MaybeRedirectOutputRAII() { pop(); }
     private:
       void pop();
-      void redirect(int fd, std::string fileName, FILE* standard);
+      void redirect(int fd, const std::string& fileName, FILE* standard);
       void unredirect(llvm::SmallVectorImpl<char>& prevFile,
                       FILE* standard);
     };
@@ -168,8 +159,6 @@ namespace cling {
     readInputFromFile(llvm::StringRef filename,
                       StoredValueRef* result,
                       bool ignoreOutmostBlock = false);
-
-    bool getTerminal(int fd, llvm::SmallVectorImpl<char>& prevFile);
     ///\brief Set the stdout and stderr stream to the appropriate file.
     ///
     ///\param [in] file - The file for the redirection.
@@ -182,9 +171,10 @@ namespace cling {
     ///\brief Set a stream to a file
     ///
     ///\param [in] file - The file for the redirection.
-    void setFileStream(std::string& fileStorage, llvm::StringRef file,
-                      bool append, int fd,
-                      llvm::SmallVector<llvm::SmallString<128> ,2>& prevFileStack);
+    void setFileStream(llvm::StringRef file, bool append, int fd,
+                  llvm::SmallVector<llvm::SmallString<128> ,2>& prevFileStack);
+
+    bool getTerminal(int fd, llvm::SmallVectorImpl<char>& prevFile);
   };
 } // end namespace cling
 

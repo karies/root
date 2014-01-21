@@ -910,8 +910,7 @@ TString TTabCom::DetermineClass(const char varName[])
    // the type of the variable whose name is "varName"
    // should now be stored on disk in the file "tmpfile"
 
-   cmd = ".> ";
-   gROOT->ProcessLineSync(cmd.Data());
+   gROOT->ProcessLineSync(".>");
 
    TString type = "";
    int c;
