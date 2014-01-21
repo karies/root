@@ -38,11 +38,11 @@ namespace cling {
                                           MetaProcessor* p)
   :m_MetaProcessor(p), m_isCurrentlyRedirecting(false) {
     SmallString<128> redirectionFile;
-    if (!m_MetaProcessor->m_PrevStdoutFileName.empty()){
+    if (m_MetaProcessor->m_PrevStdoutFileName.size()>1){
       redirectionFile = m_MetaProcessor->m_PrevStdoutFileName.back();
       redirect(STDOUT_FILENO, redirectionFile.str(), stdout);
     }
-    if (!m_MetaProcessor->m_PrevStderrFileName.empty()){
+    if (m_MetaProcessor->m_PrevStderrFileName.size()>1){
       redirectionFile = m_MetaProcessor->m_PrevStderrFileName.back();
       redirect(STDERR_FILENO, redirectionFile.str(), stderr);
     }
@@ -62,13 +62,13 @@ namespace cling {
   void MetaProcessor::MaybeRedirectOutputRAII::pop() {
     SmallString<128> terminalName;
     if (m_isCurrentlyRedirecting
-        && !m_MetaProcessor->m_PrevStdoutFileName.empty()) {
-      m_MetaProcessor->getTerminal(STDOUT_FILENO, terminalName);
+        && m_MetaProcessor->m_PrevStdoutFileName.size()>1) {
+      terminalName = m_MetaProcessor->m_PrevStdoutFileName.front();
       unredirect(terminalName, stdout);
     }
     if (m_isCurrentlyRedirecting
-        && !m_MetaProcessor->m_PrevStderrFileName.empty()) {
-      m_MetaProcessor->getTerminal(STDERR_FILENO, terminalName);
+        && m_MetaProcessor->m_PrevStderrFileName.size()>1) {
+      terminalName = m_MetaProcessor->m_PrevStderrFileName.front();
       unredirect(terminalName, stderr);
     }
   }
@@ -94,6 +94,11 @@ namespace cling {
     : m_Interp(interp), m_Outs(outs) {
     m_InputValidator.reset(new InputValidator());
     m_MetaParser.reset(new MetaParser(new MetaSema(interp, *this)));
+    SmallString<128> terminalName;
+    getTerminal(STDOUT_FILENO, terminalName);
+    m_PrevStdoutFileName.push_back(terminalName);
+    getTerminal(STDERR_FILENO, terminalName);
+    m_PrevStderrFileName.push_back(terminalName);
   }
 
   MetaProcessor::~MetaProcessor() {}
@@ -295,6 +300,8 @@ namespace cling {
 
     if (ttyname_Result == 0) {
       file.set_size(strlen(file.data()));
+      file.push_back(0);
+      file.pop_back();
       return true;
     } else if (ttyname_Result == EBADF) {
       llvm::errs() << "Error in cling::MetaProcessor::getTerminal: Bad file "
@@ -343,7 +350,7 @@ namespace cling {
     // Else unredirection, so switch to the previous file.
     } else {
       // If there is no previous file on the stack, we had stdout/stderr.
-      if (!prevFileStack.empty()) {
+      if (prevFileStack.size()>1) {
         // Pop the file.
         prevFileStack.pop_back();
       }
@@ -359,9 +366,7 @@ namespace cling {
     if (stream & kSTDERR) {
       // Deal with the case 2>&1 and 2&>1
       if (strcmp(file.data(), "_IO_2_1_stdout_") == 0) {
-        SmallString<1024> stdoutName;
-        getTerminal(STDERR_FILENO, stdoutName);
-        file = stdoutName.c_str();
+        file = m_PrevStdoutFileName.front().str();
       }
       setFileStream(file, append, STDERR_FILENO, m_PrevStderrFileName);
     }
