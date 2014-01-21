@@ -171,10 +171,18 @@ namespace cling {
     ///\brief Set a stream to a file
     ///
     ///\param [in] file - The file for the redirection.
+    ///\param [in] append - Write in append mode.
+    ///\param [in] fd - File descriptor for the file we want to open.
+    ///\param [in] prevFileStack - The stack of previous file paths.
     void setFileStream(llvm::StringRef file, bool append, int fd,
                   llvm::SmallVector<llvm::SmallString<128> ,2>& prevFileStack);
 
-    bool getTerminal(int fd, llvm::SmallVectorImpl<char>& prevFile);
+    ///\brief Get the terminal name for unredirection.
+    ///
+    ///\param [in] fd - The file descriptor for the file we want the terminal
+    ///                 name of.
+    ///\param [out] out - The file to store the terminal name in.
+    bool getTerminal(int fd, llvm::SmallVectorImpl<char>& out);
   };
 } // end namespace cling
 
