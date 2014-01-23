@@ -54,6 +54,14 @@ namespace cling {
     ///
     llvm::raw_ostream& m_Outs;
 
+    ///brief The file descriptor copy of stdout.
+    ///
+    int m_backupFDStdout;
+
+    ///brief
+    ///
+    int m_backupFDStderr;
+
     ///brief Stores the stack for the redirect file paths for out.
     llvm::SmallVector<llvm::SmallString<128>, 2> m_PrevStdoutFileName;
     ///brief Stores the stack for the redirect file paths for err.
@@ -72,16 +80,16 @@ namespace cling {
     class MaybeRedirectOutputRAII {
     private:
       MetaProcessor* m_MetaProcessor;
-      RedirectionScope m_isCurrentlyRedirecting;
+      int m_isCurrentlyRedirecting;
 
     public:
       MaybeRedirectOutputRAII(MetaProcessor* p);
       ~MaybeRedirectOutputRAII() { pop(); }
     private:
       void pop();
-      void redirect(int fd, const std::string& fileName, FILE* standard);
-      void unredirect(llvm::SmallVectorImpl<char>& prevFile,
-                      FILE* standard);
+      void redirect(FILE* file, const std::string& fileName,
+                    MetaProcessor::RedirectionScope scope);
+      void unredirect(int backFD, int expectedFD, FILE* file);
     };
 
   public:
@@ -177,12 +185,11 @@ namespace cling {
     void setFileStream(llvm::StringRef file, bool append, int fd,
                   llvm::SmallVector<llvm::SmallString<128> ,2>& prevFileStack);
 
-    ///\brief Get the terminal name for unredirection.
+    ///brief Copy a file descriptor.
     ///
-    ///\param [in] fd - The file descriptor for the file we want the terminal
-    ///                 name of.
-    ///\param [out] out - The file to store the terminal name in.
-    bool getTerminal(int fd, llvm::SmallVectorImpl<char>& out);
+    ///\param [in] fd - The fd to be copied.
+    ///\param [out] backupFD - The copy of the file descriptor.
+    void copyFileDescriptor(int fd, int& backupFD);
   };
 } // end namespace cling
 
