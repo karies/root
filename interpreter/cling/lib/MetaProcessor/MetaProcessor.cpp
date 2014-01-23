@@ -57,7 +57,6 @@ namespace cling {
       if (!redirectionFile) {
         llvm::errs()<<"cling::MetaProcessor Error: The file path is not valid.";
       } else {
-        // TO DO: Improve the condition.
         m_isCurrentlyRedirecting = (fd == STDOUT_FILENO) ? kSTDOUT : kSTDERR;
       }
     }
@@ -66,7 +65,7 @@ namespace cling {
   void MetaProcessor::MaybeRedirectOutputRAII::pop() {
     SmallString<128> terminalName;
     if (m_isCurrentlyRedirecting & kSTDOUT) {
-      if (!m_MetaProcessor->m_PrevStderrFileName.empty()) {
+      if (!m_MetaProcessor->m_PrevStdoutFileName.empty()) {
         terminalName = m_MetaProcessor->m_PrevStdoutFileName.front();
         unredirect(terminalName, stdout);
       }
@@ -92,7 +91,6 @@ namespace cling {
       }
     }
   }
-
 
   MetaProcessor::MetaProcessor(Interpreter& interp, raw_ostream& outs) 
     : m_Interp(interp), m_Outs(outs) {

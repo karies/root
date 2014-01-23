@@ -173,7 +173,7 @@ namespace cling {
     ///\param [in] file - The file for the redirection.
     ///\param [in] append - Write in append mode.
     ///\param [in] fd - File descriptor for the file we want to open.
-    ///\param [in] prevFileStack - The stack of previous file paths.
+    ///\param [out] prevFileStack - The stack of previous file paths.
     void setFileStream(llvm::StringRef file, bool append, int fd,
                   llvm::SmallVector<llvm::SmallString<128> ,2>& prevFileStack);
 
