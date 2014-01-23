@@ -68,16 +68,12 @@ namespace cling {
     if (m_isCurrentlyRedirecting & kSTDOUT) {
       if (!m_MetaProcessor->m_PrevStderrFileName.empty()) {
         terminalName = m_MetaProcessor->m_PrevStdoutFileName.front();
-        terminalName.push_back(0);
-        terminalName.pop_back();
         unredirect(terminalName, stdout);
       }
     }
     if (m_isCurrentlyRedirecting & kSTDERR) {
       if (!m_MetaProcessor->m_PrevStderrFileName.empty()) {
         terminalName = m_MetaProcessor->m_PrevStderrFileName.front();
-        terminalName.push_back(0);
-        terminalName.pop_back();
         unredirect(terminalName, stderr);
       }
     }
