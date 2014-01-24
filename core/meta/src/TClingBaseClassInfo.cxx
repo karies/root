@@ -160,7 +160,7 @@ TClingClassInfo *TClingBaseClassInfo::GetBase() const
 OffsetPtrFunc_t
 TClingBaseClassInfo::GenerateBaseOffsetFunction(const TClingClassInfo * derivedClass,
                                                 TClingClassInfo* targetClass,
-                                                void* address) const
+                                                void* address, bool isDerivedObject) const
 {
    // Generate a function at run-time that would calculate the offset
    // from the parameter derived class to the parameter target class for the
@@ -205,9 +205,15 @@ TClingBaseClassInfo::GenerateBaseOffsetFunction(const TClingClassInfo * derivedC
                                                   QTTarget, *fInterp);
       //  Write the wrapper code.
       llvm::raw_string_ostream buf(code);
-      buf << "extern \"C\" long " + wrapper_name + "(void* address) {\n"
-          << "  " << derived_class_name << " *object = (" << derived_class_name << "*)address;\n"
-          << "  " << target_class_name << " *target = object;\n"
+      buf << "extern \"C\" long " + wrapper_name + "(void* address) {\n";
+      // If the object is not derived, will downcast to target first.
+      if(isDerivedObject) {
+         buf << "  " << derived_class_name << " *object = (" << derived_class_name << "*)address;\n";
+      } else {
+         buf << "  " << derived_class_name << " *object = (" << derived_class_name << "*)("
+             << target_class_name << "*)address;\n";
+      }
+      buf << "  " << target_class_name << " *target = object;\n"
           << "  return ((long)target - (long)object);\n}\n";
    }
 
@@ -389,7 +395,7 @@ static clang::CharUnits computeOffsetHint(clang::ASTContext &Context,
    return Offset;
  }
 
-ptrdiff_t TClingBaseClassInfo::Offset(void * address) const
+ptrdiff_t TClingBaseClassInfo::Offset(void * address, bool isDerivedObject) const
 {
    // Compute the offset of the derived class to the base class.
 
@@ -456,7 +462,7 @@ ptrdiff_t TClingBaseClassInfo::Offset(void * address) const
    }
 
    // Virtual inheritance case
-   OffsetPtrFunc_t executableFunc = GenerateBaseOffsetFunction(fClassInfo, fBaseInfo, address);
+   OffsetPtrFunc_t executableFunc = GenerateBaseOffsetFunction(fClassInfo, fBaseInfo, address, isDerivedObject);
    if (executableFunc) {
       fClassInfo->AddBaseOffsetFunction(fBaseInfo->GetDecl(), executableFunc);
       return (*executableFunc)(address);

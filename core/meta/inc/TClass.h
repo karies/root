@@ -289,7 +289,7 @@ public:
    TClass            *GetActualClass(const void *object) const;
    TClass            *GetBaseClass(const char *classname);
    TClass            *GetBaseClass(const TClass *base);
-   Int_t              GetBaseClassOffset(const TClass *base, void *address = 0);
+   Int_t              GetBaseClassOffset(const TClass *base, void *address = 0, bool isDerivedObject = true);
    TClass            *GetBaseDataMember(const char *datamember);
    ROOT::DirAutoAdd_t GetDirectoryAutoAdd() const;
    TFunctionTemplate *GetFunctionTemplate(const char *name);
