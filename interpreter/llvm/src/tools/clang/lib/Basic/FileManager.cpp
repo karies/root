@@ -331,13 +331,17 @@ const FileEntry *FileManager::getFile(StringRef Filename, bool openFile,
       UniqueRealFiles.getFile(Data.UniqueID, Data.IsNamedPipe, Data.InPCH);
 
   NamedFileEnt.setValue(&UFE);
-  if (UFE.getName() && Data.ModTime == UFE.ModTime) {
-    // Already have an entry with this inode, return it.
-    // If the stat process opened the file, close it to avoid a FD leak.
-    if (FileDescriptor != -1)
-      close(FileDescriptor);
+  if (UFE.getName() && Data.ModTime == UFE.ModTime
+      && (uint64_t)Data.Size == (uint64_t)UFE.Size) {
+    const StringRef UFEFilename = llvm::sys::path::filename(UFE.getName());
+    if (llvm::sys::path::filename(Filename) == UFEFilename) {
+      // Already have an entry with this inode, return it.
+      // If the stat process opened the file, close it to avoid a FD leak.
+      if (FileDescriptor != -1)
+        close(FileDescriptor);
 
-    return &UFE;
+      return &UFE;
+    }
   }
 
   // Otherwise, we don't have this directory yet, add it.
