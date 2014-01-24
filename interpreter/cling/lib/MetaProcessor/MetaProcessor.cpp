@@ -36,7 +36,7 @@ namespace cling {
 
   MetaProcessor::MaybeRedirectOutputRAII::MaybeRedirectOutputRAII(
                                           MetaProcessor* p)
-  :m_MetaProcessor(p) {
+  :m_MetaProcessor(p), m_isCurrentlyRedirecting(0) {
     StringRef redirectionFile;
     if (!m_MetaProcessor->m_PrevStdoutFileName.empty()) {
       redirectionFile = m_MetaProcessor->m_PrevStdoutFileName.back();
@@ -85,8 +85,12 @@ namespace cling {
                                                           int expectedFD,
                                                           FILE* file) {
     // Switch back to previous file after line is processed.
-    // Flush the current content.
-    fflush(file);
+
+    // Flush the current content if there is any.
+    if (!feof(file)) {
+      fflush(file);
+    }
+    // Copy the original fd for the std.
     if (dup2(backupFD, expectedFD) != expectedFD) {
         llvm::errs() << "cling::MetaProcessor::unredirect "
                      << "The unredirection file descriptor not valid "
