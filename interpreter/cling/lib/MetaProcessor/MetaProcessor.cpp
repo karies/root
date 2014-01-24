@@ -98,8 +98,8 @@ namespace cling {
     : m_Interp(interp), m_Outs(outs) {
     m_InputValidator.reset(new InputValidator());
     m_MetaParser.reset(new MetaParser(new MetaSema(interp, *this)));
-    copyFileDescriptor(STDOUT_FILENO, m_backupFDStdout);
-    copyFileDescriptor(STDERR_FILENO, m_backupFDStderr);
+    m_backupFDStdout = copyFileDescriptor(STDOUT_FILENO);
+    m_backupFDStderr = copyFileDescriptor(STDERR_FILENO);
   }
 
   MetaProcessor::~MetaProcessor() {}
@@ -328,13 +328,14 @@ namespace cling {
     }
   }
 
-  void MetaProcessor::copyFileDescriptor(int fd, int& backupFD) {
-    backupFD = dup(fd);
+  int MetaProcessor::copyFileDescriptor(int fd) {
+    int backupFD = dup(fd);
     if (backupFD < 0) {
       llvm::errs() << "MetaProcessor::copyFileDescriptor: Duplicating the file"
                    " descriptor " << fd << "resulted in an error."
                    " Will not be able to unredirect.";
     }
+    return backupFD;
   }
 
 } // end namespace cling

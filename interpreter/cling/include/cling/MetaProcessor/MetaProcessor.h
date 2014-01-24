@@ -54,7 +54,7 @@ namespace cling {
     ///
     llvm::raw_ostream& m_Outs;
 
-    ///brief The file descriptor copy of stdout.
+    ///\brief The file descriptor of the copy of stdout.
     ///
     int m_backupFDStdout;
 
@@ -185,11 +185,12 @@ namespace cling {
     void setFileStream(llvm::StringRef file, bool append, int fd,
                   llvm::SmallVector<llvm::SmallString<128> ,2>& prevFileStack);
 
-    ///brief Copy a file descriptor.
+    ///\brief Copy a file descriptor.
     ///
     ///\param [in] fd - The fd to be copied.
-    ///\param [out] backupFD - The copy of the file descriptor.
-    void copyFileDescriptor(int fd, int& backupFD);
+
+    ///\returns - The copy of the file descriptor.
+    int copyFileDescriptor(int fd);
   };
 } // end namespace cling
 
