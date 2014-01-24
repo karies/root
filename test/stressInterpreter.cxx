@@ -237,9 +237,7 @@ bool InterpreterStress::stressSTLDict() {
          otmp << cmd << endl;
       }
       gInterpreter->ProcessLine(TString(".X ") + tmpfilename, &interpError);
-#ifndef ClingWorkAroundDeletedSourceFile
       gSystem->Unlink(tmpfilename);
-#endif
       if (interpError != TInterpreter::kNoError) {
          printf("InterpreterStress::stressSTLDict(): "
                 "Interpreter error: %d processing file %s:\n%s\n",
@@ -256,12 +254,6 @@ bool InterpreterStress::stressSTLDict() {
          break;
       }
    }
-#ifdef ClingWorkAroundDeletedSourceFile
-   for (Int_t i = 1; i < fNtimes; ++i) {
-      TString tmpfilename = TString::Format("stressInterpreter_tmp%d.C", i);
-      gSystem->Unlink(tmpfilename);
-   }
-#endif
    return allres;
 }
 
