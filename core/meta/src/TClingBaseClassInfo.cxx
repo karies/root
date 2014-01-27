@@ -205,15 +205,14 @@ TClingBaseClassInfo::GenerateBaseOffsetFunction(const TClingClassInfo * derivedC
                                                   QTTarget, *fInterp);
       //  Write the wrapper code.
       llvm::raw_string_ostream buf(code);
-      buf << "extern \"C\" long " + wrapper_name + "(void* address) {\n";
+      buf << "extern \"C\" long " + wrapper_name + "(void* address, bool isDerivedObject) {\n"
       // If the object is not derived, will downcast to target first.
-      if(isDerivedObject) {
-         buf << "  " << derived_class_name << " *object = (" << derived_class_name << "*)address;\n";
-      } else {
-         buf << "  " << derived_class_name << " *object = (" << derived_class_name << "*)("
-             << target_class_name << "*)address;\n";
-      }
-      buf << "  " << target_class_name << " *target = object;\n"
+          << "  if (isDerivedObject) {"
+          << "    " << derived_class_name << " *object = (" << derived_class_name << "*)address;\n"
+          << "  } else {\n"
+          << "    " << derived_class_name << " *object = (" << derived_class_name << "*)(" << target_class_name << "*)address;\n"
+          << "  }\n"
+          << "  " << target_class_name << " *target = object;\n"
           << "  return ((long)target - (long)object);\n}\n";
    }
 

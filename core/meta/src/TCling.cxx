@@ -5160,17 +5160,17 @@ int TCling::BaseClassInfo_Next(BaseClassInfo_t* bcinfo, int onlyDirect) const
 }
 
 //______________________________________________________________________________
-Long_t TCling::BaseClassInfo_Offset(BaseClassInfo_t* bcinfo, void * address, bool isDerivedObject) const
+Long_t TCling::BaseClassInfo_Offset(BaseClassInfo_t* toBaseClassInfo, void * address, bool isDerivedObject) const
 {
-   TClingBaseClassInfo* TClinginfo = (TClingBaseClassInfo*) bcinfo;
+   TClingBaseClassInfo* TClinginfo = (TClingBaseClassInfo*) toBaseClassInfo;
    return TClinginfo->Offset(address, isDerivedObject);
 }
 
 //______________________________________________________________________________
-Long_t TCling::ClassInfo_GetBaseOffset(ClassInfo_t* derived, ClassInfo_t* base, void * address, bool isDerivedObject) const
+Long_t TCling::ClassInfo_GetBaseOffset(ClassInfo_t* fromDerived, ClassInfo_t* toBase, void * address, bool isDerivedObject) const
 {
-   TClingClassInfo* TClinginfo = (TClingClassInfo*) derived;
-   TClingClassInfo* TClinginfoBase = (TClingClassInfo*) base;
+   TClingClassInfo* TClinginfo = (TClingClassInfo*) fromDerived;
+   TClingClassInfo* TClinginfoBase = (TClingClassInfo*) toBase;
    // Offset to the class itself.
    if (TClinginfo->GetDecl() == TClinginfoBase->GetDecl()) {
       return 0;
