@@ -48,7 +48,7 @@ namespace ROOT {
    }
 }
 
-extern "C" typedef ptrdiff_t (*OffsetPtrFunc_t)(void*);
+extern "C" typedef ptrdiff_t (*OffsetPtrFunc_t)(void*, bool);
 
 class TClingClassInfo {
 
