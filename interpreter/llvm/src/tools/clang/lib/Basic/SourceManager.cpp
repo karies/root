@@ -89,7 +89,9 @@ const llvm::MemoryBuffer *ContentCache::getBuffer(DiagnosticsEngine &Diag,
                                                   bool *Invalid) const {
   // Lazily create the Buffer for ContentCaches that wrap files.  If we already
   // computed it, just return what we have.
-  if (Buffer.getPointer() || ContentsEntry == 0) {
+  if (ContentsEntry == 0 ||
+      (ContentsEntry->getSize() && ContentsEntry->getModificationTime()
+       && Buffer.getPointer())) {
     if (Invalid)
       *Invalid = isBufferInvalid();
     
