@@ -207,7 +207,7 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
 {
   // Call a function without arguments, or with an SRet argument, see SRet below
   // We don't care whether something was unresolved before.
-  m_unresolvedSymbols.clear();
+  /*m_unresolvedSymbols.clear();
 
   llvm::Function* f = m_engine->FindFunctionNamed(funcname.str().c_str());
   if (!f) {
@@ -232,9 +232,20 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
     freeCallersOfUnresolvedSymbols(funcsToFree, m_engine.get());
     m_unresolvedSymbols.clear();
     return kExeUnresolvedSymbols;
-  }
+  }*/
+  typedef void (*PromptWrapper_t)(void*);
+  PromptWrapper_t func = (PromptWrapper_t)
+  m_engine->getPointerToFunction(f)
+  
+  if (!returnValue) {  
+    (*func)(0);
+  } else {
+    cling::Value V;
+    (*func)(&V);
+    returnValue = &StoredValueRef::bitwiseCopy(interp, V);
+  } 
 
-  std::vector<llvm::GenericValue> args;
+  /*std::vector<llvm::GenericValue> args;
   bool wantReturn = (returnValue);
   StoredValueRef aggregateRet;
 
@@ -251,15 +262,7 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
     args.push_back(returnValue->get().getGV());
     // will get set as arg0, must not assign.
     wantReturn = false;
-  }
-
-  if (wantReturn) {
-    llvm::GenericValue gvRet = m_engine->runFunction(f, args);
-    // rescue the ret value (which might be aggregate) from the stack
-    *returnValue = StoredValueRef::bitwiseCopy(interp, Value(gvRet, retType));
-  } else {
-    m_engine->runFunction(f, args);
-  }
+  }*/
 
   return kExeSuccess;
 }
@@ -419,4 +422,56 @@ ExecutionContext::getPointerToGlobalFromJIT(const llvm::GlobalValue& GV) const {
 
   //  Function not yet codegened by the JIT, force this to happen now.
   return m_engine->getPointerToGlobal(&GV);
+}
+
+void* runtime::internal::getAddrOfValue(void* vpVal, const void* vpQT) {
+  
+  cling::Value* V = (cling::Value*) vpVal;
+  clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
+  V->setClangType(QT);
+  
+  switch (QT->getTypePtr()) {
+    case ASTContext::FloatTy : {
+      return &V->getGV().getAs((float*)0);
+    } break;
+    case ASTContext::DoubleTy : { 
+      return &V->getGV().getAs((double*)0);
+    } break;
+    case ASTContext::LongDoubleTy : {
+      return &V->getGV().getAs((long double*)0);
+    } break;
+    case ASTContext::BoolTy : {
+      return &V->getGV().getAs((bool*)0);
+    } break;
+    case ASTContext::CharTy : {
+      return &V->getGV().getAs((char*)0);
+    } break;
+    case ASTContext::UnsignedCharTy : {
+      return &V->getGV().getAs((unsigned char*)0);
+    } break;
+    case ASTContext::ShortTy : {
+      return &V->getGV().getAs((short*)0);
+    } break;
+    case ASTContext::UnsignedShortTy : {
+      return &V->getGV().getAs((unsigned short*)0);
+    } break;
+    case ASTContext::IntTy : {
+      return &V->getGV().getAs((int*)0);
+    } break;
+    case ASTContext::UnsignedIntTy : {
+      return &V->getGV().getAs((unsigned int*)0);
+    } break;
+    case ASTContext::LongTy : {
+      return &V->getGV().getAs((long*)0);
+    } break;
+    case ASTContext::UnsignedLongTy : {
+      return &V->getGV().getAs((unsigned long*)0);
+    } break;
+    case ASTContext::LongLongTy : {
+      return &V->getGV().getAs((long long*)0);
+    } break;
+    case ASTContext::UnsignedLongLongTy : {
+      return &V->getGV().getAs((unsigned long long*)0);
+    } break;
+
 }

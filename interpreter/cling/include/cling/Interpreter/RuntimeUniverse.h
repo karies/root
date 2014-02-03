@@ -65,6 +65,12 @@ namespace cling {
       /// when clang emits diagnostics on artificially inserted AST node.
       int InterpreterGeneratedCodeDiagnosticsMaybeIncorrect;
 
+      ///\brief Get the address for a cling::Value and set the type for it.
+      /// 
+      /// Implemented in ExecutionContext.cpp
+      ///
+      void* getAddrOfValue(void* vpVal, const void* vpQT);
+
 //__cxa_atexit is declared later for WIN32
 #if (!_WIN32)
       // Force the module to define __cxa_atexit, we need it.
