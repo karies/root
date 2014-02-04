@@ -66,10 +66,10 @@ namespace cling {
       int InterpreterGeneratedCodeDiagnosticsMaybeIncorrect;
 
       ///\brief Get the address for a cling::Value and set the type for it.
-      /// 
+      ///
       /// Implemented in ExecutionContext.cpp
       ///
-      void* getAddrOfValue(void* vpVal, const void* vpQT);
+      void* getAddrOfValue(Interpreter&, void* vpStoredValRef, void* vpQT);
 
 //__cxa_atexit is declared later for WIN32
 #if (!_WIN32)

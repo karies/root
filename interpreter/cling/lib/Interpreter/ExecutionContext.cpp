@@ -13,6 +13,7 @@
 #include "cling/Interpreter/Interpreter.h" // FIXME: Remove when at_exit is ready
 
 #include "clang/AST/Type.h"
+#include "clang/AST/ASTContext.h"
 
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
@@ -207,7 +208,7 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
 {
   // Call a function without arguments, or with an SRet argument, see SRet below
   // We don't care whether something was unresolved before.
-  /*m_unresolvedSymbols.clear();
+  m_unresolvedSymbols.clear();
 
   llvm::Function* f = m_engine->FindFunctionNamed(funcname.str().c_str());
   if (!f) {
@@ -215,6 +216,8 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
       "could not find function named " << funcname << '\n';
     return kExeFunctionNotCompiled;
   }
+  typedef void (*PromptWrapper_t)(void*);
+  PromptWrapper_t func = (PromptWrapper_t)
   m_engine->getPointerToFunction(f);
   // check if there is any unresolved symbol in the list
   if (!m_unresolvedSymbols.empty()) {
@@ -232,18 +235,14 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
     freeCallersOfUnresolvedSymbols(funcsToFree, m_engine.get());
     m_unresolvedSymbols.clear();
     return kExeUnresolvedSymbols;
-  }*/
-  typedef void (*PromptWrapper_t)(void*);
-  PromptWrapper_t func = (PromptWrapper_t)
-  m_engine->getPointerToFunction(f)
-  
-  if (!returnValue) {  
+  }
+
+  if (!returnValue) {
     (*func)(0);
   } else {
     cling::Value V;
     (*func)(&V);
-    returnValue = &StoredValueRef::bitwiseCopy(interp, V);
-  } 
+  }
 
   /*std::vector<llvm::GenericValue> args;
   bool wantReturn = (returnValue);
@@ -424,54 +423,91 @@ ExecutionContext::getPointerToGlobalFromJIT(const llvm::GlobalValue& GV) const {
   return m_engine->getPointerToGlobal(&GV);
 }
 
-void* runtime::internal::getAddrOfValue(void* vpVal, const void* vpQT) {
-  
-  cling::Value* V = (cling::Value*) vpVal;
-  clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
-  V->setClangType(QT);
-  
-  switch (QT->getTypePtr()) {
-    case ASTContext::FloatTy : {
-      return &V->getGV().getAs((float*)0);
-    } break;
-    case ASTContext::DoubleTy : { 
-      return &V->getGV().getAs((double*)0);
-    } break;
-    case ASTContext::LongDoubleTy : {
-      return &V->getGV().getAs((long double*)0);
-    } break;
-    case ASTContext::BoolTy : {
-      return &V->getGV().getAs((bool*)0);
-    } break;
-    case ASTContext::CharTy : {
-      return &V->getGV().getAs((char*)0);
-    } break;
-    case ASTContext::UnsignedCharTy : {
-      return &V->getGV().getAs((unsigned char*)0);
-    } break;
-    case ASTContext::ShortTy : {
-      return &V->getGV().getAs((short*)0);
-    } break;
-    case ASTContext::UnsignedShortTy : {
-      return &V->getGV().getAs((unsigned short*)0);
-    } break;
-    case ASTContext::IntTy : {
-      return &V->getGV().getAs((int*)0);
-    } break;
-    case ASTContext::UnsignedIntTy : {
-      return &V->getGV().getAs((unsigned int*)0);
-    } break;
-    case ASTContext::LongTy : {
-      return &V->getGV().getAs((long*)0);
-    } break;
-    case ASTContext::UnsignedLongTy : {
-      return &V->getGV().getAs((unsigned long*)0);
-    } break;
-    case ASTContext::LongLongTy : {
-      return &V->getGV().getAs((long long*)0);
-    } break;
-    case ASTContext::UnsignedLongLongTy : {
-      return &V->getGV().getAs((unsigned long long*)0);
-    } break;
+namespace runtime {
+  namespace internal {
+    void* getAddrOfValue(Interpreter& interp, void* vpStoredValRef, void* vpQT) {
 
+      cling::StoredValueRef& SVR = *(cling::StoredValueRef*)vpStoredValRef;
+      clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
+
+      SVR = StoredValueRef::allocate(interp, QT);
+      const cling::Value V = SVR.get();
+
+      // Deal with builtin types.
+      if (QT->isBuiltinType()) {
+        clang::BuiltinType* BT = (clang::BuiltinType*)(QT.getTypePtr());
+        if (BT) {
+          clang::BuiltinType::Kind kind = BT->getKind();
+          switch (kind) {
+            case clang::BuiltinType::Void: {
+              return V.getGV().PointerVal;
+            } break;
+            case clang::BuiltinType::Bool : {
+              return (void*)(V.getGV().IntVal.getBoolValue());
+            } break;
+            case clang::BuiltinType::UChar : {
+              return (void*)(V.getGV().IntVal.getZExtValue());
+            } break;
+            case clang::BuiltinType::Char16 : {
+              return (void*)V.getGV().IntVal.getZExtValue();
+            } break;
+            case clang::BuiltinType::Char32 : {
+              return (void*)V.getGV().IntVal.getZExtValue();
+            } break;
+            case clang::BuiltinType::UShort : {
+              return (void*)V.getGV().IntVal.getZExtValue();
+            } break;
+            case clang::BuiltinType::UInt : {
+              return (void*)V.getGV().IntVal.getZExtValue();
+            } break;
+            case clang::BuiltinType::ULong : {
+              return (void*)V.getGV().IntVal.getZExtValue();
+            } break;
+            case clang::BuiltinType::ULongLong : {
+              return (void*)V.getGV().IntVal.getZExtValue();
+            } break;
+            case clang::BuiltinType::UInt128 : {
+              return (void*)V.getGV().IntVal.getZExtValue();
+            } break;
+            case clang::BuiltinType::Char_S : {
+              return (void*)V.getGV().IntVal.getSExtValue();
+            } break;
+            case clang::BuiltinType::WChar_S : {
+              return (void*)V.getGV().IntVal.getSExtValue();
+            } break;
+            case clang::BuiltinType::Short : {
+              return (void*)V.getGV().IntVal.getSExtValue();
+            } break;
+            case clang::BuiltinType::Int : {
+              return (void*)V.getGV().IntVal.getSExtValue();
+            } break;
+            case clang::BuiltinType::Long : {
+              return (void*)V.getGV().IntVal.getSExtValue();
+            } break;
+            case clang::BuiltinType::LongLong : {
+              return (void*)V.getGV().IntVal.getSExtValue();
+            } break;
+            case clang::BuiltinType::Int128 : {
+              return (void*)V.getGV().IntVal.getSExtValue();
+            } break;
+            case clang::BuiltinType::Float : {
+              return (void*)V.getGV().FloatVal;
+            } break;
+            case clang::BuiltinType::Double : {
+              return (void*)V.getGV().DoubleVal;
+            }
+            case clang::BuiltinType::LongDouble : {
+              return (void*)V.getGV().IntVal;
+            } break;
+          }
+        } else {
+          if (QT->isPointerType()) {
+            return V.getGV().PointerVal;
+          } else {
+            return *(V.getGV().PointerVal);
+          }
+        }
+      }
+    }
+  }
 }
