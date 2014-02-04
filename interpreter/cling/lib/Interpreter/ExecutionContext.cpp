@@ -439,75 +439,45 @@ namespace runtime {
         if (BT) {
           clang::BuiltinType::Kind kind = BT->getKind();
           switch (kind) {
-            case clang::BuiltinType::Void: {
-              return V.getGV().PointerVal;
-            } break;
-            case clang::BuiltinType::Bool : {
-              return (void*)(V.getGV().IntVal.getBoolValue());
-            } break;
-            case clang::BuiltinType::UChar : {
-              return (void*)(V.getGV().IntVal.getZExtValue());
-            } break;
-            case clang::BuiltinType::Char16 : {
-              return (void*)V.getGV().IntVal.getZExtValue();
-            } break;
-            case clang::BuiltinType::Char32 : {
-              return (void*)V.getGV().IntVal.getZExtValue();
-            } break;
-            case clang::BuiltinType::UShort : {
-              return (void*)V.getGV().IntVal.getZExtValue();
-            } break;
-            case clang::BuiltinType::UInt : {
-              return (void*)V.getGV().IntVal.getZExtValue();
-            } break;
-            case clang::BuiltinType::ULong : {
-              return (void*)V.getGV().IntVal.getZExtValue();
-            } break;
-            case clang::BuiltinType::ULongLong : {
-              return (void*)V.getGV().IntVal.getZExtValue();
-            } break;
-            case clang::BuiltinType::UInt128 : {
-              return (void*)V.getGV().IntVal.getZExtValue();
-            } break;
-            case clang::BuiltinType::Char_S : {
-              return (void*)V.getGV().IntVal.getSExtValue();
-            } break;
-            case clang::BuiltinType::WChar_S : {
-              return (void*)V.getGV().IntVal.getSExtValue();
-            } break;
-            case clang::BuiltinType::Short : {
-              return (void*)V.getGV().IntVal.getSExtValue();
-            } break;
-            case clang::BuiltinType::Int : {
-              return (void*)V.getGV().IntVal.getSExtValue();
-            } break;
-            case clang::BuiltinType::Long : {
-              return (void*)V.getGV().IntVal.getSExtValue();
-            } break;
-            case clang::BuiltinType::LongLong : {
-              return (void*)V.getGV().IntVal.getSExtValue();
-            } break;
-            case clang::BuiltinType::Int128 : {
-              return (void*)V.getGV().IntVal.getSExtValue();
-            } break;
             case clang::BuiltinType::Float : {
-              return (void*)V.getGV().FloatVal;
+              return (void*)&V.getGV().FloatVal;
             } break;
             case clang::BuiltinType::Double : {
-              return (void*)V.getGV().DoubleVal;
+              return (void*)&V.getGV().DoubleVal;
             }
-            case clang::BuiltinType::LongDouble : {
-              return (void*)V.getGV().IntVal;
+            case clang::BuiltinType::Char32 : // Intentional fall through
+            case clang::BuiltinType::Char16 :
+            case clang::BuiltinType::UChar :
+            case clang::BuiltinType::Bool :
+            case clang::BuiltinType::UShort :
+            case clang::BuiltinType::UInt :
+            case clang::BuiltinType::ULong :
+            case clang::BuiltinType::ULongLong :
+            case clang::BuiltinType::UInt128 :
+            case clang::BuiltinType::Char_S :
+            case clang::BuiltinType::WChar_S :
+            case clang::BuiltinType::Short :
+            case clang::BuiltinType::Int :
+            case clang::BuiltinType::Long :
+            case clang::BuiltinType::LongLong :
+            case clang::BuiltinType::Int128 :
+            case clang::BuiltinType::LongDouble : { // llvm docs say long double is stored in IntVal
+              return (void*)&V.getGV().IntVal;
+            } break;
+            default: {
+              return (void*)&V.getGV().PointerVal;
             } break;
           }
         } else {
           if (QT->isPointerType()) {
-            return V.getGV().PointerVal;
+            return (void*)&V.getGV().PointerVal;
           } else {
-            return *(V.getGV().PointerVal);
+            return (void*)(V.getGV().PointerVal);
           }
         }
       }
+      //duplication here, but otherwise control reaches end of non-void func
+    return (void*)&V.getGV().PointerVal;
     }
   }
 }
