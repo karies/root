@@ -240,8 +240,8 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
   if (!returnValue) {
     (*func)(0);
   } else {
-    cling::Value V;
-    (*func)(&V);
+    cling::StoredValueRef SVR;
+    (*func)(&SVR);
   }
 
   /*std::vector<llvm::GenericValue> args;
@@ -425,59 +425,61 @@ ExecutionContext::getPointerToGlobalFromJIT(const llvm::GlobalValue& GV) const {
 
 namespace runtime {
   namespace internal {
-    void* getAddrOfValue(Interpreter& interp, void* vpStoredValRef, void* vpQT) {
 
-      cling::StoredValueRef& SVR = *(cling::StoredValueRef*)vpStoredValRef;
+    cling::StoredValueRef& getStoredValueRef(Interpreter& interp, void* vpQT,
+                                             void* vpStoredValRef) {
       clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
-
+      cling::StoredValueRef& SVR = *(cling::StoredValueRef*)vpStoredValRef;
       SVR = StoredValueRef::allocate(interp, QT);
-      const cling::Value V = SVR.get();
-
-      // Deal with builtin types.
-      if (QT->isBuiltinType()) {
-        clang::BuiltinType* BT = (clang::BuiltinType*)(QT.getTypePtr());
-        if (BT) {
-          clang::BuiltinType::Kind kind = BT->getKind();
-          switch (kind) {
-            case clang::BuiltinType::Float : {
-              return (void*)&V.getGV().FloatVal;
-            } break;
-            case clang::BuiltinType::Double : {
-              return (void*)&V.getGV().DoubleVal;
-            }
-            case clang::BuiltinType::Char32 : // Intentional fall through
-            case clang::BuiltinType::Char16 :
-            case clang::BuiltinType::UChar :
-            case clang::BuiltinType::Bool :
-            case clang::BuiltinType::UShort :
-            case clang::BuiltinType::UInt :
-            case clang::BuiltinType::ULong :
-            case clang::BuiltinType::ULongLong :
-            case clang::BuiltinType::UInt128 :
-            case clang::BuiltinType::Char_S :
-            case clang::BuiltinType::WChar_S :
-            case clang::BuiltinType::Short :
-            case clang::BuiltinType::Int :
-            case clang::BuiltinType::Long :
-            case clang::BuiltinType::LongLong :
-            case clang::BuiltinType::Int128 :
-            case clang::BuiltinType::LongDouble : { // llvm docs say long double is stored in IntVal
-              return (void*)&V.getGV().IntVal;
-            } break;
-            default: {
-              return (void*)&V.getGV().PointerVal;
-            } break;
-          }
-        } else {
-          if (QT->isPointerType()) {
-            return (void*)&V.getGV().PointerVal;
-          } else {
-            return (void*)(V.getGV().PointerVal);
-          }
-        }
-      }
-      //duplication here, but otherwise control reaches end of non-void func
-    return (void*)&V.getGV().PointerVal;
+      return SVR;
     }
+    void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
+                  float value) {
+      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      llvm::GenericValue GV = V.getGV().FloatVal = value;
+      GV.FloatVal = value;
+      V.setGV(GV);
+    }
+    void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
+                  double value) {
+      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      llvm::GenericValue GV = V.getGV();
+      GV.DoubleVal = value;
+      V.setGV(GV);
+    }
+    void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
+                  uint64_t value) {
+      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
+      // Unsigned integer types.
+      llvm::GenericValue GV = V.getGV();
+      GV.IntVal = llvm::APIInt(QT.getAddressSpace(), value, false);
+      V.setGV(GV);
+    }
+    void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
+                  int64_t value) {
+      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
+      // Signed integer types.
+      llvm::GenericValue GV = V.getGV();
+      GV.IntVal = llvm::APIInt(QT.getAddressSpace(), value, true);
+      V.setGV(GV);
+    }
+    void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
+                  void* value) {
+      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      llvm::GenericValue GV = V.getGV();
+      &GV.PointerVal = value;
+      V.setGV(GV);
+    }
+    template<typename T>
+    void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
+                  const T& value) {
+      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      llvm::GenericValue GV = V.getGV();
+      GV.PointerVal = value;
+      V.setGV(GV);
+    }
+
   }
 }
