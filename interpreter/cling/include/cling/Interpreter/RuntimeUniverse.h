@@ -30,6 +30,10 @@
 
 #include "cling/Interpreter/RuntimeException.h"
 
+namespace llvm {
+  class GenericValue;
+}
+
 namespace cling {
 
   class Interpreter;
@@ -65,7 +69,7 @@ namespace cling {
       /// when clang emits diagnostics on artificially inserted AST node.
       int InterpreterGeneratedCodeDiagnosticsMaybeIncorrect;
 
-      ///\brief Allocate the StoredValueRef for setting the GenericValue
+      ///\brief Allocate the StoredValueRef and return the GenericValue
       /// for an expression evaluated at the prompt.
       ///
       /// Implemented in ExecutionContext.cpp
@@ -73,9 +77,8 @@ namespace cling {
       ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
       ///\param [in] - The opaque ptr for the clang::QualType of value stored.
       ///\param [out] - The StoredValueRef that is allocated.
-      cling::StoredValueRef& getStoredValueRef(Interpreter& interp,
-                                               void* vpQT,
-                                               void* vpStoredValRef);
+      llvm::GenericValue& allocateValueAndGetGV(Interpreter& interp, void* vpQT,
+                                                void* vpStoredValRef);
 
       ///\brief Set the value of the GenericValue for the expression
       /// evaluated at the prompt.
@@ -104,7 +107,7 @@ namespace cling {
       ///\param [in] - The uint64_t value of the assignment to be stored
       ///              in GenericValue.
       ///\param [out] - The StoredValueRef that is created.
-      void setValue(Interpreter& interp,  void* vpQT, uint64_t value,
+      void setValue(Interpreter& interp,  void* vpQT, unsigned long long value,
                     void* vpStoredValRef);
 
       ///\brief Set the value of the GenericValue for the expression
@@ -114,7 +117,7 @@ namespace cling {
       ///\param [in] - The int64_t value of the assignment to be stored
       ///              in GenericValue.
       ///\param [out] - The StoredValueRef that is created.
-      void setValue(Interpreter& interp,  void* vpQT, int64_t value,
+      void setValue(Interpreter& interp,  void* vpQT, long long value,
                     void* vpStoredValRef);
 
       ///\brief Set the value of the GenericValue for the expression
@@ -135,8 +138,10 @@ namespace cling {
       ///              in GenericValue.
       ///\param [out] - The StoredValueRef that is created.
       template<typename T>
-      void setValue(Interpreter& interp,  void* vpQT, constT& value,
-                    void* vpStoredValRef);
+      void setValue(Interpreter& interp,  void* vpQT, const T& value,
+                    void* vpStoredValRef) {
+        setValue(interp, vpQT, (const void*)&value, vpStoredValRef);
+      }
 
 
 //__cxa_atexit is declared later for WIN32

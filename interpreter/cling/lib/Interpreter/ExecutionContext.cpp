@@ -14,6 +14,7 @@
 
 #include "clang/AST/Type.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/Sema/Sema.h"
 
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
@@ -242,26 +243,8 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
   } else {
     cling::StoredValueRef SVR;
     (*func)(&SVR);
+    *returnValue = SVR;
   }
-
-  /*std::vector<llvm::GenericValue> args;
-  bool wantReturn = (returnValue);
-  StoredValueRef aggregateRet;
-
-  if (f->hasStructRetAttr()) {
-    // Function expects to receive the storage for the returned aggregate as
-    // first argument. Allocate returnValue:
-    aggregateRet = StoredValueRef::allocate(interp, retType,
-                                            f->getReturnType());
-    if (returnValue) {
-      *returnValue = aggregateRet;
-    } else {
-      returnValue = &aggregateRet;
-    }
-    args.push_back(returnValue->get().getGV());
-    // will get set as arg0, must not assign.
-    wantReturn = false;
-  }*/
 
   return kExeSuccess;
 }
@@ -425,61 +408,40 @@ ExecutionContext::getPointerToGlobalFromJIT(const llvm::GlobalValue& GV) const {
 
 namespace runtime {
   namespace internal {
-
-    cling::StoredValueRef& getStoredValueRef(Interpreter& interp, void* vpQT,
+    llvm::GenericValue& allocateValueAndGetGV(Interpreter& interp, void* vpQT,
                                              void* vpStoredValRef) {
       clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
       cling::StoredValueRef& SVR = *(cling::StoredValueRef*)vpStoredValRef;
-      SVR = StoredValueRef::allocate(interp, QT);
-      return SVR;
+      return StoredValueRef::allocate(interp, QT).get().getGV();
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   float value) {
-      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
-      llvm::GenericValue GV = V.getGV();
-      GV.FloatVal = value;
-      V.setGV(GV);
+      allocateValueAndGetGV(interp, vpStoredValRef, vpQT).FloatVal = value;
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   double value) {
-      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
-      llvm::GenericValue GV = V.getGV();
-      GV.DoubleVal = value;
-      V.setGV(GV);
+      allocateValueAndGetGV(interp, vpStoredValRef, vpQT).DoubleVal = value;
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   uint64_t value) {
-      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
       clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
       // Unsigned integer types.
-      llvm::GenericValue GV = V.getGV();
-      GV.IntVal = llvm::APInt(QT.getAddressSpace(), value, false);
-      V.setGV(GV);
+      allocateValueAndGetGV(interp, vpStoredValRef, vpQT).IntVal =
+        llvm::APInt(interp.getSema().getASTContext().getTypeSize(QT),
+                                                                value, false);
+
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   int64_t value) {
-      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
       clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
       // Signed integer types.
-      llvm::GenericValue GV = V.getGV();
-      GV.IntVal = llvm::APInt(QT.getAddressSpace(), value, true);
-      V.setGV(GV);
+      allocateValueAndGetGV(interp, vpStoredValRef, vpQT).IntVal =
+        llvm::APInt(interp.getSema().getASTContext().getTypeSize(QT),
+                                                                value, true);
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   void* value) {
-      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
-      llvm::GenericValue GV = V.getGV();
-      GV.PointerVal = value;
-      V.setGV(GV);
+      allocateValueAndGetGV(interp, vpStoredValRef, vpQT).PointerVal = value;
     }
-    template<typename T>
-    void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
-                  const T& value) {
-      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
-      llvm::GenericValue GV = V.getGV();
-      GV.PointerVal = value;
-      V.setGV(GV);
-    }
-
   }
 }
