@@ -435,47 +435,47 @@ namespace runtime {
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   float value) {
-      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
-      llvm::GenericValue GV = V.getGV().FloatVal = value;
+      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      llvm::GenericValue GV = V.getGV();
       GV.FloatVal = value;
       V.setGV(GV);
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   double value) {
-      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
       llvm::GenericValue GV = V.getGV();
       GV.DoubleVal = value;
       V.setGV(GV);
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   uint64_t value) {
-      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
       clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
       // Unsigned integer types.
       llvm::GenericValue GV = V.getGV();
-      GV.IntVal = llvm::APIInt(QT.getAddressSpace(), value, false);
+      GV.IntVal = llvm::APInt(QT.getAddressSpace(), value, false);
       V.setGV(GV);
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   int64_t value) {
-      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
       clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
       // Signed integer types.
       llvm::GenericValue GV = V.getGV();
-      GV.IntVal = llvm::APIInt(QT.getAddressSpace(), value, true);
+      GV.IntVal = llvm::APInt(QT.getAddressSpace(), value, true);
       V.setGV(GV);
     }
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   void* value) {
-      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
       llvm::GenericValue GV = V.getGV();
-      &GV.PointerVal = value;
+      GV.PointerVal = value;
       V.setGV(GV);
     }
     template<typename T>
     void setValue(Interpreter& interp, void* vpStoredValRef, void* vpQT,
                   const T& value) {
-      const Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
+      Value V = getStoredValueRef(interp, vpStoredValRef, vpQT).get();
       llvm::GenericValue GV = V.getGV();
       GV.PointerVal = value;
       V.setGV(GV);
