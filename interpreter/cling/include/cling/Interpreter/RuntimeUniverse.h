@@ -69,79 +69,63 @@ namespace cling {
       /// when clang emits diagnostics on artificially inserted AST node.
       int InterpreterGeneratedCodeDiagnosticsMaybeIncorrect;
 
-      ///\brief Allocate the StoredValueRef and return the GenericValue
-      /// for an expression evaluated at the prompt.
-      ///
-      /// Implemented in ExecutionContext.cpp
-      ///
-      ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-      ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-      ///\param [out] - The StoredValueRef that is allocated.
-      llvm::GenericValue& allocateValueAndGetGV(Interpreter& interp, void* vpQT,
-                                                void* vpStoredValRef);
+      ///\brief Set the value of the GenericValue for the expression
+      /// evaluated at the prompt.
+      ///\param [in] vpInterp - The cling::Interpreter for StoredValueRef.
+      ///\param [in] vpQT - The opaque ptr for the clang::QualType of value.
+      ///\param [in] value - The float value of the assignment to be stored
+      ///                    in GenericValue.
+      ///\param [out] vpStoredValRef - The StoredValueRef that is created.
+      void setValueNoAlloc(void* vpInterp,  void* vpQT, float value,
+                           void* vpStoredValRef);
 
       ///\brief Set the value of the GenericValue for the expression
       /// evaluated at the prompt.
-      ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-      ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-      ///\param [in] - The float value of the assignment to be stored
-      ///              in GenericValue.
-      ///\param [out] - The StoredValueRef that is created.
-      void setValue(Interpreter& interp,  void* vpQT, float value,
-                    void* vpStoredValRef);
+      ///\param [in] vpInterp - The cling::Interpreter for StoredValueRef.
+      ///\param [in] vpQT - The opaque ptr for the clang::QualType of value.
+      ///\param [in] value - The double value of the assignment to be stored
+      ///                    in GenericValue.
+      ///\param [out] vpStoredValRef - The StoredValueRef that is created.
+      void setValueNoAlloc(void* vpInterp,  void* vpQT, double value,
+                           void* vpStoredValRef);
 
       ///\brief Set the value of the GenericValue for the expression
       /// evaluated at the prompt.
-      ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-      ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-      ///\param [in] - The double value of the assignment to be stored
-      ///              in GenericValue.
-      ///\param [out] - The StoredValueRef that is created.
-      void setValue(Interpreter& interp,  void* vpQT, double value,
-                    void* vpStoredValRef);
+      ///\param [in] vpInterp - The cling::Interpreter for StoredValueRef.
+      ///\param [in] vpQT - The opaque ptr for the clang::QualType of value.
+      ///\param [in] value - The uint64_t value of the assignment to be stored
+      ///                    in GenericValue.
+      ///\param [out] vpStoredValRef - The StoredValueRef that is created.
+      void setValueNoAlloc(void* vpInterp,  void* vpQT, unsigned long long value,
+                           void* vpStoredValRef);
 
       ///\brief Set the value of the GenericValue for the expression
       /// evaluated at the prompt.
-      ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-      ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-      ///\param [in] - The uint64_t value of the assignment to be stored
-      ///              in GenericValue.
-      ///\param [out] - The StoredValueRef that is created.
-      void setValue(Interpreter& interp,  void* vpQT, unsigned long long value,
-                    void* vpStoredValRef);
+      ///\param [in] vpInterp - The cling::Interpreter for StoredValueRef.
+      ///\param [in] vpQT - The opaque ptr for the clang::QualType of value.
+      ///\param [in] value - The int64_t value of the assignment to be stored
+      ///                    in GenericValue.
+      ///\param [out] vpStoredValRef - The StoredValueRef that is created.
+      void setValueNoAlloc(void* vpInterp,  void* vpQT, long long value,
+                           void* vpStoredValRef);
 
       ///\brief Set the value of the GenericValue for the expression
       /// evaluated at the prompt.
-      ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-      ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-      ///\param [in] - The int64_t value of the assignment to be stored
-      ///              in GenericValue.
-      ///\param [out] - The StoredValueRef that is created.
-      void setValue(Interpreter& interp,  void* vpQT, long long value,
-                    void* vpStoredValRef);
+      ///\param [in] vpInterp - The cling::Interpreter for StoredValueRef.
+      ///\param [in] vpQT - The opaque ptr for the clang::QualType of value.
+      ///\param [in] value - The void* value of the assignment to be stored
+      ///                    in GenericValue.
+      ///\param [out] vpStoredValRef - The StoredValueRef that is created.
+      void setValueNoAlloc(void* vpInterp,  void* vpQT, void* value,
+                           void* vpStoredValRef);
 
-      ///\brief Set the value of the GenericValue for the expression
-      /// evaluated at the prompt.
-      ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-      ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-      ///\param [in] - The pointer value of the assignment to be stored
-      ///              in GenericValue.
-      ///\param [out] - The StoredValueRef that is created.
-      void setValue(Interpreter& interp,  void* vpQT, void* value,
-                    void* vpStoredValRef);
-
-      ///\brief Set the value of the GenericValue for the expression
-      /// evaluated at the prompt.
-      ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-      ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-      ///\param [in] - The object value of the assignment to be stored
-      ///              in GenericValue.
-      ///\param [out] - The StoredValueRef that is created.
-      template<typename T>
-      void setValue(Interpreter& interp,  void* vpQT, const T& value,
-                    void* vpStoredValRef) {
-        setValue(interp, vpQT, (const void*)&value, vpStoredValRef);
-      }
+      ///\brief Set the value of the Generic value and return the address
+      /// for the allocated storage space.
+      ///\param [in] vpInterp - The cling::Interpreter for StoredValueRef.
+      ///\param [in] vpQT - The opaque ptr for the clang::QualType of value.
+      ///\param [out] vpStoredValRef - The StoredValueRef that is created.
+      void* setValueWithAlloc(Interpreter& interp,  void* vpQT,
+                              void* vpStoredValRef);
 
 
 //__cxa_atexit is declared later for WIN32
