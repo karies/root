@@ -241,7 +241,7 @@ ExecutionContext::executeFunction(llvm::StringRef funcname,
   if (!returnValue) {
     (*func)(0);
   } else {
-    (*func)(&returnValue);
+    (*func)(returnValue);
   }
 
   return kExeSuccess;
@@ -408,9 +408,9 @@ namespace {
   ///\brief Allocate the StoredValueRef and return the GenericValue
   /// for an expression evaluated at the prompt.
   ///
-  ///\param [in] - The cling::Interpreter to allocate the SToredValueRef.
-  ///\param [in] - The opaque ptr for the clang::QualType of value stored.
-  ///\param [out] - The StoredValueRef that is allocated.
+  ///\param [in] interp - The cling::Interpreter to allocate the SToredValueRef.
+  ///\param [in] vpQT - The opaque ptr for the clang::QualType of value stored.
+  ///\param [out] vpStoredValRef - The StoredValueRef that is allocated.
   llvm::GenericValue& allocateStoredRefValueAndGetGV(Interpreter& interp,
                                                        void* vpQT,
                                                        void* vpStoredValRef) {
@@ -463,7 +463,7 @@ namespace runtime {
     void* setValueWithAlloc(void* vpInterp,  void* vpQT,
                             void* vpStoredValRef) {
       cling::Interpreter* interp = (cling::Interpreter*)(vpInterp);
-      return &allocateStoredRefValueAndGetGV(*interp, vpQT,
+      return allocateStoredRefValueAndGetGV(*interp, vpQT,
                                             vpStoredValRef).PointerVal;
     }
   }

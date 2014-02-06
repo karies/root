@@ -30,10 +30,6 @@
 
 #include "cling/Interpreter/RuntimeException.h"
 
-namespace llvm {
-  class GenericValue;
-}
-
 namespace cling {
 
   class Interpreter;
