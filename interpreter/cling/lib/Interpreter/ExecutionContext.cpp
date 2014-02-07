@@ -411,7 +411,7 @@ namespace {
   ///\param [in] interp - The cling::Interpreter to allocate the SToredValueRef.
   ///\param [in] vpQT - The opaque ptr for the clang::QualType of value stored.
   ///\param [out] vpStoredValRef - The StoredValueRef that is allocated.
-  llvm::GenericValue& allocateStoredRefValueAndGetGV(Interpreter& interp,
+  static llvm::GenericValue& allocateStoredRefValueAndGetGV(Interpreter& interp,
                                                        void* vpQT,
                                                        void* vpStoredValRef) {
     clang::QualType QT = clang::QualType::getFromOpaquePtr(vpQT);
