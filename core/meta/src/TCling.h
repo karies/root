@@ -482,8 +482,6 @@ private: // Private Utility Functions
    bool InsertMissingDictionaryDecl(const clang::Decl* D, std::set<std::string> &netD, clang::QualType qType, bool recurse);
    void InitRootmapFile(const char *name);
    int  ReadRootmapFile(const char *rootmapfile);
-   // Wrapper function for getting the definition of the interpreter ClassDef version.
-   static void GetClassDefDefinition(std::string& def);
 };
 
 #endif

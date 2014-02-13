@@ -156,6 +156,27 @@ using namespace std;
 using namespace clang;
 using namespace ROOT;
 
+namespace {
+   static const char* gInterpreterClassDef = "#define ClassDef(name, id) \\"
+      "private: \\"
+      "public: \\"
+      "static TClass *Class() { static TClass* sIsA = 0;"
+                                  "if (!sIsA) sIsA = TClass::GetClass(#name); return sIsA; } \\"
+      "static const char *Class_Name() { return #name; } \\"
+      "static Version_t Class_Version() { return id; } \\"
+      "static void Dictionary() {} \\"
+      "virtual TClass *IsA() const { return name::Class(); } \\"
+      "virtual void ShowMembers(TMemberInspector&insp) const "
+      "{ ::ROOT::Class_ShowMembers(name::Class(), this, insp); } \\"
+      "virtual void Streamer(TBuffer&) "
+      "{ Error (\"Streamer\", \"Cannot stream interpreted class.\"); } \\"
+      "void StreamerNVirtual(TBuffer&ClassDef_StreamerNVirtual_b)"
+      "{ name::Streamer(ClassDef_StreamerNVirtual_b); } \\"
+      "static const char *DeclFileName() { return __FILE__; } \\"
+      "static int ImplFileLine() { return 0; } \\"
+      "static const char *ImplFileName() { return __FILE__; }";
+}
+
 R__EXTERN int optind;
 
 // The functions are used to bridge cling/clang/llvm compiled with no-rtti and
@@ -1090,7 +1111,10 @@ void TCling::RegisterModule(const char* modulename,
    // This is used to give Sema the same view on ACLiC'ed files (which
    // are then #included through the dictionary) as rootcling had.
    TString code = "#define __ROOTCLING__ 1\n"
-                  "#undef ClassDef";
+                  "#undef ClassDef"
+                  "#define ClassDef(name,id) "
+                  "_ClassDef_(name,id) \\"
+                  "static int DeclFileLine() { return __LINE__; }";
    code += payloadCode;
 
    // We need to open the dictionary shared library, to resolve sylbols
@@ -1186,10 +1210,7 @@ void TCling::RegisterModule(const char* modulename,
    // Might be pulled in through PCH
    fInterpreter->declare("#ifdef __ROOTCLING__\n"
                          "#undef __ROOTCLING__\n"
-                         "#endif"
-                         "#define ClassDef(name,id) "
-                         "_ClassDef_(name,id) \\"
-                         "static int DeclFileLine() { return __LINE__; }");
+                         "#endif");
 
    if (dyLibName) {
       void* dyLibHandle = fRegisterModuleDyLibs.back();
@@ -6137,27 +6158,4 @@ const char* TCling::TypedefInfo_Title(TypedefInfo_t* tinfo) const
 {
    TClingTypedefInfo* TClinginfo = (TClingTypedefInfo*) tinfo;
    return TClinginfo->Title();
-}
-
-//______________________________________________________________________________
-void TCling::GetClassDefDefinition(std::string& def)
-{
-   def << "#define ClassDef(name, id) \\"
-          "private: \\"
-          "public: \\"
-          "static TClass *Class() { static TClass* sIsA = 0;"
-                                      "if (!sIsA) sIsA = TClass::GetClass(#name); return sIsA; } \\"
-          "static const char *Class_Name() { return #name; } \\"
-          "static Version_t Class_Version() { return id; } \\"
-          "static void Dictionary() {} \\"
-          "virtual TClass *IsA() const { return name::Class(); } \\"
-          "virtual void ShowMembers(TMemberInspector&insp) const "
-          "{ ::ROOT::Class_ShowMembers(name::Class(), this, insp); } \\"
-          "virtual void Streamer(TBuffer&) "
-          "{ Error (\"Streamer\", \"Cannot stream interpreted class.\"); } \\"
-          "void StreamerNVirtual(TBuffer&ClassDef_StreamerNVirtual_b)"
-          "{ name::Streamer(ClassDef_StreamerNVirtual_b); } \\"
-          "static const char *DeclFileName() { return __FILE__; } \\"
-          "static int ImplFileLine() { return 0; } \\"
-          "static const char *ImplFileName() { return __FILE__; }";
 }
