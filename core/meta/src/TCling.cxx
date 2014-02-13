@@ -158,24 +158,10 @@ using namespace ROOT;
 
 namespace {
    static const std::string gInterpreterClassDef = "#undef ClassDef\n"
-      "#define ClassDef(name, id) \\\n"
-      "private: \\\n"
-      "public: \\\n"
-      "static TClass *Class() { static TClass* sIsA = 0;"
-                                "if (!sIsA) sIsA = TClass::GetClass(#name); return sIsA; } \\\n"
-      "static const char *Class_Name() { return #name; } \\\n"
-      "static Version_t Class_Version() { return id; } \\\n"
-      "static void Dictionary() {} \\\n"
-      "virtual TClass *IsA() const { return name::Class(); } \\\n"
-      "virtual void ShowMembers(TMemberInspector&insp) const "
-      "{ ::ROOT::Class_ShowMembers(name::Class(), this, insp); } \\\n"
-      "virtual void Streamer(TBuffer&)"
-      "{ Error (\"Streamer\", \"Cannot stream interpreted class.\"); } \\\n"
-      "void StreamerNVirtual(TBuffer&ClassDef_StreamerNVirtual_b)"
-      "{ name::Streamer(ClassDef_StreamerNVirtual_b); } \\\n"
-      "static const char *DeclFileName() { return __FILE__; } \\\n"
-      "static int ImplFileLine() { return 0; } \\\n"
-      "static const char *ImplFileName() { return __FILE__; } \n";
+                "#define ClassDef(name, id) \\\n"
+                "_ClassDefInterp_(name,id) \\\n"
+                "static int DeclFileLine() { return __LINE__; }\n";
+
 }
 
 R__EXTERN int optind;
@@ -913,6 +899,7 @@ TCling::TCling(const char *name, const char *title)
       ::Info("TCling::TCling", "Using one PCM.");
 
    // For the list to also include string, we have to include it now.
+
    fInterpreter->declare("#include \"Rtypes.h\"\n"+ gInterpreterClassDef +"#include <string>\n"
                          "using namespace std;");
 
@@ -6208,4 +6195,27 @@ const char* TCling::TypedefInfo_Title(TypedefInfo_t* tinfo) const
 {
    TClingTypedefInfo* TClinginfo = (TClingTypedefInfo*) tinfo;
    return TClinginfo->Title();
+}
+
+//______________________________________________________________________________
+void TCling::GetClassDefDefinition(std::string& def)
+{
+   def = StringRef ("#define ClassDef(name, id) \\"
+         "private: \\"
+         "public: \\"
+         "static TClass *Class() { static TClass* sIsA = 0;"
+                                     "if (!sIsA) sIsA = TClass::GetClass(#name); return sIsA; } \\"
+         "static const char *Class_Name() { return #name; } \\"
+         "static Version_t Class_Version() { return id; } \\"
+         "static void Dictionary() {} \\"
+         "virtual TClass *IsA() const { return name::Class(); } \\"
+         "virtual void ShowMembers(TMemberInspector&insp) const "
+         "{ ::ROOT::Class_ShowMembers(name::Class(), this, insp); } \\"
+         "virtual void Streamer(TBuffer&) "
+         "{ Error (\"Streamer\", \"Cannot stream interpreted class.\"); } \\"
+         "void StreamerNVirtual(TBuffer&ClassDef_StreamerNVirtual_b)"
+         "{ name::Streamer(ClassDef_StreamerNVirtual_b); } \\"
+         "static const char *DeclFileName() { return __FILE__; } \\"
+         "static int ImplFileLine() { return 0; } \\"
+         "static const char *ImplFileName() { return __FILE__; }");
 }
