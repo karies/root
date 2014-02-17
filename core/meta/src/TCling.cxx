@@ -157,24 +157,25 @@ using namespace clang;
 using namespace ROOT;
 
 namespace {
-   static const char* gInterpreterClassDef = "#define ClassDef(name, id) \\"
-      "private: \\"
-      "public: \\"
+   static const std::string gInterpreterClassDef = "#undef ClassDef\n"
+      "#define ClassDef(name, id) \\\n"
+      "private: \\\n"
+      "public: \\\n"
       "static TClass *Class() { static TClass* sIsA = 0;"
-                                  "if (!sIsA) sIsA = TClass::GetClass(#name); return sIsA; } \\"
-      "static const char *Class_Name() { return #name; } \\"
-      "static Version_t Class_Version() { return id; } \\"
-      "static void Dictionary() {} \\"
-      "virtual TClass *IsA() const { return name::Class(); } \\"
+                                "if (!sIsA) sIsA = TClass::GetClass(#name); return sIsA; } \\\n"
+      "static const char *Class_Name() { return #name; } \\\n"
+      "static Version_t Class_Version() { return id; } \\\n"
+      "static void Dictionary() {} \\\n"
+      "virtual TClass *IsA() const { return name::Class(); } \\\n"
       "virtual void ShowMembers(TMemberInspector&insp) const "
-      "{ ::ROOT::Class_ShowMembers(name::Class(), this, insp); } \\"
-      "virtual void Streamer(TBuffer&) "
-      "{ Error (\"Streamer\", \"Cannot stream interpreted class.\"); } \\"
+      "{ ::ROOT::Class_ShowMembers(name::Class(), this, insp); } \\\n"
+      "virtual void Streamer(TBuffer&)"
+      "{ Error (\"Streamer\", \"Cannot stream interpreted class.\"); } \\\n"
       "void StreamerNVirtual(TBuffer&ClassDef_StreamerNVirtual_b)"
-      "{ name::Streamer(ClassDef_StreamerNVirtual_b); } \\"
-      "static const char *DeclFileName() { return __FILE__; } \\"
-      "static int ImplFileLine() { return 0; } \\"
-      "static const char *ImplFileName() { return __FILE__; }";
+      "{ name::Streamer(ClassDef_StreamerNVirtual_b); } \\\n"
+      "static const char *DeclFileName() { return __FILE__; } \\\n"
+      "static int ImplFileLine() { return 0; } \\\n"
+      "static const char *ImplFileName() { return __FILE__; } \n";
 }
 
 R__EXTERN int optind;
@@ -906,9 +907,7 @@ TCling::TCling(const char *name, const char *title)
       ::Info("TCling::TCling", "Using one PCM.");
 
    // For the list to also include string, we have to include it now.
-   fInterpreter->declare("#include \"Rtypes.h\"\n"
-                         "here I should replace the line above with my ClassDef?"
-                         "#include <string>\n"
+   fInterpreter->declare("#include \"Rtypes.h\"\n"+ gInterpreterClassDef +"#include <string>\n"
                          "using namespace std;");
 
    // We are now ready (enough is loaded) to init the list of opaque typedefs.
@@ -1111,10 +1110,10 @@ void TCling::RegisterModule(const char* modulename,
    // This is used to give Sema the same view on ACLiC'ed files (which
    // are then #included through the dictionary) as rootcling had.
    TString code = "#define __ROOTCLING__ 1\n"
-                  "#undef ClassDef"
-                  "#define ClassDef(name,id) "
-                  "_ClassDef_(name,id) \\"
-                  "static int DeclFileLine() { return __LINE__; }";
+                  "#undef ClassDef\n"
+                  "#define ClassDef(name,id) \\\n"
+                  "_ClassDef_(name,id) \\\n"
+                  "static int DeclFileLine() { return __LINE__; }\n";
    code += payloadCode;
 
    // We need to open the dictionary shared library, to resolve sylbols
@@ -1209,7 +1208,7 @@ void TCling::RegisterModule(const char* modulename,
 
    // Might be pulled in through PCH
    fInterpreter->declare("#ifdef __ROOTCLING__\n"
-                         "#undef __ROOTCLING__\n"
+                         "#undef __ROOTCLING__\n" + gInterpreterClassDef +
                          "#endif");
 
    if (dyLibName) {
