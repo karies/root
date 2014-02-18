@@ -49,3 +49,9 @@ void TEnum::AddConstant(TEnumConstant* constant)
    fConstantList.Add(constant);
 }
 
+//______________________________________________________________________________
+DeclId_t TEnum::GetDeclId() const
+{
+   return fInfo;
+}
+

@@ -30,6 +30,8 @@
 #include "TString.h"
 #endif
 
+typedef const void *DeclId_t;
+
 class TClass;
 class TEnumConstant;
 
@@ -46,12 +48,13 @@ public:
    TEnum(const char* name, bool isGlobal, void* info, TClass* cls);
    virtual ~TEnum();
 
-   void AddConstant(TEnumConstant* constant);
-   TClass* GetClass() const { return fClass; }
+   void                  AddConstant(TEnumConstant* constant);
+   TClass*               GetClass() const { return fClass; }
    const TSeqCollection* GetConstants() const { return &fConstantList; }
-   const TEnumConstant* GetConstant(const char* name) const {
+   const TEnumConstant*  GetConstant(const char* name) const {
       return (TEnumConstant*) fConstantList.FindObject(name);
    }
+   DeclId_t              GetDeclId() const;
 
    ClassDef(TEnum,2)  //Enum type class
 };

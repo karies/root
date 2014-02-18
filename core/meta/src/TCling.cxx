@@ -263,7 +263,7 @@ void TCling::HandleEnumDecl(const clang::Decl* D, bool isGlobal, TClass *cl) con
       if (isGlobal) {
          gROOT->GetListOfEnums()->Add(enumType);
       } else {
-         cl->fEnums->Add(enumType);
+         cl->GetListOfEnums()->AddLast(enumType);
       }
    }
 
@@ -2492,15 +2492,11 @@ void TCling::CreateListOfBaseClasses(TClass* cl) const
 }
 
 //______________________________________________________________________________
-void TCling::CreateListOfEnums(TClass* cl) const
+void TCling::LoadEnums(TClass* cl) const
 {
    // Create list of pointers to enums for TClass cl.
    R__LOCKGUARD2(gInterpreterMutex);
-   if (cl->fEnums) {
-      return;
-   }
-   cl->fEnums = new TList;
-   cl->fEnums->SetOwner();
+
    const Decl * D = ((TClingClassInfo*)cl->GetClassInfo())->GetDecl();
 
    // Iterate on the decl of the class and get the enums.
@@ -2520,6 +2516,14 @@ void TCling::CreateListOfEnums(TClass* cl) const
          }
       }
    }
+}
+
+//______________________________________________________________________________
+void TCling::CreateListOfEnums(TClass* cl) const
+{
+   // Create list of pointers to enums for TClass cl.
+   // This is now a nop.  The creation and updating is handled in
+   // TListOfEnums.
 }
 
 //______________________________________________________________________________
@@ -2551,10 +2555,9 @@ void TCling::UpdateListOfMethods(TClass* cl) const
 //______________________________________________________________________________
 void TCling::UpdateListOfEnums(TClass* cl) const
 {
-   // Update the list of pointers to enums for TClass cl.
-   delete cl->fEnums;
-   cl->fEnums = 0;
-   CreateListOfEnums(cl);
+   // Update the list of pointers to enums for TClass cl
+   // This is now a nop.  The creation and updating is handled in
+   // TListOfEnums.
 }
 
 //______________________________________________________________________________
@@ -2758,6 +2761,41 @@ TInterpreter::DeclId_t TCling::GetDataMember(ClassInfo_t *opaque_cl, const char 
       d = gcl.GetDataMember(name);
    }
    return d;
+}
+
+//______________________________________________________________________________
+TInterpreter::DeclId_t TCling::GetEnum(TClass *cl, const char *name) const
+{
+   // Return pointer to cling Decl of global/static variable that is located
+   // at the address given by addr.
+
+   R__LOCKGUARD2(gInterpreterMutex);
+
+   TClingClassInfo *cci = (TClingClassInfo*)cl->GetClassInfo();
+   const cling::LookupHelper& lh = fInterpreter->getLookupHelper();
+   if (cci) {
+      clang::DeclContext* dc = 0;
+      if (const clang::Decl* D = cci->GetDecl()) {
+         if (isa<clang::NamespaceDecl>(D)) {
+            dc = (clang::NamespaceDecl*)(D); 
+         } else if (isa<clang::RecordDecl>(D)) {
+            dc = (clang::RecordDecl*)(D);
+         }
+      }
+      if (dc) {
+         const clang::ValueDecl* possibleEnum = lh.findDataMember((const clang::Decl*)dc, name);
+         if (isa<clang::EnumDecl>(possibleEnum)) {
+            return new TEnum(name, false /* is global */, &possibleEnum, cl);
+         }
+      }
+   }   
+   else {
+      const clang::Decl* possibleEnum = lh.findScope(name);
+      if (isa<clang::EnumDecl>(possibleEnum)) {
+            return new TEnum(name, true /* is global */, &possibleEnum, cl);
+         }
+   }
+   return 0;
 }
 
 //______________________________________________________________________________

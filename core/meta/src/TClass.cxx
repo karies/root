@@ -77,6 +77,7 @@
 
 #include "TListOfDataMembers.h"
 #include "TListOfFunctions.h"
+#include "TListOfEnums.h"
 #include "TViewPubDataMembers.h"
 #include "TViewPubFunctions.h"
 
@@ -3133,12 +3134,12 @@ TList *TClass::GetListOfBases()
 }
 
 //______________________________________________________________________________
-TList *TClass::GetListOfEnums()
+TList *TClass::GetListOfEnums(Bool_t load /* = kTRUE */)
 {
    // Return list containing the TEnums of a class.
 
    R__LOCKGUARD(gInterpreterMutex);
-   if (!fClassInfo) {
+   /*if (!fClassInfo) {
       if (!fEnums) fEnums = new TList;
       return fEnums;
    }
@@ -3148,7 +3149,10 @@ TList *TClass::GetListOfEnums()
          Fatal("GetListOfEnums", "gInterpreter not initialized");
 
       gInterpreter->CreateListOfEnums(this);
-   }
+   }*/
+
+   if (!fEnums) fEnums = new TListOfEnums(this);
+   if (load) fEnums->Load();
    return fEnums;
 }
 

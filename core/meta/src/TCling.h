@@ -216,6 +216,8 @@ public: // Public Interface
    virtual DeclId_t GetDataMember(ClassInfo_t *cl, const char *name) const;
    virtual DeclId_t GetDataMemberAtAddr(const void *addr) const;
    virtual DeclId_t GetDataMemberWithValue(const void *ptrvalue) const;
+   virtual DeclId_t GetEnum(TClass *cl, const char *name) const;
+   virtual void     LoadEnums(TClass* cl) const;
    TString GetMangledName(TClass* cl, const char* method, const char* params, Bool_t objectIsConst = kFALSE);
    TString GetMangledNameWithPrototype(TClass* cl, const char* method, const char* proto, Bool_t objectIsConst = kFALSE, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch);
    void*   GetInterfaceMethod(TClass* cl, const char* method, const char* params, Bool_t objectIsConst = kFALSE);
