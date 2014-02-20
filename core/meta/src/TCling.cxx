@@ -898,7 +898,6 @@ TCling::TCling(const char *name, const char *title)
       ::Info("TCling::TCling", "Using one PCM.");
 
    // For the list to also include string, we have to include it now.
-
    fInterpreter->declare("#include \"Rtypes.h\"\n"+ gInterpreterClassDef +"#include <string>\n"
                          "using namespace std;");
 
