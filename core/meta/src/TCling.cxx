@@ -262,8 +262,6 @@ void TCling::HandleEnumDecl(const clang::Decl* D, bool isGlobal, TClass *cl) con
       // Add global enums to the list of globals TEnums.
       if (isGlobal) {
          gROOT->GetListOfEnums()->Add(enumType);
-      } else {
-         cl->GetListOfEnums()->AddLast(enumType);
       }
    }
 
@@ -2773,6 +2771,8 @@ TInterpreter::DeclId_t TCling::GetEnum(TClass *cl, const char *name) const
 
    TClingClassInfo *cci = (TClingClassInfo*)cl->GetClassInfo();
    const cling::LookupHelper& lh = fInterpreter->getLookupHelper();
+   const clang::Decl* possibleEnum;
+   // FInd the context of the decl.
    if (cci) {
       clang::DeclContext* dc = 0;
       if (const clang::Decl* D = cci->GetDecl()) {
@@ -2783,17 +2783,15 @@ TInterpreter::DeclId_t TCling::GetEnum(TClass *cl, const char *name) const
          }
       }
       if (dc) {
-         const clang::ValueDecl* possibleEnum = lh.findDataMember((const clang::Decl*)dc, name);
-         if (isa<clang::EnumDecl>(possibleEnum)) {
-            return new TEnum(name, false /* is global */, &possibleEnum, cl);
-         }
+         // If it is a data member enum.
+         possibleEnum = lh.findDataMember((const clang::Decl*)dc, name, cling::LookupHelper::NoDiagnostics);
+      } else {
+         // If it is a global enum.
+         possibleEnum = lh.findScope(name, cling::LookupHelper::NoDiagnostics);
       }
-   }   
-   else {
-      const clang::Decl* possibleEnum = lh.findScope(name);
-      if (isa<clang::EnumDecl>(possibleEnum)) {
-            return new TEnum(name, true /* is global */, &possibleEnum, cl);
-         }
+   }
+   if (isa<clang::EnumDecl>(possibleEnum)) {
+      return possibleEnum;
    }
    return 0;
 }
