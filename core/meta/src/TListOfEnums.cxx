@@ -288,13 +288,13 @@ TObject *TListOfEnums::FindObject(const char *name) const
       TInterpreter::DeclId_t decl;
       if (fClass) decl = gInterpreter->GetEnum(fClass, name);
       else        decl = gInterpreter->GetEnum(0, name);
-      if (decl) result = const_cast<TListOfEnums*>(this)->Get(decl);
+      if (decl) result = const_cast<TListOfEnums*>(this)->Get(decl, name);
    }
    return result;
 }
 
 //______________________________________________________________________________
-TEnum *TListOfEnums::Get(DeclId_t id)
+TEnum *TListOfEnums::Get(DeclId_t id, const char *name)
 {
    // Return (after creating it if necessary) the TEnum
    // describing the enum corresponding to the Decl 'id'.
@@ -323,8 +323,8 @@ TEnum *TListOfEnums::Get(DeclId_t id)
          e = update;
       }*/
       if (!e) {
-         if (fClass) e = new TEnum(name, false/*is global*/, id, fClass);
-         else e = new TEnum(name, true/*is global*/, id);
+         if (fClass) e = new TEnum(name, false/*is global*/, (void*)id, fClass);
+         else e = new TEnum(name, true/*is global*/, (void*)id, fClass);
       }
       // Calling 'just' THahList::Add would turn around and call
       // TListOfEnums::AddLast which should *also* do the fIds->Add.

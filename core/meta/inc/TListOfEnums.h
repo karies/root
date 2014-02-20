@@ -57,7 +57,7 @@ public:
    using THashList::FindObject;
    virtual TObject   *FindObject(const char *name) const;
 
-   TEnum *Get(DeclId_t id);
+   TEnum *Get(DeclId_t id, const char *name);
 
    Bool_t     IsLoaded() const { return fIsLoaded; }
    void       AddFirst(TObject *obj);
