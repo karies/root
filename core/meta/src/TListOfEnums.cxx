@@ -321,11 +321,11 @@ TEnum *TListOfEnums::Get(DeclId_t id)
             ((TGlobal*)update)->Update();
          }
          e = update;
-      }
-      if (!e) {
-         if (fClass) e = HandleNewEnumDecl();
-         else e = new TGlobal(info);
       }*/
+      if (!e) {
+         if (fClass) e = new TEnum(name, false/*is global*/, id, fClass);
+         else e = new TEnum(name, true/*is global*/, id);
+      }
       // Calling 'just' THahList::Add would turn around and call
       // TListOfEnums::AddLast which should *also* do the fIds->Add.
       THashList::AddLast(e);
