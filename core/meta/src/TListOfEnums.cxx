@@ -56,18 +56,10 @@ void TListOfEnums::AddFirst(TObject *obj)
 
    THashList::AddFirst(obj);
 
-   if (fClass) {
-      TEnum *d = dynamic_cast<TEnum*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
+   TEnum *d = dynamic_cast<TEnum*>(obj);
+   if (d) {
+      DeclId_t id = d->GetDeclId();
+      fIds->Add((Long64_t)id,(Long64_t)d);
    }
 }
 
@@ -88,12 +80,6 @@ void TListOfEnums::AddFirst(TObject *obj, Option_t *opt)
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
       }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
    }
 }
 
@@ -109,12 +95,6 @@ void TListOfEnums::AddLast(TObject *obj)
       if (d) {
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
       }
    }
 }
@@ -136,12 +116,6 @@ void TListOfEnums::AddLast(TObject *obj, Option_t *opt)
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
       }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
    }
 }
 
@@ -157,12 +131,6 @@ void TListOfEnums::AddAt(TObject *obj, Int_t idx)
       if (d) {
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
       }
    }
 }
@@ -180,12 +148,6 @@ void TListOfEnums::AddAfter(const TObject *after, TObject *obj)
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
       }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
    }
 }
 
@@ -201,12 +163,6 @@ void TListOfEnums::AddAfter(TObjLink *after, TObject *obj)
       if (d) {
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
       }
    }
 }
@@ -224,12 +180,6 @@ void TListOfEnums::AddBefore(const TObject *before, TObject *obj)
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
       }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
    }
 }
 
@@ -245,12 +195,6 @@ void TListOfEnums::AddBefore(TObjLink *before, TObject *obj)
       if (d) {
          DeclId_t id = d->GetDeclId();
          fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
       }
    }
 }
@@ -349,12 +293,6 @@ void TListOfEnums::RecursiveRemove(TObject *obj)
          DeclId_t id = d->GetDeclId();
          fIds->Remove((Long64_t)id);
       }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Remove((Long64_t)id);
-      }
    }
 }
 
@@ -373,12 +311,6 @@ TObject* TListOfEnums::Remove(TObject *obj)
       TEnum *d = dynamic_cast<TEnum*>(obj);
       if (d) {
          DeclId_t id = d->GetDeclId();
-         fIds->Remove((Long64_t)id);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
          fIds->Remove((Long64_t)id);
       }
    }
@@ -402,12 +334,6 @@ TObject* TListOfEnums::Remove(TObjLink *lnk)
       TEnum *d = dynamic_cast<TEnum*>(obj);
       if (d) {
          DeclId_t id = d->GetDeclId();
-         fIds->Remove((Long64_t)id);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
          fIds->Remove((Long64_t)id);
       }
    }
