@@ -312,17 +312,10 @@ TEnum *TListOfEnums::Get(DeclId_t id, const char *name)
       // Let's see if this is a reload ...
       // can we check for reloads for enums?
       //const char *name = gInterpreter->DataMemberInfo_Name(info);
-      /* 
-      TDictionary *update = (TDictionary *)fUnloaded->FindObject(name);
-      if (update) {
-         if (fClass) {
-            ((TEnum*)update)->Update();
-         } else {
-            ((TGlobal*)update)->Update();
-         }
-         e = update;
-      }*/
-      if (!e) {
+      e = (TEnum *)fUnloaded->FindObject(name);
+      if (e) {
+         e->Update(id);
+      } else {
          if (fClass) e = new TEnum(name, false/*is global*/, (void*)id, fClass);
          else e = new TEnum(name, true/*is global*/, (void*)id, fClass);
       }

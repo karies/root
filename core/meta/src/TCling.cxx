@@ -62,6 +62,7 @@
 #include "compiledata.h"
 #include "TMetaUtils.h"
 #include "TVirtualCollectionProxy.h"
+#include "TListOfEnums.h"
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Decl.h"
@@ -254,15 +255,19 @@ void TCling::HandleEnumDecl(const clang::Decl* D, bool isGlobal, TClass *cl) con
    const char* name = buf.c_str();
 
    // Create the enum type.
-   TEnum* enumType = new TEnum(name, false /*!global*/, &D, cl);
-   // Check TEnum is created.
+   TEnum* enumType = 0;
+   TListOfEnums* enumList;
+   if (!isGlobal && cl) {
+      enumList = (TListOfEnums*)cl->GetListOfEnums(false);
+   }
+   // What do I do if it's global? How do I get the list of enums? Is GROOT->GetListOfEnums
+   // lazily created as well?
+   else {
+      enumList = (TListOfEnums*)gROOT->GetListOfEnums();
+   }
+   enumType = enumList->Get(D, name);
    if (!enumType) {
       Error ("HandleEnumDecl", "The enum type %s was not created.", name);
-   } else {
-      // Add global enums to the list of globals TEnums.
-      if (isGlobal) {
-         gROOT->GetListOfEnums()->Add(enumType);
-      }
    }
 
    // Add the constants to the enum type.
@@ -369,16 +374,9 @@ void TCling::HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*
          return;
 
       // Put the global constants and global enums in the coresponding lists.
-      if (const EnumDecl *ED = dyn_cast<EnumDecl>(D)) {
-         if (!gROOT->GetListOfEnums()->FindObject(ND->getNameAsString().c_str())) {
-            HandleEnumDecl(ED, true /* is global*/);
-         }
-      } else {
-         gROOT->GetListOfGlobals()->Add(new TGlobal((DataMemberInfo_t *)
-                                                    new TClingDataMemberInfo(fInterpreter,
-                                                                             cast<ValueDecl>(ND), 0)));
-      }
-
+      gROOT->GetListOfGlobals()->Add(new TGlobal((DataMemberInfo_t *)
+                                                new TClingDataMemberInfo(fInterpreter,
+                                                                        cast<ValueDecl>(ND), 0)));
    }
 }
 

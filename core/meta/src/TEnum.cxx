@@ -52,6 +52,12 @@ void TEnum::AddConstant(TEnumConstant* constant)
 //______________________________________________________________________________
 DeclId_t TEnum::GetDeclId() const
 {
-   return fInfo;
+   return (DeclId_t)fInfo;
 }
 
+//______________________________________________________________________________
+bool TEnum::Update(DeclId_t id)
+{
+   fInfo = (void*)id;
+   return kTRUE;
+}

@@ -29,8 +29,11 @@
 #ifndef ROOT_TString
 #include "TString.h"
 #endif
+#ifndef ROOT_TDictionary
+#include "TDictionary.h"
+#endif
 
-typedef const void *DeclId_t;
+typedef TDictionary::DeclId_t DeclId_t;
 
 class TClass;
 class TEnumConstant;
@@ -55,6 +58,7 @@ public:
       return (TEnumConstant*) fConstantList.FindObject(name);
    }
    DeclId_t              GetDeclId() const;
+   bool                  Update(DeclId_t id);
 
    ClassDef(TEnum,2)  //Enum type class
 };
