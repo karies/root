@@ -9,23 +9,46 @@
 
 #include "cling/Interpreter/Value.h"
 
-#include "llvm/ExecutionEngine/GenericValue.h"
-
 #include "clang/AST/Type.h"
 #include "clang/AST/CanonicalType.h"
 
-namespace cling {
+namespace {
+  ///\brief The allocation starts with this layout; it is followed by the
+  ///  value's object at m_Payload. This class does not inherit from
+  ///  llvm::RefCountedBase because deallocation cannot use this type but must
+  ///  free the character array.
+  class AllocatedValue {
+  private:
+    ///\brief The reference count - once 0, this object will be deallocated.
+    mutable unsigned m_RefCnt;
 
-Value::Value() :m_ClangType() {
-  assert(sizeof(llvm::GenericValue) <= sizeof(m_GV)
-         && "GlobalValue buffer too small");
-  new (m_GV) llvm::GenericValue();
+    ///\brief The interpreter that will execute the destructor.
+    cling::Interpreter& m_Interp;
+
+    ///\brief The start of the allocation.
+    char m_Payload[1];
+
+  public:
+    AllocatedValue(cling::Interpreter& interp): m_RefCnt(0), m_Inter(interp) {}
+    void Retain() { ++m_RefCnt; }
+
+    ///\brief This object must be allocated as a char array. Deallocate it as
+    ///   such.
+    void Release() {
+      assert (m_RefCnt > 0 && "Reference count is already zero.");
+      if (--m_RefCnt == 0) {
+        delete [] (char*)this;
+      }
+    }
+  };
 }
 
-Value::Value(const Value& other) : m_ClangType(other.m_ClangType) {
-  assert(sizeof(llvm::GenericValue) <= sizeof(m_GV)
-         && "GlobalValue buffer too small");
-  new (m_GV) llvm::GenericValue(other.getGV());
+namespace cling {
+
+Value::Value(const Value& other) : m_Type(other.m_Type) {
+  if (needsManagedAllocation()) {
+    IncreaseManagedReference();
+  }
 }
 
 Value::Value(const llvm::GenericValue& v, clang::QualType clangTy)
