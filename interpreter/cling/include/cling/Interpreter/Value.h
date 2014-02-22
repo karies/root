@@ -84,9 +84,11 @@ namespace cling {
     Value() {}
     /// \brief Copy a value.
     Value(const Value& other);
-    /// \brief Construct a valid Value; ManagedAllocate() if needed.
-    Value(clang::QualType Ty, cling::Interpreter& Interp);
-    /// \brief Destruct the value; ManagedFree() if needed.
+    /// \brief Construct a valid but ininitialized Value. After this call the
+    ///   value's storage can be accessed; i.e. calls ManagedAllocate() if
+    ///   needed.
+    Value(clang::QualType Ty, Interpreter& Interp);
+    /// \brief Destruct the value; calls ManagedFree() if needed.
     ~Value();
 
     Value& operator =(const Value& other);
