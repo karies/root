@@ -217,6 +217,7 @@ public: // Public Interface
    virtual DeclId_t GetDataMemberAtAddr(const void *addr) const;
    virtual DeclId_t GetDataMemberWithValue(const void *ptrvalue) const;
    virtual DeclId_t GetEnum(TClass *cl, const char *name) const;
+   virtual TEnum*   HandleEnumDecl(void *VD, const char* name, TClass *cl = 0) const;
    virtual void     LoadEnums(TClass* cl) const;
    TString GetMangledName(TClass* cl, const char* method, const char* params, Bool_t objectIsConst = kFALSE);
    TString GetMangledNameWithPrototype(TClass* cl, const char* method, const char* proto, Bool_t objectIsConst = kFALSE, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch);
@@ -471,7 +472,6 @@ public: // Public Interface
 
    void HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*>& modifiedClasses);
 
-
 private: // Private Utility Functions
    TCling();
    TCling(const TCling&); // NOT IMPLEMENTED
@@ -487,7 +487,6 @@ private: // Private Utility Functions
 
    bool LoadPCM(TString pcmFileName, const char** headers,
                 void (*triggerFunc)()) const;
-   void HandleEnumDecl(const clang::Decl* D, bool isGlobal, TClass *cl = 0) const;
    void GetMissingDictionariesForDecl(const clang::Decl* D, std::set<std::string> &netD, clang::QualType qType, bool recurse);
    bool InsertMissingDictionaryDecl(const clang::Decl* D, std::set<std::string> &netD, clang::QualType qType, bool recurse);
    void InitRootmapFile(const char *name);

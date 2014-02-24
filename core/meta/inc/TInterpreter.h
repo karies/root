@@ -42,6 +42,7 @@ class TInterpreterValue;
 class TMethod;
 class TObjArray;
 class TVirtualMutex;
+class TEnum;
 
 R__EXTERN TVirtualMutex *gInterpreterMutex;
 
@@ -227,6 +228,7 @@ public:
    virtual DeclId_t GetDataMemberAtAddr(const void *addr) const = 0;
    virtual DeclId_t GetDataMemberWithValue(const void *ptrvalue) const = 0;
    virtual DeclId_t GetEnum(TClass *cl, const char *name) const = 0;
+   virtual TEnum*   HandleEnumDecl(void *VD, const char* name, TClass *cl = 0) const = 0;
    virtual void     LoadEnums(TClass* cl) const = 0;
    virtual DeclId_t GetFunction(ClassInfo_t *cl, const char *funcname) = 0;
    virtual DeclId_t GetFunctionWithPrototype(ClassInfo_t *cl, const char* method, const char* proto, Bool_t objectIsConst = kFALSE, ROOT::EFunctionMatchMode mode = ROOT::kConversionMatch) = 0;

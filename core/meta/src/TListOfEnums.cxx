@@ -260,8 +260,7 @@ TEnum *TListOfEnums::Get(DeclId_t id, const char *name)
       if (e) {
          e->Update(id);
       } else {
-         if (fClass) e = new TEnum(name, false/*is global*/, (void*)id, fClass);
-         else e = new TEnum(name, true/*is global*/, (void*)id, fClass);
+         e = gInterpreter->HandleEnumDecl((void*)id, name, fClass);
       }
       // Calling 'just' THahList::Add would turn around and call
       // TListOfEnums::AddLast which should *also* do the fIds->Add.
