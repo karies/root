@@ -21,7 +21,7 @@
 ClassImp(TEnum)
 
 //______________________________________________________________________________
-TEnum::TEnum(const char* name, bool isGlobal, void* info, TClass* cls)
+TEnum::TEnum(const char* name, void* info, TClass* cls)
    : TNamed(name, "An enum type"), fInfo(info), fClass(cls)
 {
    //Constructor for TEnum class.
@@ -30,7 +30,7 @@ TEnum::TEnum(const char* name, bool isGlobal, void* info, TClass* cls)
    //Constant List is owner if enum not on global scope (thus constants not
    //in TROOT::GetListOfGlobals).
 
-   if (!isGlobal) {
+   if (cls) {
       fConstantList.SetOwner(kTRUE);
    }
 }
@@ -50,14 +50,7 @@ void TEnum::AddConstant(TEnumConstant* constant)
 }
 
 //______________________________________________________________________________
-DeclId_t TEnum::GetDeclId() const
-{
-   return (DeclId_t)fInfo;
-}
-
-//______________________________________________________________________________
-bool TEnum::Update(DeclId_t id)
+void TEnum::Update(DeclId_t id)
 {
    fInfo = (void*)id;
-   return kTRUE;
 }

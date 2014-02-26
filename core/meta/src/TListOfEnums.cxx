@@ -255,12 +255,12 @@ TEnum *TListOfEnums::Get(DeclId_t id, const char *name)
 
       // Let's see if this is a reload ...
       // can we check for reloads for enums?
-      //const char *name = gInterpreter->DataMemberInfo_Name(info);
       e = (TEnum *)fUnloaded->FindObject(name);
       if (e) {
          e->Update(id);
+         gInterpreter->UpdateEnumConstants(e, fClass);
       } else {
-         e = gInterpreter->HandleEnumDecl((void*)id, name, fClass);
+         e = gInterpreter->CreateEnum((void*)id, fClass);
       }
       // Calling 'just' THahList::Add would turn around and call
       // TListOfEnums::AddLast which should *also* do the fIds->Add.
@@ -349,49 +349,3 @@ void TListOfEnums::Load()
 
    gInterpreter->LoadEnums(fClass);
 }
-/*
-//______________________________________________________________________________
-void TListOfEnums::Unload()
-{
-   // Mark 'all func' as being unloaded.
-   // After the unload, the data member can no longer be found directly,
-   // until the decl can be found again in the interpreter (in which
-   // the func object will be reused.
-
-   TObjLink *lnk = FirstLink();
-   while (lnk) {
-      DeclId_t id;
-      TDictionary *data = (TDictionary *)lnk->GetObject();
-      if (fClass) id = ((TDataMember*)data)->GetDeclId();
-      else id = ((TGlobal*)data)->GetDeclId();
-
-      fIds->Remove((Long64_t)id);
-      fUnloaded->Add(data);
-
-      lnk = lnk->Next();
-   }
-
-   THashList::Clear();
-   fIsLoaded = kFALSE;
-}
-
-//______________________________________________________________________________
-void TListOfEnums::Unload(TDictionary *mem)
-{
-   // Mark 'func' as being unloaded.
-   // After the unload, the data member can no longer be found directly,
-   // until the decl can be found again in the interpreter (in which
-   // the func object will be reused.
-
-   if (THashList::Remove(mem)) {
-      // We contains the object, let remove it from the other internal
-      // list and move it to the list of unloaded objects.
-
-      DeclId_t id;
-      if (fClass) id = ((TDataMember*)mem)->GetDeclId();
-      else id = ((TGlobal*)mem)->GetDeclId();
-      fIds->Remove((Long64_t)id);
-      fUnloaded->Add(mem);
-   }
-}
-*/
