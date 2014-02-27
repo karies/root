@@ -46,6 +46,9 @@ private:
    TListOfEnums(const TListOfEnums&);              // not implemented
    TListOfEnums& operator=(const TListOfEnums&);   // not implemented
 
+   void       MapObject(TObject *obj);
+   void       UnmapObject(TObject *obj);
+
 public:
 
    TListOfEnums(TClass *cl);

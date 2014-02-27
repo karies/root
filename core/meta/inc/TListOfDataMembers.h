@@ -46,6 +46,9 @@ private:
    TListOfDataMembers(const TListOfDataMembers&);              // not implemented
    TListOfDataMembers& operator=(const TListOfDataMembers&);   // not implemented
 
+   void       MapObject(TObject *obj);
+   void       UnmapObject(TObject *obj);
+
 public:
 
    TListOfDataMembers(TClass *cl);

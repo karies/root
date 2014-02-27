@@ -50,6 +50,9 @@ private:
    TListOfFunctions(const TListOfFunctions&);              // not implemented
    TListOfFunctions& operator=(const TListOfFunctions&);   // not implemented
    TList     *GetListForObjectNonConst(const char* name);
+
+   void       MapObject(TObject *obj);
+   void       UnmapObject(TObject *obj);
    
 public:
    

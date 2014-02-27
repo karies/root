@@ -50,17 +50,24 @@ TListOfFunctions::~TListOfFunctions()
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddFirst(TObject *obj)
+void TListOfFunctions::MapObject(TObject *obj)
 {
-   // Add object at the beginning of the list.
+   // Add pair<id, object> to the map of functions and their ids.
 
-   THashList::AddFirst(obj);
-   
    TFunction *f = dynamic_cast<TFunction*>(obj);
    if (f) {
       DeclId_t id = f->GetDeclId();
       fIds->Add((Long64_t)id,(Long64_t)f);
    }
+}
+
+//______________________________________________________________________________
+void TListOfFunctions::AddFirst(TObject *obj)
+{
+   // Add object at the beginning of the list.
+
+   THashList::AddFirst(obj);
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -73,12 +80,7 @@ void TListOfFunctions::AddFirst(TObject *obj, Option_t *opt)
    // method. It allows the same object to be drawn in different ways.
    
    THashList::AddFirst(obj,opt);
-
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -87,12 +89,7 @@ void TListOfFunctions::AddLast(TObject *obj)
    // Add object at the end of the list.
 
    THashList::AddLast(obj);
-
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -105,12 +102,7 @@ void TListOfFunctions::AddLast(TObject *obj, Option_t *opt)
    // method. It allows the same object to be drawn in different ways.
 
    THashList::AddLast(obj, opt);
-
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -119,12 +111,7 @@ void TListOfFunctions::AddAt(TObject *obj, Int_t idx)
    // Insert object at location idx in the list.
 
    THashList::AddAt(obj, idx);
-
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -133,12 +120,7 @@ void TListOfFunctions::AddAfter(const TObject *after, TObject *obj)
    // Insert object after object after in the list.
 
    THashList::AddAfter(after, obj);
-   
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -147,12 +129,7 @@ void TListOfFunctions::AddAfter(TObjLink *after, TObject *obj)
    // Insert object after object after in the list.
 
    THashList::AddAfter(after, obj);
-
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -161,12 +138,7 @@ void TListOfFunctions::AddBefore(const TObject *before, TObject *obj)
    // Insert object before object before in the list.
 
    THashList::AddBefore(before, obj);
-
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -175,12 +147,7 @@ void TListOfFunctions::AddBefore(TObjLink *before, TObject *obj)
    // Insert object before object before in the list.
 
    THashList::AddBefore(before, obj);
-
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -322,6 +289,17 @@ TFunction *TListOfFunctions::Get(DeclId_t id)
 }
 
 //______________________________________________________________________________
+void TListOfFunctions::UnmapObject(TObject *obj)
+{
+   // Remove a pair<id, object> from the map of functions and their ids.
+   TFunction *f = dynamic_cast<TFunction*>(obj);
+   if (f) {
+      DeclId_t id = f->GetDeclId();
+      fIds->Remove((Long64_t)id);
+   }
+}
+
+//______________________________________________________________________________
 void TListOfFunctions::RecursiveRemove(TObject *obj)
 {
    // Remove object from this collection and recursively remove the object
@@ -336,12 +314,8 @@ void TListOfFunctions::RecursiveRemove(TObject *obj)
    
    THashList::RecursiveRemove(obj);
    fUnloaded->RecursiveRemove(obj);
+   UnmapObject(obj);
 
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Remove((Long64_t)id);
-   }
 }
 
 //______________________________________________________________________________
@@ -355,11 +329,7 @@ TObject* TListOfFunctions::Remove(TObject *obj)
    if (!found) {
       found = fUnloaded->Remove(obj);
    }
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Remove((Long64_t)id);
-   }
+   UnmapObject(obj);
    if (found) return obj;
    else return 0;
 }
@@ -376,11 +346,7 @@ TObject* TListOfFunctions::Remove(TObjLink *lnk)
    THashList::Remove(lnk);
    fUnloaded->Remove(obj);
 
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Remove((Long64_t)id);
-   }
+   UnmapObject(obj);
    return obj;
 }
 

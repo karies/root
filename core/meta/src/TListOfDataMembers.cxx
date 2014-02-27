@@ -50,12 +50,9 @@ TListOfDataMembers::~TListOfDataMembers()
 }
 
 //______________________________________________________________________________
-void TListOfDataMembers::AddFirst(TObject *obj)
+void TListOfDataMembers::MapObject(TObject* obj)
 {
-   // Add object at the beginning of the list.
-
-   THashList::AddFirst(obj);
-
+   // Add a pair<id, object> to the map of data members and their ids.
    if (fClass) {
       TDataMember *d = dynamic_cast<TDataMember*>(obj);
       if (d) {
@@ -69,6 +66,15 @@ void TListOfDataMembers::AddFirst(TObject *obj)
          fIds->Add((Long64_t)id,(Long64_t)g);
       }
    }
+}
+
+//______________________________________________________________________________
+void TListOfDataMembers::AddFirst(TObject *obj)
+{
+   // Add object at the beginning of the list.
+
+   THashList::AddFirst(obj);
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -81,20 +87,7 @@ void TListOfDataMembers::AddFirst(TObject *obj, Option_t *opt)
    // method. It allows the same object to be drawn in different ways.
 
    THashList::AddFirst(obj,opt);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -103,20 +96,7 @@ void TListOfDataMembers::AddLast(TObject *obj)
    // Add object at the end of the list.
 
    THashList::AddLast(obj);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -129,20 +109,7 @@ void TListOfDataMembers::AddLast(TObject *obj, Option_t *opt)
    // method. It allows the same object to be drawn in different ways.
 
    THashList::AddLast(obj, opt);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -151,20 +118,7 @@ void TListOfDataMembers::AddAt(TObject *obj, Int_t idx)
    // Insert object at location idx in the list.
 
    THashList::AddAt(obj, idx);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -173,20 +127,7 @@ void TListOfDataMembers::AddAfter(const TObject *after, TObject *obj)
    // Insert object after object after in the list.
 
    THashList::AddAfter(after, obj);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -195,20 +136,7 @@ void TListOfDataMembers::AddAfter(TObjLink *after, TObject *obj)
    // Insert object after object after in the list.
 
    THashList::AddAfter(after, obj);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -217,20 +145,7 @@ void TListOfDataMembers::AddBefore(const TObject *before, TObject *obj)
    // Insert object before object before in the list.
 
    THashList::AddBefore(before, obj);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -239,20 +154,7 @@ void TListOfDataMembers::AddBefore(TObjLink *before, TObject *obj)
    // Insert object before object before in the list.
 
    THashList::AddBefore(before, obj);
-
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
-      }
-   }
+   MapObject(obj);
 }
 
 //______________________________________________________________________________
@@ -372,22 +274,9 @@ TDictionary *TListOfDataMembers::Get(DataMemberInfo_t *info)
    return dm;
 }
 
-//______________________________________________________________________________
-void TListOfDataMembers::RecursiveRemove(TObject *obj)
+void TListOfDataMembers::UnmapObject(TObject* obj)
 {
-   // Remove object from this collection and recursively remove the object
-   // from all other objects (and collections).
-   // This function overrides TCollection::RecursiveRemove that calls
-   // the Remove function. THashList::Remove cannot be called because
-   // it uses the hash value of the hash table. This hash value
-   // is not available anymore when RecursiveRemove is called from
-   // the TObject destructor.
-
-   if (!obj) return;
-
-   THashList::RecursiveRemove(obj);
-   fUnloaded->RecursiveRemove(obj);
-
+   // Remove a pair<id, object> from the map of data members and their ids.
    if (fClass) {
       TDataMember *d = dynamic_cast<TDataMember*>(obj);
       if (d) {
@@ -404,6 +293,25 @@ void TListOfDataMembers::RecursiveRemove(TObject *obj)
 }
 
 //______________________________________________________________________________
+void TListOfDataMembers::RecursiveRemove(TObject *obj)
+{
+   // Remove object from this collection and recursively remove the object
+   // from all other objects (and collections).
+   // This function overrides TCollection::RecursiveRemove that calls
+   // the Remove function. THashList::Remove cannot be called because
+   // it uses the hash value of the hash table. This hash value
+   // is not available anymore when RecursiveRemove is called from
+   // the TObject destructor.
+
+   if (!obj) return;
+
+   THashList::RecursiveRemove(obj);
+   fUnloaded->RecursiveRemove(obj);
+   UnmapObject(obj);
+
+}
+
+//______________________________________________________________________________
 TObject* TListOfDataMembers::Remove(TObject *obj)
 {
    // Remove object from the list.
@@ -414,19 +322,7 @@ TObject* TListOfDataMembers::Remove(TObject *obj)
    if (!found) {
       found = fUnloaded->Remove(obj);
    }
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Remove((Long64_t)id);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Remove((Long64_t)id);
-      }
-   }
+   UnmapObject(obj);
    if (found) return obj;
    else return 0;
 }
@@ -443,19 +339,7 @@ TObject* TListOfDataMembers::Remove(TObjLink *lnk)
    THashList::Remove(lnk);
    fUnloaded->Remove(obj);
 
-   if (fClass) {
-      TDataMember *d = dynamic_cast<TDataMember*>(obj);
-      if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Remove((Long64_t)id);
-      }
-   } else {
-      TGlobal *g = dynamic_cast<TGlobal*>(obj);
-      if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Remove((Long64_t)id);
-      }
-   }
+   UnmapObject(obj);
    return obj;
 }
 
