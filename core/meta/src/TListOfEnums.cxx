@@ -1,5 +1,5 @@
 // @(#)root/cont
-// Author: Philippe Canal Aug 2013
+// Author: Bianca-Cristina Cristescu February 2014
 
 /*************************************************************************
  * Copyright (C) 1995-2013, Rene Brun and Fons Rademakers.               *
@@ -11,26 +11,26 @@
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
-// TListOfFunctions                                                     //
+// TListOfEnums                                                         //
 //                                                                      //
-// A collection of TFunction objects designed for fast access given a   //
-// DeclId_t and for keep track of TFunction that were described         //
-// unloaded function.                                                   //
+// A collection of TEnum objects designed for fast access given a       //
+// DeclId_t and for keep track of TEnum that were described             //
+// unloaded enum.                                                       //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TListOfFunctions.h"
+#include "TListOfEnums.h"
 #include "TClass.h"
 #include "TExMap.h"
-#include "TFunction.h"
-#include "TMethod.h"
+#include "TEnum.h"
+#include "TGlobal.h"
 #include "TInterpreter.h"
 #include "TVirtualMutex.h"
 
-ClassImp(TListOfFunctions)
+ClassImp(TListOfEnums)
 
 //______________________________________________________________________________
-TListOfFunctions::TListOfFunctions(TClass *cl) : fClass(cl),fIds(0),fUnloaded(0)
+TListOfEnums::TListOfEnums(TClass *cl) : fClass(cl),fIds(0),fUnloaded(0),fIsLoaded(kFALSE)
 {
    // Constructor.
 
@@ -39,7 +39,7 @@ TListOfFunctions::TListOfFunctions(TClass *cl) : fClass(cl),fIds(0),fUnloaded(0)
 }
 
 //______________________________________________________________________________
-TListOfFunctions::~TListOfFunctions()
+TListOfEnums::~TListOfEnums()
 {
    // Destructor.
 
@@ -50,18 +50,18 @@ TListOfFunctions::~TListOfFunctions()
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::MapObject(TObject *obj)
+void TListOfEnums::MapObject(TObject *obj)
 {
    // Add pair<id, object> to the map of functions and their ids.
 
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      fIds->Add((Long64_t)f->GetDeclId(),(Long64_t)f);
+   TEnum *e = dynamic_cast<TEnum*>(obj);
+   if (e) {
+      fIds->Add((Long64_t)e->GetDeclId(),(Long64_t)e);
    }
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddFirst(TObject *obj)
+void TListOfEnums::AddFirst(TObject *obj)
 {
    // Add object at the beginning of the list.
 
@@ -70,20 +70,20 @@ void TListOfFunctions::AddFirst(TObject *obj)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddFirst(TObject *obj, Option_t *opt)
+void TListOfEnums::AddFirst(TObject *obj, Option_t *opt)
 {
    // Add object at the beginning of the list and also store option.
    // Storing an option is useful when one wants to change the behaviour
    // of an object a little without having to create a complete new
    // copy of the object. This feature is used, for example, by the Draw()
    // method. It allows the same object to be drawn in different ways.
-   
+
    THashList::AddFirst(obj,opt);
    MapObject(obj);
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddLast(TObject *obj)
+void TListOfEnums::AddLast(TObject *obj)
 {
    // Add object at the end of the list.
 
@@ -92,7 +92,7 @@ void TListOfFunctions::AddLast(TObject *obj)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddLast(TObject *obj, Option_t *opt)
+void TListOfEnums::AddLast(TObject *obj, Option_t *opt)
 {
    // Add object at the end of the list and also store option.
    // Storing an option is useful when one wants to change the behaviour
@@ -105,7 +105,7 @@ void TListOfFunctions::AddLast(TObject *obj, Option_t *opt)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddAt(TObject *obj, Int_t idx)
+void TListOfEnums::AddAt(TObject *obj, Int_t idx)
 {
    // Insert object at location idx in the list.
 
@@ -114,7 +114,7 @@ void TListOfFunctions::AddAt(TObject *obj, Int_t idx)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddAfter(const TObject *after, TObject *obj)
+void TListOfEnums::AddAfter(const TObject *after, TObject *obj)
 {
    // Insert object after object after in the list.
 
@@ -123,7 +123,7 @@ void TListOfFunctions::AddAfter(const TObject *after, TObject *obj)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddAfter(TObjLink *after, TObject *obj)
+void TListOfEnums::AddAfter(TObjLink *after, TObject *obj)
 {
    // Insert object after object after in the list.
 
@@ -132,7 +132,7 @@ void TListOfFunctions::AddAfter(TObjLink *after, TObject *obj)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddBefore(const TObject *before, TObject *obj)
+void TListOfEnums::AddBefore(const TObject *before, TObject *obj)
 {
    // Insert object before object before in the list.
 
@@ -141,7 +141,7 @@ void TListOfFunctions::AddBefore(const TObject *before, TObject *obj)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::AddBefore(TObjLink *before, TObject *obj)
+void TListOfEnums::AddBefore(TObjLink *before, TObject *obj)
 {
    // Insert object before object before in the list.
 
@@ -150,7 +150,7 @@ void TListOfFunctions::AddBefore(TObjLink *before, TObject *obj)
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::Clear(Option_t *option)
+void TListOfEnums::Clear(Option_t *option)
 {
    // Remove all objects from the list. Does not delete the objects unless
    // the THashList is the owner (set via SetOwner()).
@@ -158,156 +158,89 @@ void TListOfFunctions::Clear(Option_t *option)
    fUnloaded->Clear(option);
    fIds->Clear();
    THashList::Clear(option);
+   fIsLoaded = kFALSE;
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::Delete(Option_t *option /* ="" */)
+void TListOfEnums::Delete(Option_t *option /* ="" */)
 {
-   // Delete all TFunction object files.
+   // Delete all TDataMember object files.
 
    fUnloaded->Delete(option);
-   fIds->Clear();
    THashList::Delete(option);
+   fIsLoaded = kFALSE;
 }
 
 //______________________________________________________________________________
-TObject *TListOfFunctions::FindObject(const char *name) const
+TObject *TListOfEnums::FindObject(const char *name) const
 {
    // Specialize FindObject to do search for the
-   // a function just by name or create it if its not already in the list
+   // a enum just by name or create it if its not already in the list
 
    TObject *result = THashList::FindObject(name);
    if (!result) {
       TInterpreter::DeclId_t decl;
-      if (fClass) decl = gInterpreter->GetFunction(fClass->GetClassInfo(),name);
-      else        decl = gInterpreter->GetFunction(0,name);
-      if (decl) result = const_cast<TListOfFunctions*>(this)->Get(decl);
+      if (fClass) decl = gInterpreter->GetEnum(fClass, name);
+      else        decl = gInterpreter->GetEnum(0, name);
+      if (decl) result = const_cast<TListOfEnums*>(this)->Get(decl, name);
    }
    return result;
 }
 
 //______________________________________________________________________________
-TObject *TListOfFunctions::FindObject(TObject *obj) const
+TObject *TListOfEnums::FindObject(TObject *obj) const
 {
    // Specialize FindObject to do search for the
-   // a function or create it if its not already in the list
+   // a enum or create it if its not already in the list
 
    return FindObject(obj->GetName());
 }
 
 //______________________________________________________________________________
-TList* TListOfFunctions::GetListForObjectNonConst(const char* name)
+TEnum *TListOfEnums::Get(DeclId_t id, const char *name)
 {
-   // Return the set of overloads for this name, collecting all available ones.
-   // Can construct and insert new TFunction-s.
-   TList* overloads = (TList*)fOverloads.FindObject(name);
-   TExMap overloadsSet;
-   Bool_t wasEmpty = true;
-   if (!overloads) {
-      overloads = new TList();
-      overloads->SetName(name);
-      fOverloads.Add(overloads);
-   } else {
-      TIter iOverload(overloads);
-      while (TFunction* over = (TFunction*)iOverload()) {
-         wasEmpty = false;
-         overloadsSet.Add((Long64_t)(ULong64_t)over->GetDeclId(),
-                          (Long64_t)(ULong64_t)over);
-      }
-   }
-
-   // Update if needed.
-   std::vector<DeclId_t> overloadDecls;
-   ClassInfo_t* ci = fClass ? fClass->GetClassInfo() : 0;
-   gInterpreter->GetFunctionOverloads(ci, name, overloadDecls);
-   for (std::vector<DeclId_t>::const_iterator iD = overloadDecls.begin(),
-           eD = overloadDecls.end(); iD != eD; ++iD) {
-      TFunction* over = Get(*iD);
-      if (wasEmpty || !overloadsSet.GetValue((Long64_t)(ULong64_t)over->GetDeclId())) {
-          overloads->Add(over);
-      }
-   }
-
-   return overloads;
-}
-
-//______________________________________________________________________________
-TList* TListOfFunctions::GetListForObject(const char* name) const
-{
-   // Return the set of overloads for this name, collecting all available ones.
-   // Can construct and insert new TFunction-s.
-   return const_cast<TListOfFunctions*>(this)->GetListForObjectNonConst(name);
-}
-
-//______________________________________________________________________________
-TList* TListOfFunctions::GetListForObject(const TObject* obj) const
-{
-   // Return the set of overloads for function obj, collecting all available ones.
-   // Can construct and insert new TFunction-s.
-   if (!obj) return 0;
-   return const_cast<TListOfFunctions*>(this)
-      ->GetListForObjectNonConst(obj->GetName());
-}
-
-//______________________________________________________________________________
-TFunction *TListOfFunctions::Get(DeclId_t id)
-{
-   // Return (after creating it if necessary) the TMethod or TFunction
-   // describing the function corresponding to the Decl 'id'.
+   // Return (after creating it if necessary) the TEnum
+   // describing the enum corresponding to the Decl 'id'.
 
    if (!id) return 0;
 
-   TFunction *f = (TFunction*)fIds->GetValue((Long64_t)id);
-   if (!f) {
+   TEnum *e = (TEnum*)fIds->GetValue((Long64_t)id);
+   if (!e) {
       if (fClass) {
          if (!gInterpreter->ClassInfo_Contains(fClass->GetClassInfo(),id)) return 0;
       } else {
          if (!gInterpreter->ClassInfo_Contains(0,id)) return 0;
       }
-      MethodInfo_t *m = gInterpreter->MethodInfo_Factory(id);
 
       // Let's see if this is a reload ...
-      const char *name = gInterpreter->MethodInfo_Name(m);
-      TList* bucketForMethod = fUnloaded->GetListForObject(name);
-      if (bucketForMethod) {
-         TString mangledName( gInterpreter->MethodInfo_GetMangledName(m) );
-         TIter    next(bucketForMethod);
-         TFunction *uf;
-         while ((uf = (TFunction *) next())) {
-            if (uf->GetMangledName() == mangledName) {
-               // Reuse
-               fUnloaded->Remove(uf);
-
-               uf->Update(m);
-               f = uf;
-               break;
-            }
-         }
-      }
-      if (!f) {
-         if (fClass) f = new TMethod(m, fClass);
-         else f = new TFunction(m);
+      // can we check for reloads for enums?
+      e = (TEnum *)fUnloaded->FindObject(name);
+      if (e) {
+         e->Update(id);
+         gInterpreter->UpdateEnumConstants(e, fClass);
+      } else {
+         e = gInterpreter->CreateEnum((void*)id, fClass);
       }
       // Calling 'just' THahList::Add would turn around and call
-      // TListOfFunctions::AddLast which should *also* do the fIds->Add.
-      THashList::AddLast(f);
-      fIds->Add((Long64_t)id,(Long64_t)f);
+      // TListOfEnums::AddLast which should *also* do the fIds->Add.
+      THashList::AddLast(e);
+      fIds->Add((Long64_t)id,(Long64_t)e);
    }
-   return f;
+   return e;
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::UnmapObject(TObject *obj)
+void TListOfEnums::UnmapObject(TObject *obj)
 {
    // Remove a pair<id, object> from the map of functions and their ids.
-   TFunction *f = dynamic_cast<TFunction*>(obj);
-   if (f) {
-      fIds->Remove((Long64_t)f->GetDeclId());
+   TEnum *e = dynamic_cast<TEnum*>(obj);
+   if (e) {
+      fIds->Remove((Long64_t)e->GetDeclId());
    }
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::RecursiveRemove(TObject *obj)
+void TListOfEnums::RecursiveRemove(TObject *obj)
 {
    // Remove object from this collection and recursively remove the object
    // from all other objects (and collections).
@@ -318,20 +251,19 @@ void TListOfFunctions::RecursiveRemove(TObject *obj)
    // the TObject destructor.
 
    if (!obj) return;
-   
+
    THashList::RecursiveRemove(obj);
    fUnloaded->RecursiveRemove(obj);
    UnmapObject(obj);
-
 }
 
 //______________________________________________________________________________
-TObject* TListOfFunctions::Remove(TObject *obj)
+TObject* TListOfEnums::Remove(TObject *obj)
 {
    // Remove object from the list.
 
    Bool_t found;
-   
+
    found = THashList::Remove(obj);
    if (!found) {
       found = fUnloaded->Remove(obj);
@@ -342,82 +274,81 @@ TObject* TListOfFunctions::Remove(TObject *obj)
 }
 
 //______________________________________________________________________________
-TObject* TListOfFunctions::Remove(TObjLink *lnk)
+TObject* TListOfEnums::Remove(TObjLink *lnk)
 {
    // Remove object via its objlink from the list.
-   
+
    if (!lnk) return 0;
 
    TObject *obj = lnk->GetObject();
-   
+
    THashList::Remove(lnk);
    fUnloaded->Remove(obj);
-
    UnmapObject(obj);
    return obj;
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::Load()
+void TListOfEnums::Load()
 {
-   // Load all the functions known to the intepreter for the scope 'fClass'
+   // Load all the DataMembers known to the intepreter for the scope 'fClass'
    // into this collection.
 
    if (fClass && fClass->GetClassInfo() == 0) return;
-   
-   R__LOCKGUARD(gInterpreterMutex);
 
-   ClassInfo_t *info;
-   if (fClass) info = fClass->GetClassInfo();
-   else info = gInterpreter->ClassInfo_Factory();
-
-   MethodInfo_t *t = gInterpreter->MethodInfo_Factory(info);
-   while (gInterpreter->MethodInfo_Next(t)) {
-      // if the name cannot be obtained there is no use to put in list
-      if (gInterpreter->MethodInfo_IsValid(t) && gInterpreter->MethodInfo_Name(t)) {
-         TDictionary::DeclId_t mid = gInterpreter->GetDeclId(t);
-         // Get will check if there is already there or create a new one
-         // (or re-use a previously unloaded version).
-         Get(mid);
-      }
+   if (fClass && fClass->Property() & (kIsClass|kIsStruct|kIsUnion)) {
+      // Class and union are not extendable, if we already
+      // loaded all the data member there is no need to recheck
+      if (fIsLoaded) return;
    }
-   if (!fClass) gInterpreter->ClassInfo_Delete(info);
+   // In the case of namespace, even if we have loaded before we need to
+   // load again in case there was new data member added.
+   // (We may want to avoid doing it if there was no change in the AST).
+
+   // Mark the list as loaded to avoid an infinite recursion in the case
+   // where we have a data member that is a variable size array.  In that
+   // case TDataMember::Init needs to get/load the list to find the data
+   // member used as the array size.
+   fIsLoaded = kTRUE;
+
+   gInterpreter->LoadEnums(fClass);
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::Unload()
+void TListOfEnums::Unload()
 {
    // Mark 'all func' as being unloaded.
-   // After the unload, the function can no longer be found directly,
+   // After the unload, the data member can no longer be found directly,
    // until the decl can be found again in the interpreter (in which
    // the func object will be reused.
-   
+
    TObjLink *lnk = FirstLink();
    while (lnk) {
-      TFunction *func = (TFunction*)lnk->GetObject();
+      TEnum *data = (TEnum *)lnk->GetObject();
 
-      fIds->Remove((Long64_t)func->GetDeclId());
-      fUnloaded->Add(func);
+      fIds->Remove((Long64_t)data->GetDeclId());
+      fUnloaded->Add(data);
 
       lnk = lnk->Next();
    }
 
    THashList::Clear();
+   fIsLoaded = kFALSE;
 }
 
 //______________________________________________________________________________
-void TListOfFunctions::Unload(TFunction *func)
+void TListOfEnums::Unload(TEnum *e)
 {
    // Mark 'func' as being unloaded.
-   // After the unload, the function can no longer be found directly,
+   // After the unload, the data member can no longer be found directly,
    // until the decl can be found again in the interpreter (in which
    // the func object will be reused.
-   
-   if (THashList::Remove(func)) {
+
+   if (THashList::Remove(e)) {
       // We contains the object, let remove it from the other internal
       // list and move it to the list of unloaded objects.
-      
-      fIds->Remove((Long64_t)func->GetDeclId());
-      fUnloaded->Add(func);
+
+      fIds->Remove((Long64_t)e->GetDeclId());
+      fUnloaded->Add(e);
    }
 }

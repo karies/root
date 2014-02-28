@@ -1,5 +1,5 @@
 // @(#)root/cont
-// Author: Philippe Canal Aug 2013
+// Author: Bianca-Cristina Cristescu February 2014
 
 /*************************************************************************
  * Copyright (C) 1995-2013, Rene Brun and Fons Rademakers.               *
@@ -9,16 +9,16 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
-#ifndef ROOT_TListOfDataMembers
-#define ROOT_TListOfDataMembers
+#ifndef ROOT_TListOfEnums
+#define ROOT_TListOfEnums
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
-// TListOfDataMembers                                                   //
+// TListOfEnums                                                         //
 //                                                                      //
-// A collection of TDataMember objects designed for fast access given a //
-// DeclId_t and for keep track of TDataMember that were described       //
-// unloaded member.                                                     //
+// A collection of TEnum objects designed for fast access given a       //
+// DeclId_t and for keep track of TEnum that were described             //
+// unloaded enum.                                                       //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -31,28 +31,28 @@
 #endif
 
 class TExMap;
-class TDataMember;
+class TEnum;
 
-class TListOfDataMembers : public THashList
+class TListOfEnums : public THashList
 {
 private:
    typedef TDictionary::DeclId_t DeclId_t;
    TClass    *fClass; // Context of this list.  Not owned.
 
-   TExMap    *fIds;      // Map from DeclId_t to TDataMember*
-   THashList *fUnloaded; // Holder of TDataMember for unloaded DataMembers.
+   TExMap    *fIds;      // Map from DeclId_t to TEnum*
+   THashList *fUnloaded; // Holder of TEnum for unloaded Enums.
    Bool_t     fIsLoaded; // Mark whether Load was executed.
 
-   TListOfDataMembers(const TListOfDataMembers&);              // not implemented
-   TListOfDataMembers& operator=(const TListOfDataMembers&);   // not implemented
+   TListOfEnums(const TListOfEnums&);              // not implemented
+   TListOfEnums& operator=(const TListOfEnums&);   // not implemented
 
    void       MapObject(TObject *obj);
    void       UnmapObject(TObject *obj);
 
 public:
 
-   TListOfDataMembers(TClass *cl);
-   ~TListOfDataMembers();
+   TListOfEnums(TClass *cl);
+   ~TListOfEnums();
 
    virtual void Clear(Option_t *option);
    virtual void Delete(Option_t *option="");
@@ -61,8 +61,7 @@ public:
    virtual TObject   *FindObject(const char *name) const;
    virtual TObject   *FindObject(TObject *obj) const;
 
-   TDictionary *Get(DeclId_t id);
-   TDictionary *Get(DataMemberInfo_t *info);
+   TEnum *Get(DeclId_t id, const char *name);
 
    Bool_t     IsLoaded() const { return fIsLoaded; }
    void       AddFirst(TObject *obj);
@@ -81,9 +80,9 @@ public:
 
    void Load();
    void Unload();
-   void Unload(TDictionary *member);
+   void Unload(TEnum *e);
 
-   ClassDef(TListOfDataMembers,0);  // List of TDataMembers for a class
+   ClassDef(TListOfEnums,0);  // List of TDataMembers for a class
 };
 
-#endif // ROOT_TListOfDataMembers
+#endif // ROOT_TListOfEnums
