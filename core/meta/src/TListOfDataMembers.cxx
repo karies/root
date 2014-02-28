@@ -56,14 +56,12 @@ void TListOfDataMembers::MapObject(TObject* obj)
    if (fClass) {
       TDataMember *d = dynamic_cast<TDataMember*>(obj);
       if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)d);
+         fIds->Add((Long64_t)d->GetDeclId(),(Long64_t)d);
       }
    } else {
       TGlobal *g = dynamic_cast<TGlobal*>(obj);
       if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Add((Long64_t)id,(Long64_t)g);
+         fIds->Add((Long64_t)g->GetDeclId(),(Long64_t)g);
       }
    }
 }
@@ -196,6 +194,15 @@ TObject *TListOfDataMembers::FindObject(const char *name) const
 }
 
 //______________________________________________________________________________
+TObject *TListOfDataMembers::FindObject(TObject *obj) const
+{
+   // Specialize FindObject to do search for the
+   // a data member or create it if its not already in the list
+
+   return FindObject(obj->GetName());
+}
+
+//______________________________________________________________________________
 TDictionary *TListOfDataMembers::Get(DeclId_t id)
 {
    // Return (after creating it if necessary) the TDataMember
@@ -280,14 +287,12 @@ void TListOfDataMembers::UnmapObject(TObject* obj)
    if (fClass) {
       TDataMember *d = dynamic_cast<TDataMember*>(obj);
       if (d) {
-         DeclId_t id = d->GetDeclId();
-         fIds->Remove((Long64_t)id);
+         fIds->Remove((Long64_t)d->GetDeclId());
       }
    } else {
       TGlobal *g = dynamic_cast<TGlobal*>(obj);
       if (g) {
-         DeclId_t id = g->GetDeclId();
-         fIds->Remove((Long64_t)id);
+         fIds->Remove((Long64_t)g->GetDeclId());
       }
    }
 }
@@ -392,12 +397,8 @@ void TListOfDataMembers::Unload()
 
    TObjLink *lnk = FirstLink();
    while (lnk) {
-      DeclId_t id;
       TDictionary *data = (TDictionary *)lnk->GetObject();
-      if (fClass) id = ((TDataMember*)data)->GetDeclId();
-      else id = ((TGlobal*)data)->GetDeclId();
-
-      fIds->Remove((Long64_t)id);
+      UnmapObject(data);
       fUnloaded->Add(data);
 
       lnk = lnk->Next();
@@ -419,10 +420,7 @@ void TListOfDataMembers::Unload(TDictionary *mem)
       // We contains the object, let remove it from the other internal
       // list and move it to the list of unloaded objects.
 
-      DeclId_t id;
-      if (fClass) id = ((TDataMember*)mem)->GetDeclId();
-      else id = ((TGlobal*)mem)->GetDeclId();
-      fIds->Remove((Long64_t)id);
+      UnmapObject(mem);
       fUnloaded->Add(mem);
    }
 }

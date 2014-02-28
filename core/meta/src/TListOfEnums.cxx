@@ -56,8 +56,7 @@ void TListOfEnums::MapObject(TObject *obj)
 
    TEnum *e = dynamic_cast<TEnum*>(obj);
    if (e) {
-      DeclId_t id = e->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)e);
+      fIds->Add((Long64_t)e->GetDeclId(),(Long64_t)e);
    }
 }
 
@@ -189,6 +188,15 @@ TObject *TListOfEnums::FindObject(const char *name) const
 }
 
 //______________________________________________________________________________
+TObject *TListOfEnums::FindObject(TObject *obj) const
+{
+   // Specialize FindObject to do search for the
+   // a enum or create it if its not already in the list
+
+   return FindObject(obj->GetName());
+}
+
+//______________________________________________________________________________
 TEnum *TListOfEnums::Get(DeclId_t id, const char *name)
 {
    // Return (after creating it if necessary) the TEnum
@@ -227,8 +235,7 @@ void TListOfEnums::UnmapObject(TObject *obj)
    // Remove a pair<id, object> from the map of functions and their ids.
    TEnum *e = dynamic_cast<TEnum*>(obj);
    if (e) {
-      DeclId_t id = e->GetDeclId();
-      fIds->Remove((Long64_t)id);
+      fIds->Remove((Long64_t)e->GetDeclId());
    }
 }
 

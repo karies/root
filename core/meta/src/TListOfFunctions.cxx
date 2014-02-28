@@ -56,8 +56,7 @@ void TListOfFunctions::MapObject(TObject *obj)
 
    TFunction *f = dynamic_cast<TFunction*>(obj);
    if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Add((Long64_t)id,(Long64_t)f);
+      fIds->Add((Long64_t)f->GetDeclId(),(Long64_t)f);
    }
 }
 
@@ -188,6 +187,15 @@ TObject *TListOfFunctions::FindObject(const char *name) const
 }
 
 //______________________________________________________________________________
+TObject *TListOfFunctions::FindObject(TObject *obj) const
+{
+   // Specialize FindObject to do search for the
+   // a function or create it if its not already in the list
+
+   return FindObject(obj->GetName());
+}
+
+//______________________________________________________________________________
 TList* TListOfFunctions::GetListForObjectNonConst(const char* name)
 {
    // Return the set of overloads for this name, collecting all available ones.
@@ -294,8 +302,7 @@ void TListOfFunctions::UnmapObject(TObject *obj)
    // Remove a pair<id, object> from the map of functions and their ids.
    TFunction *f = dynamic_cast<TFunction*>(obj);
    if (f) {
-      DeclId_t id = f->GetDeclId();
-      fIds->Remove((Long64_t)id);
+      fIds->Remove((Long64_t)f->GetDeclId());
    }
 }
 

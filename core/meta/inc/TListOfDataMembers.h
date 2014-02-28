@@ -59,6 +59,7 @@ public:
 
    using THashList::FindObject;
    virtual TObject   *FindObject(const char *name) const;
+   virtual TObject   *FindObject(TObject *obj) const;
 
    TDictionary *Get(DeclId_t id);
    TDictionary *Get(DataMemberInfo_t *info);
