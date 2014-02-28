@@ -2522,7 +2522,7 @@ void TCling::LoadEnums(TClass* cl) const
                if (!buf.empty()) {
                   const char* name = buf.c_str();
                   // Add the enum to the list of loaded enums.
-                  enumList->FindObject(name);
+                  enumList->Get(ED, name);
                }
             }
          }
