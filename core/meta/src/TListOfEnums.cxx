@@ -302,8 +302,7 @@ void TListOfEnums::Load()
    // member used as the array size.
    fIsLoaded = kTRUE;
 
-   if (fClass) gInterpreter->LoadEnums(fClass);
-   else gInterpreter->LoadEnums(0);
+   gInterpreter->LoadEnums(fClass);
 }
 
 //______________________________________________________________________________
