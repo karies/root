@@ -123,6 +123,16 @@ const char *TGlobal::GetFullTypeName() const
 }
 
 //______________________________________________________________________________
+Bool_t TGlobal::IsValid() const
+{
+   // Return true if this function object is pointing to a currently
+   // loaded function.  If a function is unloaded after the TFunction
+   // is created, the TFunction will be set to be invalid.
+
+   return fInfo != 0;
+}
+
+//______________________________________________________________________________
 Long_t TGlobal::Property() const
 {
    // Get property description word. For meaning of bits see EProperty.

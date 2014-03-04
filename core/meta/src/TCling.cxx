@@ -63,6 +63,7 @@
 #include "TMetaUtils.h"
 #include "TVirtualCollectionProxy.h"
 #include "TListOfEnums.h"
+#include "TListOfFunctions.h"
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Decl.h"
@@ -484,20 +485,55 @@ void TCling__UpdateListsOnCommitted(const cling::Transaction &T,
 extern "C"
 void TCling__UpdateListsOnUnloaded(const cling::Transaction &T) {
    TGlobal *global = 0;
+   TFunction *function = 0;
+   TEnum* e = 0;
    TCollection* globals = gROOT->GetListOfGlobals();
+   TListOfFunctions* functions = (TListOfFunctions*)gROOT->GetListOfGlobalFunctions();
+   TListOfEnums* enums = (TListOfEnums*)gROOT->GetListOfEnums();
    for(cling::Transaction::const_iterator I = T.decls_begin(), E = T.decls_end();
        I != E; ++I)
       for (DeclGroupRef::const_iterator DI = I->m_DGR.begin(),
               DE = I->m_DGR.end(); DI != DE; ++DI) {
          if (const VarDecl* VD = dyn_cast<VarDecl>(*DI)) {
             global = (TGlobal*)globals->FindObject(VD->getNameAsString().c_str());
-            if (global) {
+            if (global && global->IsValid()) {
+               // Unload the global by setting the DataMemberInfo_t to 0
                globals->Remove(global);
+               global->Update(0);
+               /*
                if (!globals->IsOwner())
                   delete global;
+               */
+            }
+         }
+         if (const RecordDecl* RD =dyn_cast<RecordDecl>(*DI)) {
+            const clang::NamedDecl* ND = dyn_cast<NamedDecl>(RD);
+            if (ND) {
+               std::string buf = ND->getNameAsString();
+               const char* name = buf.c_str();
+               TClass* cl = gROOT->GetClass(name);
+               if (cl) {
+                  cl->SetUnloaded();
+               }
+            }
+         }
+         if (const FunctionDecl* FD = dyn_cast<FunctionDecl>(*DI)) {
+            function = gROOT->GetGlobalFunction(FD->getNameAsString().c_str());
+            if (function && function->IsValid()) {
+               function->Update(0);
+               //FIXME: Cannot get the list of functions: GetGlobalFunctions() is protected
+               functions->Unload(function);
+            }
+         }
+         if (const EnumDecl* ED = dyn_cast<EnumDecl>(*DI)) {
+            e = (TEnum*)enums->FindObject(ED->getNameAsString().c_str());
+            if (e && e->IsValid()) {
+               e->Update(0);
+               enums->Unload(e);
             }
          }
       }
+
 }
 
 extern "C"
