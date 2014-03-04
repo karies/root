@@ -875,7 +875,7 @@ Long_t TApplication::ProcessLine(const char *line, Bool_t sync, Int_t *err)
       return mac ? 1 : 0;
    }
 
-   if (!strncmp(line, ".L", 2) || !strncmp(line, ".U", 2)) {
+   if (!strncmp(line, ".L", 2)) {
       TString aclicMode;
       TString arguments;
       TString io;
