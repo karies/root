@@ -503,8 +503,8 @@ void TCling__UpdateListsOnUnloaded(const cling::Transaction &T) {
                globals->Unload(global);
                global->Update(0);
             }
-         } else if (const RecordDecl* RD =dyn_cast<RecordDecl>(*DI)) {
-            const clang::NamedDecl* ND = dyn_cast<NamedDecl>(RD);
+         } else if (isa<RecordDecl>(*DI) || isa<NamespaceDecl>(*DI)) {
+            const clang::NamedDecl* ND = dyn_cast<NamedDecl>(*DI);
             if (ND) {
                std::string buf = ND->getNameAsString();
                const char* name = buf.c_str();
