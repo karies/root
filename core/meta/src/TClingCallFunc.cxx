@@ -74,7 +74,6 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include <vector>
 
 using namespace ROOT;
 using namespace llvm;
@@ -1502,8 +1501,8 @@ public:
 void
 TClingCallFunc::exec(void* address, void* ret) const
 {
-   vector<ValHolder> vh_ary;
-   vector<void*> vp_ary;
+   SmallVector<ValHolder, 16> vh_ary;
+   SmallVector<void*, 16> vp_ary;
    const FunctionDecl* FD = fMethod->GetMethodDecl();
 
    //
@@ -2163,7 +2162,7 @@ TClingCallFunc::exec_with_valref_return(void* address, cling::Value* ret) const
 
 void
 TClingCallFunc::exec_with_args_and_return(void* address,
-                                          const vector<void*>& args,
+                                          const SmallVectorImpl<void*>& args,
                                           void* ret) const
 {
    //const FunctionDecl* FD = fMethod->GetMethodDecl();
@@ -2175,11 +2174,11 @@ TClingCallFunc::exec_with_args_and_return(void* address,
 void
 TClingCallFunc::EvaluateArgList(const string& ArgList)
 {
-   SmallVector<Expr*, 4> exprs;
+   SmallVector<Expr*, 16> exprs;
    fInterp->getLookupHelper().findArgList(ArgList, exprs,
                                           gDebug > 5 ? cling::LookupHelper::WithDiagnostics
                                           : cling::LookupHelper::NoDiagnostics);
-   for (SmallVector<Expr*, 4>::const_iterator I = exprs.begin(),
+   for (SmallVectorImpl<Expr*>::const_iterator I = exprs.begin(),
          E = exprs.end(); I != E; ++I) {
       cling::Value val;
       EvaluateExpr(fInterp, *I, val);
@@ -2252,7 +2251,7 @@ TClingCallFunc::ExecDouble(void* address)
 }
 
 void
-TClingCallFunc::ExecWithArgsAndReturn(void* address, const vector<void*>& args
+TClingCallFunc::ExecWithArgsAndReturn(void* address, const SmallVectorImpl<void*>& args
                                       /*= vector<void*>()*/, void* ret/*= 0*/)
 {
    IFacePtr();
@@ -2545,7 +2544,7 @@ TClingCallFunc::SetFuncProto(const TClingClassInfo* info, const char* method,
 
 void
 TClingCallFunc::SetFuncProto(const TClingClassInfo* info, const char* method,
-             const llvm::SmallVector<clang::QualType, 4>& proto, long* poffset,
+             const llvm::SmallVectorImpl<clang::QualType>& proto, long* poffset,
              EFunctionMatchMode mode/*=kConversionMatch*/)
 {
    SetFuncProto(info, method, proto, false, poffset, mode);
@@ -2553,7 +2552,7 @@ TClingCallFunc::SetFuncProto(const TClingClassInfo* info, const char* method,
 
 void
 TClingCallFunc::SetFuncProto(const TClingClassInfo* info, const char* method,
-             const llvm::SmallVector<clang::QualType, 4>& proto,
+             const llvm::SmallVectorImpl<clang::QualType>& proto,
              bool objectIsConst, long* poffset,
              EFunctionMatchMode mode/*=kConversionMatch*/)
 {

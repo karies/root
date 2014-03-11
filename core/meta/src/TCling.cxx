@@ -3462,7 +3462,8 @@ void TCling::ExecuteWithArgsAndReturn(TMethod* method, void* address,
    TClingCallFunc func(fInterpreter);
    TClingMethodInfo* minfo = (TClingMethodInfo*) method->fInfo;
    func.Init(minfo);
-   func.ExecWithArgsAndReturn(address, args, ret);
+   llvm::SmallVector<void*, 16> SVArgs(args.begin(), args.end());
+   func.ExecWithArgsAndReturn(address, SVArgs, ret);
 }
 
 //______________________________________________________________________________
@@ -4934,7 +4935,8 @@ void TCling::CallFunc_ExecWithArgsAndReturn(CallFunc_t* func, void* address,
                                             void* ret/*=0*/) const
 {
    TClingCallFunc* f = (TClingCallFunc*) func;
-   f->ExecWithArgsAndReturn(address, args, ret);
+   llvm::SmallVector<void*, 16> SVArgs(args.begin(), args.end());
+   f->ExecWithArgsAndReturn(address, SVArgs, ret);
 }
 
 //______________________________________________________________________________
