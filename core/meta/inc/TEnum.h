@@ -60,7 +60,7 @@ public:
       return (TEnumConstant*) fConstantList.FindObject(name);
    }
    DeclId_t              GetDeclId() const { return (DeclId_t)fInfo; }
-   Bool_t                IsValid() const { return fInfo != 0; }
+   Bool_t                IsValid();
    void                  Update(DeclId_t id);
 
    ClassDef(TEnum,2)  //Enum type class

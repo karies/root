@@ -123,12 +123,19 @@ const char *TGlobal::GetFullTypeName() const
 }
 
 //______________________________________________________________________________
-Bool_t TGlobal::IsValid() const
+Bool_t TGlobal::IsValid()
 {
    // Return true if this function object is pointing to a currently
    // loaded function.  If a function is unloaded after the TFunction
    // is created, the TFunction will be set to be invalid.
-
+   if (!fInfo) {
+      DeclId_t newId = gInterpreter->GetDataMember(0, fName);
+      if (newId) {
+         DataMemberInfo_t *info = gInterpreter->DataMemberInfo_Factory(newId, 0);
+         Update(info);
+      }
+      return newId != 0;
+   }
    return fInfo != 0;
 }
 

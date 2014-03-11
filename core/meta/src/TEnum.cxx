@@ -17,6 +17,7 @@
 
 #include "TEnum.h"
 #include "TEnumConstant.h"
+#include "TInterpreter.h"
 
 ClassImp(TEnum)
 
@@ -47,6 +48,22 @@ void TEnum::AddConstant(TEnumConstant* constant)
    //Add a EnumConstant to the list of constants of the Enum Type.
 
    fConstantList.Add(constant);
+}
+
+//______________________________________________________________________________
+Bool_t TEnum::IsValid()
+{
+   if (!fInfo) {
+      //Check if the enum has not been declared again after unloading.
+      //FIXME: Slow lookup for the decl of the name. Check whether there has been
+      //       a change in the AST.
+      DeclId_t newId = gInterpreter->GetEnum(fClass, fName);
+      if (newId) {
+         Update(newId);
+      }
+      return newId != 0;
+   }
+   return fInfo != 0;
 }
 
 //______________________________________________________________________________

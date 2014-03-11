@@ -3360,6 +3360,19 @@ void TClass::ResetClassInfo(Long_t tagnum)
 }
 
 //______________________________________________________________________________
+void TClass::ResetClassInfo()
+{
+   // Make sure that the current ClassInfo is up to date.
+   fClassInfo = 0;
+   gInterpreter->SetClassInfo(this, true);
+   if (fStreamerInfo->GetEntries() != 0) {
+      fState = kEmulated;
+   } else {
+      fState = kForwardDeclared;
+   }
+}
+
+//______________________________________________________________________________
 void TClass::ResetCaches()
 {
    // To clean out all caches.
