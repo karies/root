@@ -3365,6 +3365,8 @@ void TClass::ResetClassInfo()
    // Make sure that the current ClassInfo is up to date.
    fClassInfo = 0;
    gInterpreter->SetClassInfo(this, true);
+   //Could use TCling__UpdateClassInfoWithDecl, but the new decl is 0
+   ResetCaches();
    if (fStreamerInfo->GetEntries() != 0) {
       fState = kEmulated;
    } else {
@@ -3377,16 +3379,19 @@ void TClass::ResetCaches()
 {
    // To clean out all caches.
 
-   // Not owning lists, don't call Delete()
+   // Not owning lists, don't call Delete(), but unload
+   if (fData)
+      fData->Unload();
+   if (fEnums)
+      fEnums->Unload();
+   if (fMethod)
+      fMethod->Unload();
+
    delete fAllPubData; fAllPubData = 0;
 
    if (fBase)
       fBase->Delete();
    delete fBase; fBase = 0;
-
-   if (fEnums)
-      fEnums->Delete();
-   delete fEnums;   fEnums = 0;
 
    if (fRealData)
       fRealData->Delete();
