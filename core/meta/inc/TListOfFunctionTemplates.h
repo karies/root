@@ -42,20 +42,20 @@ class TListOfFunctionTemplates : public THashList
 private:
    typedef TDictionary::DeclId_t DeclId_t;
    TClass    *fClass; // Context of this list.  Not owned.
-   
+
    TExMap    *fIds;      // Map from DeclId_t to TFunction*
    THashList *fUnloaded; // Holder of TFunction for unloaded functions.
    THashTable fOverloads; // TLists of overloads.
-   
+
    TListOfFunctionTemplates(const TListOfFunctionTemplates&);              // not implemented
    TListOfFunctionTemplates& operator=(const TListOfFunctionTemplates&);   // not implemented
    TList     *GetListForObjectNonConst(const char* name);
 
    void       MapObject(TObject *obj);
    void       UnmapObject(TObject *obj);
-   
+
 public:
-   
+
    TListOfFunctionTemplates(TClass *cl);
    ~TListOfFunctionTemplates();
 
@@ -86,7 +86,7 @@ public:
    void Load();
    void Unload();
    void Unload(TFunctionTemplate *func);
-   
+
    ClassDef(TListOfFunctionTemplates,0);  // List of TFunctions for a class
 };
 

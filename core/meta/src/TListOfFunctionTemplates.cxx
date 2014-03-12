@@ -23,7 +23,7 @@
 #include "TClass.h"
 #include "TExMap.h"
 #include "TFunction.h"
-#include "TFunctionTemplate.h" 
+#include "TFunctionTemplate.h"
 #include "TMethod.h"
 #include "TInterpreter.h"
 #include "TVirtualMutex.h"
@@ -78,7 +78,7 @@ void TListOfFunctionTemplates::AddFirst(TObject *obj, Option_t *opt)
    // of an object a little without having to create a complete new
    // copy of the object. This feature is used, for example, by the Draw()
    // method. It allows the same object to be drawn in different ways.
-   
+
    THashList::AddFirst(obj,opt);
    MapObject(obj);
 }
@@ -301,7 +301,7 @@ void TListOfFunctionTemplates::RecursiveRemove(TObject *obj)
    // the TObject destructor.
 
    if (!obj) return;
-   
+
    THashList::RecursiveRemove(obj);
    fUnloaded->RecursiveRemove(obj);
    UnmapObject(obj);
@@ -314,7 +314,7 @@ TObject* TListOfFunctionTemplates::Remove(TObject *obj)
    // Remove object from the list.
 
    Bool_t found;
-   
+
    found = THashList::Remove(obj);
    if (!found) {
       found = fUnloaded->Remove(obj);
@@ -328,11 +328,11 @@ TObject* TListOfFunctionTemplates::Remove(TObject *obj)
 TObject* TListOfFunctionTemplates::Remove(TObjLink *lnk)
 {
    // Remove object via its objlink from the list.
-   
+
    if (!lnk) return 0;
 
    TObject *obj = lnk->GetObject();
-   
+
    THashList::Remove(lnk);
    fUnloaded->Remove(obj);
 
@@ -347,7 +347,7 @@ void TListOfFunctionTemplates::Load()
    // into this collection.
 
    if (fClass && fClass->GetClassInfo() == 0) return;
-   
+
    R__LOCKGUARD(gInterpreterMutex);
 
    gInterpreter->LoadFunctionTemplates(fClass);
@@ -360,7 +360,7 @@ void TListOfFunctionTemplates::Unload()
    // After the unload, the function can no longer be found directly,
    // until the decl can be found again in the interpreter (in which
    // the func object will be reused.
-   
+
    TObjLink *lnk = FirstLink();
    while (lnk) {
       TFunctionTemplate *func = (TFunctionTemplate*)lnk->GetObject();
@@ -381,11 +381,11 @@ void TListOfFunctionTemplates::Unload(TFunctionTemplate *func)
    // After the unload, the function can no longer be found directly,
    // until the decl can be found again in the interpreter (in which
    // the func object will be reused.
-   
+
    if (THashList::Remove(func)) {
       // We contains the object, let remove it from the other internal
       // list and move it to the list of unloaded objects.
-      
+
       fIds->Remove((Long64_t)func->GetDeclId());
       fUnloaded->Add(func);
    }
