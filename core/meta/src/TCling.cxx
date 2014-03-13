@@ -2266,6 +2266,7 @@ void TCling::SetClassInfo(TClass* cl, Bool_t reload)
       return;
    }
    delete (TClingClassInfo*) cl->fClassInfo;
+   cl->fClassInfo = 0;
    std::string name(cl->GetName());
    TClingClassInfo* info = new TClingClassInfo(fInterpreter, name.c_str());
    if (!info->IsValid()) {
