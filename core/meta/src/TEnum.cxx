@@ -53,6 +53,10 @@ void TEnum::AddConstant(TEnumConstant* constant)
 //______________________________________________________________________________
 Bool_t TEnum::IsValid()
 {
+   // Return true if this enum object is pointing to a currently
+   // loaded enum.  If a enum is unloaded after the TEnum
+   // is created, the TEnum will be set to be invalid.
+
    if (!fInfo) {
       //Check if the enum has not been declared again after unloading.
       //FIXME: Slow lookup for the decl of the name. Check whether there has been
@@ -70,4 +74,5 @@ Bool_t TEnum::IsValid()
 void TEnum::Update(DeclId_t id)
 {
    fInfo = (void*)id;
+
 }
