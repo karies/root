@@ -124,6 +124,7 @@ private: // Data Members
    std::set<TClass*> fModTClasses;
    std::vector<std::pair<TClass*,VoidFuncPtr_t> > fClassesToUpdate;
    void* fAutoLoadCallBack;
+   unsigned long long fTransactionCount; // Cling counter for commited or unloaded transactions which changed the AST.
 
    DeclId_t GetDeclId(const llvm::GlobalValue *gv) const;
    
@@ -162,6 +163,7 @@ public: // Public Interface
    TObjArray*  GetRootMapFiles() const { return fRootmapFiles; }
    Bool_t  HasDictionary(TClass* cl);
    void    GetMissingDictionaries(TClass* cl, TObjArray& result, bool recurse);
+   unsigned long long GetTransactionCount() const { return fTransactionCount;}
    virtual void Initialize();
    void    InspectMembers(TMemberInspector&, const void* obj, const TClass* cl, Bool_t isTransient);
    Bool_t  IsLoaded(const char* filename) const;
@@ -188,6 +190,7 @@ public: // Public Interface
    Int_t   SetClassSharedLibs(const char *cls, const char *libs);
    void    SetGetline(const char * (*getlineFunc)(const char* prompt),
                       void (*histaddFunc)(const char* line));
+   void    SetTransactionCount(unsigned long long id);
    void    Reset();
    void    ResetAll();
    void    ResetGlobals();

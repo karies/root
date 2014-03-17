@@ -718,7 +718,9 @@ Bool_t TDataMember::IsValid()
    // loaded data member.  If a function is unloaded after the TDataMember
    // is created, the TDataMember will be set to be invalid.
 
-   if (!fInfo) {
+   // Register the transaction when checking the validity of the object.
+   Bool_t isUpdated = TransactionCountUpdate();
+   if (!fInfo && isUpdated) {
       DeclId_t newId = gInterpreter->GetDataMember(0, fName);
       if (newId) {
          DataMemberInfo_t *info = gInterpreter->DataMemberInfo_Factory(newId, 0);

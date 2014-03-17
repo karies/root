@@ -401,6 +401,14 @@ void TCling__UpdateListsOnCommitted(const cling::Transaction &T,
 
    std::set<TClass*> modifiedTClasses; // TClasses that require update after this transaction
 
+   // Update the transaction count only if there was a change in the database
+   // If there was only a statement wrapped into the wrapper function, no need to increse the count.
+   if((std::distance(T.decls_begin(), T.decls_end()) != 1)
+      || T.deserialized_decls_begin() != T.deserialized_decls_end()
+      || T.macros_begin() != T.macros_end()
+      || ((!T.getFirstDecl().isNull()) && ((*T.getFirstDecl().begin()) != T.getWrapperFD())))
+      ((TCling*)gCling)->SetTransactionCount(((TCling*)gCling)->GetTransactionCount()+1);
+
    bool isTUTransaction = false;
    if (T.decls_end()-T.decls_begin() == 1 && !T.hasNestedTransactions()) {
       clang::Decl* FirstDecl = *(T.decls_begin()->m_DGR.begin());
@@ -490,6 +498,16 @@ void TCling__UpdateListsOnCommitted(const cling::Transaction &T,
 
 extern "C"
 void TCling__UpdateListsOnUnloaded(const cling::Transaction &T) {
+
+   // Update the transaction count only if there was a change in the database
+   // If there was only a statement wrapped into the wrapper function, no need to increse the count.
+   if((std::distance(T.decls_begin(), T.decls_end()) != 1)
+      || T.deserialized_decls_begin() != T.deserialized_decls_end()
+      || T.macros_begin() != T.macros_end()
+      || (*T.getFirstDecl().begin()) != T.getWrapperFD())
+      ((TCling*)gCling)->SetTransactionCount(((TCling*)gCling)->GetTransactionCount()+1);
+
+   // Unload the objects from the lists and update the objects' state.
    TGlobal *global = 0;
    TFunction *function = 0;
    TEnum* e = 0;
@@ -526,13 +544,13 @@ void TCling__UpdateListsOnUnloaded(const cling::Transaction &T) {
             }
          } else if (const EnumDecl* ED = dyn_cast<EnumDecl>(*DI)) {
             e = (TEnum*)enums->FindObject(ED->getNameAsString().c_str());
-            if (e && e->IsValid()) {
+            if (e) {
                TIter iEnumConst(e->GetConstants());
                while (TEnumConstant* enumConst = (TEnumConstant*)iEnumConst()) {
                   // Since the enum is already created and valid that ensures us that
                   // we have the enum constants created as well.
                   enumConst = (TEnumConstant*)globals->FindObject(enumConst->GetName());
-                  if (enumConst && enumConst->IsValid()) {
+                  if (enumConst) {
                      globals->Unload(enumConst);
                      enumConst->Update(0);
                   }
@@ -955,6 +973,7 @@ TCling::TCling(const char *name, const char *title)
 //    fMapNamespaces   = 0;
    fRootmapFiles = 0;
    fLockProcessLine = kTRUE;
+   fTransactionCount = 0;
    // Disable the autoloader until it is explicitly enabled.
    SetClassAutoloading(false);
 
@@ -2065,6 +2084,14 @@ void TCling::SetGetline(const char * (*getlineFunc)(const char* prompt),
    Warning("SetGetline","Cling should support the equivalent of SetGetlineFunc(getlineFunc, histaddFunc)");
 #endif
 #endif
+}
+
+//______________________________________________________________________________
+void TCling::SetTransactionCount(unsigned long long id)
+{
+   // Helper function to increase the internal Cling count of transactions
+   // that change the AST.
+   fTransactionCount = id;
 }
 
 //______________________________________________________________________________

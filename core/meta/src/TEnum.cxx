@@ -19,18 +19,19 @@
 #include "TEnumConstant.h"
 #include "TInterpreter.h"
 
+
 ClassImp(TEnum)
 
 //______________________________________________________________________________
 TEnum::TEnum(const char* name, void* info, TClass* cls)
-   : TNamed(name, "An enum type"), fInfo(info), fClass(cls)
+   :fInfo(info), fClass(cls)
 {
    //Constructor for TEnum class.
    //It take the name of the TEnum type, specification if it is global
    //and interpreter info.
    //Constant List is owner if enum not on global scope (thus constants not
    //in TROOT::GetListOfGlobals).
-
+   SetNameTitle(name, "An enum type");
    if (cls) {
       fConstantList.SetOwner(kTRUE);
    }
@@ -57,10 +58,9 @@ Bool_t TEnum::IsValid()
    // loaded enum.  If a enum is unloaded after the TEnum
    // is created, the TEnum will be set to be invalid.
 
-   if (!fInfo) {
-      //Check if the enum has not been declared again after unloading.
-      //FIXME: Slow lookup for the decl of the name. Check whether there has been
-      //       a change in the AST.
+   // Register the transaction when checking the validity of the object.
+   Bool_t isUpdated = TransactionCountUpdate();
+   if (!fInfo && isUpdated) {
       DeclId_t newId = gInterpreter->GetEnum(fClass, fName);
       if (newId) {
          Update(newId);
@@ -71,8 +71,15 @@ Bool_t TEnum::IsValid()
 }
 
 //______________________________________________________________________________
+Long_t TEnum::Property() const
+{
+   // Get property description word. For meaning of bits see EProperty.
+
+   return 0L;
+}
+
+//______________________________________________________________________________
 void TEnum::Update(DeclId_t id)
 {
    fInfo = (void*)id;
-
 }
