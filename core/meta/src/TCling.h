@@ -163,7 +163,11 @@ public: // Public Interface
    TObjArray*  GetRootMapFiles() const { return fRootmapFiles; }
    Bool_t  HasDictionary(TClass* cl);
    void    GetMissingDictionaries(TClass* cl, TObjArray& result, bool recurse);
+<<<<<<< HEAD
    unsigned long long GetInterpreterStateMarker() const { return fTransactionCount;}
+=======
+   unsigned long long GetTransactionCount() const { return fTransactionCount;}
+>>>>>>> Make TEnum derive from TDictionary and AST check optimazation for IsValid. (ROOT-5702).
    virtual void Initialize();
    void    InspectMembers(TMemberInspector&, const void* obj, const TClass* cl, Bool_t isTransient);
    Bool_t  IsLoaded(const char* filename) const;
@@ -190,6 +194,7 @@ public: // Public Interface
    Int_t   SetClassSharedLibs(const char *cls, const char *libs);
    void    SetGetline(const char * (*getlineFunc)(const char* prompt),
                       void (*histaddFunc)(const char* line));
+   void    SetTransactionCount(unsigned long long id);
    void    Reset();
    void    ResetAll();
    void    ResetGlobals();

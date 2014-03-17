@@ -400,6 +400,7 @@ void TCling__UpdateListsOnCommitted(const cling::Transaction &T,
                                     cling::Interpreter* interp) {
 
    ((TCling*)gCling)->UpdateListsOnCommitted(T, interp);
+
 }
 
 extern "C"
@@ -824,6 +825,7 @@ TCling::TCling(const char *name, const char *title)
 //    fMapNamespaces   = 0;
    fRootmapFiles = 0;
    fLockProcessLine = kTRUE;
+   fTransactionCount = 0;
    // Disable the autoloader until it is explicitly enabled.
    SetClassAutoloading(false);
 
