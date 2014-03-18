@@ -504,7 +504,7 @@ void TCling__UpdateListsOnUnloaded(const cling::Transaction &T) {
    if((std::distance(T.decls_begin(), T.decls_end()) != 1)
       || T.deserialized_decls_begin() != T.deserialized_decls_end()
       || T.macros_begin() != T.macros_end()
-      || (*T.getFirstDecl().begin()) != T.getWrapperFD())
+      || ((!T.getFirstDecl().isNull()) && ((*T.getFirstDecl().begin()) != T.getWrapperFD())))
       ((TCling*)gCling)->SetTransactionCount(((TCling*)gCling)->GetTransactionCount()+1);
 
    // Unload the objects from the lists and update the objects' state.
