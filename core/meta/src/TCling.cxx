@@ -406,7 +406,69 @@ void TCling__UpdateListsOnCommitted(const cling::Transaction &T,
 extern "C"
 void TCling__UpdateListsOnUnloaded(const cling::Transaction &T) {
 
-   ((TCling*)gCling)->UpdateListsOnUnloaded(T);
+   
+   // Update the transaction count only if there was a change in the database
+   // If there was only a statement wrapped into the wrapper function, no need to increse the count.
+   if((std::distance(T.decls_begin(), T.decls_end()) != 1)
+      || T.deserialized_decls_begin() != T.deserialized_decls_end()
+      || T.macros_begin() != T.macros_end()
+      || ((!T.getFirstDecl().isNull()) && ((*T.getFirstDecl().begin()) != T.getWrapperFD())))
+      ((TCling*)gCling)->SetTransactionCount(((TCling*)gCling)->GetTransactionCount()+1);
+
+   // Unload the objects from the lists and update the objects' state.
+   TGlobal *global = 0;
+   TFunction *function = 0;
+   TEnum* e = 0;
+   TListOfDataMembers* globals = (TListOfDataMembers*)gROOT->GetListOfGlobals();
+   TListOfFunctions* functions = (TListOfFunctions*)gROOT->GetListOfGlobalFunctions();
+   TListOfEnums* enums = (TListOfEnums*)gROOT->GetListOfEnums();
+   for(cling::Transaction::const_iterator I = T.decls_begin(), E = T.decls_end();
+       I != E; ++I)
+      for (DeclGroupRef::const_iterator DI = I->m_DGR.begin(),
+              DE = I->m_DGR.end(); DI != DE; ++DI) {
+         if (isa<VarDecl>(*DI) || isa<EnumConstantDecl>(*DI)) {
+            clang::ValueDecl* VD = dyn_cast<ValueDecl>(*DI);
+            global = (TGlobal*)globals->FindObject(VD->getNameAsString().c_str());
+            if (global && global->IsValid()) {
+               // Unload the global by setting the DataMemberInfo_t to 0
+               globals->Unload(global);
+               global->Update(0);
+            }
+         } else if (isa<RecordDecl>(*DI) || isa<NamespaceDecl>(*DI)) {
+            const clang::NamedDecl* ND = dyn_cast<NamedDecl>(*DI);
+            if (ND) {
+               std::string buf = ND->getNameAsString();
+               const char* name = buf.c_str();
+               TClass* cl = TClass::GetClass(name);
+               if (cl) {
+                  cl->ResetClassInfo();
+               }
+            }
+         } else if (const FunctionDecl* FD = dyn_cast<FunctionDecl>(*DI)) {
+            function = gROOT->GetGlobalFunction(FD->getNameAsString().c_str());
+            if (function && function->IsValid()) {
+               functions->Unload(function);
+               function->Update(0);
+            }
+         } else if (const EnumDecl* ED = dyn_cast<EnumDecl>(*DI)) {
+            e = (TEnum*)enums->FindObject(ED->getNameAsString().c_str());
+            if (e) {
+               TIter iEnumConst(e->GetConstants());
+               while (TEnumConstant* enumConst = (TEnumConstant*)iEnumConst()) {
+                  // Since the enum is already created and valid that ensures us that
+                  // we have the enum constants created as well.
+                  enumConst = (TEnumConstant*)globals->FindObject(enumConst->GetName());
+                  if (enumConst) {
+                     globals->Unload(enumConst);
+                     enumConst->Update(0);
+                  }
+               }
+               enums->Unload(e);
+               e->Update(0);
+            }
+         }
+      }
+
 }
 
 extern "C"
