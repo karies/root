@@ -99,9 +99,9 @@ Bool_t TDictionary::TransactionCountUpdate()
 {
    // Return true if there were any transactions that could have changed the
    // state of the object.
-   unsigned long long currentTransaction = gInterpreter->GetTransactionCount();
+   ULong64_t currentTransaction = gInterpreter->GetTransactionCount();
    if (currentTransaction == fUpdatingTransactionCount) {
-         return false;
+      return false;
    }
    fUpdatingTransactionCount = currentTransaction;
    return true;

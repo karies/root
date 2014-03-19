@@ -44,6 +44,11 @@ class TObjArray;
 class TVirtualMutex;
 class TEnum;
 
+namespace cling {
+   class Interpreter;
+   class Transaction;
+}
+
 R__EXTERN TVirtualMutex *gInterpreterMutex;
 
 class TInterpreter : public TNamed {
@@ -212,7 +217,9 @@ public:
 
    // core/meta helper functions.
    virtual TMethodCall::EReturnType MethodCallReturnType(TFunction *func) const = 0;
-   virtual unsigned long long GetTransactionCount() const = 0;
+   virtual ULong64_t GetTransactionCount() const = 0;
+   virtual void      UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp) = 0;
+   virtual void      UpdateListsOnUnloaded(const cling::Transaction &T) = 0;
 
    typedef TDictionary::DeclId_t DeclId_t;
    virtual DeclId_t GetDeclId(CallFunc_t *info) const = 0;   

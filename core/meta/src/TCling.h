@@ -124,7 +124,7 @@ private: // Data Members
    std::set<TClass*> fModTClasses;
    std::vector<std::pair<TClass*,VoidFuncPtr_t> > fClassesToUpdate;
    void* fAutoLoadCallBack;
-   unsigned long long fTransactionCount; // Cling counter for commited or unloaded transactions which changed the AST.
+   ULong64_t fTransactionCount; // Cling counter for commited or unloaded transactions which changed the AST.
 
    DeclId_t GetDeclId(const llvm::GlobalValue *gv) const;
    
@@ -190,7 +190,6 @@ public: // Public Interface
    Int_t   SetClassSharedLibs(const char *cls, const char *libs);
    void    SetGetline(const char * (*getlineFunc)(const char* prompt),
                       void (*histaddFunc)(const char* line));
-   void    SetTransactionCount(unsigned long long id);
    void    Reset();
    void    ResetAll();
    void    ResetGlobals();
@@ -474,6 +473,8 @@ public: // Public Interface
    std::set<TClass*>& GetModTClasses() { return fModTClasses; }
 
    void HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*>& modifiedClasses);
+   virtual void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
+   virtual void UpdateListsOnUnloaded(const cling::Transaction &T);
 
 private: // Private Utility Functions
    TCling();
@@ -494,6 +495,8 @@ private: // Private Utility Functions
    bool InsertMissingDictionaryDecl(const clang::Decl* D, std::set<std::string> &netD, clang::QualType qType, bool recurse);
    void InitRootmapFile(const char *name);
    int  ReadRootmapFile(const char *rootmapfile);
+   void HandleNewTransaction(const cling::Transaction &T);
+
 };
 
 #endif

@@ -277,8 +277,7 @@ Bool_t TMethod::IsValid()
    // is created, the TMethod will be set to be invalid.
 
    // Register the transaction when checking the validity of the object.
-   Bool_t isUpdated = TransactionCountUpdate();
-   if (!fInfo && isUpdated) {
+   if (!fInfo && TransactionCountUpdate()) {
       DeclId_t newId = gInterpreter->GetFunction(fClass->GetClassInfo(), fName);
       if (newId) {
          MethodInfo_t *info = gInterpreter->MethodInfo_Factory(newId);

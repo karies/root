@@ -130,8 +130,7 @@ Bool_t TGlobal::IsValid()
    // is created, the TGlobal will be set to be invalid.
 
    // Register the transaction when checking the validity of the object.
-   Bool_t isUpdated = TransactionCountUpdate();
-   if (!fInfo && isUpdated) {
+   if (!fInfo && TransactionCountUpdate()) {
       DeclId_t newId = gInterpreter->GetDataMember(0, fName);
       if (newId) {
          DataMemberInfo_t *info = gInterpreter->DataMemberInfo_Factory(newId, 0);
