@@ -194,7 +194,6 @@ public: // Public Interface
    Int_t   SetClassSharedLibs(const char *cls, const char *libs);
    void    SetGetline(const char * (*getlineFunc)(const char* prompt),
                       void (*histaddFunc)(const char* line));
-   void    SetTransactionCount(unsigned long long id);
    void    Reset();
    void    ResetAll();
    void    ResetGlobals();
@@ -478,8 +477,13 @@ public: // Public Interface
    std::set<TClass*>& GetModTClasses() { return fModTClasses; }
 
    void HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*>& modifiedClasses);
+<<<<<<< HEAD
    void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
    void UpdateListsOnUnloaded(const cling::Transaction &T);
+=======
+   virtual void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
+   virtual void UpdateListsOnUnloaded(const cling::Transaction &T);
+>>>>>>> Transaction counting modified. (ROOT - 5702).
 
 private: // Private Utility Functions
    TCling();
