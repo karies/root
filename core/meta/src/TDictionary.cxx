@@ -95,11 +95,11 @@ TDictionary* TDictionary::GetDictionary(const type_info &typeinfo)
    return TClass::GetClass(typeinfo, true);
 }
 
-Bool_t TDictionary::TransactionCountUpdate()
+Bool_t TDictionary::InterpreterStateHasChanged()
 {
    // Return true if there were any transactions that could have changed the
    // state of the object.
-   ULong64_t currentTransaction = gInterpreter->GetTransactionCount();
+   ULong64_t currentTransaction = gInterpreter->GetInterpreterStateMarker();
    if (currentTransaction == fUpdatingTransactionCount) {
       return false;
    }
