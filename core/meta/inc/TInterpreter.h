@@ -44,11 +44,6 @@ class TObjArray;
 class TVirtualMutex;
 class TEnum;
 
-namespace cling {
-   class Interpreter;
-   class Transaction;
-}
-
 R__EXTERN TVirtualMutex *gInterpreterMutex;
 
 class TInterpreter : public TNamed {

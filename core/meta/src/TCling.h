@@ -163,11 +163,8 @@ public: // Public Interface
    TObjArray*  GetRootMapFiles() const { return fRootmapFiles; }
    Bool_t  HasDictionary(TClass* cl);
    void    GetMissingDictionaries(TClass* cl, TObjArray& result, bool recurse);
-<<<<<<< HEAD
-   unsigned long long GetInterpreterStateMarker() const { return fTransactionCount;}
-=======
-   unsigned long long GetTransactionCount() const { return fTransactionCount;}
->>>>>>> Make TEnum derive from TDictionary and AST check optimazation for IsValid. (ROOT-5702).
+   ULong64_t GetInterpreterStateMarker() const { return fTransactionCount;}
+
    virtual void Initialize();
    void    InspectMembers(TMemberInspector&, const void* obj, const TClass* cl, Bool_t isTransient);
    Bool_t  IsLoaded(const char* filename) const;
@@ -478,12 +475,17 @@ public: // Public Interface
 
    void HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*>& modifiedClasses);
 <<<<<<< HEAD
+<<<<<<< HEAD
    void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
    void UpdateListsOnUnloaded(const cling::Transaction &T);
 =======
    virtual void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
    virtual void UpdateListsOnUnloaded(const cling::Transaction &T);
 >>>>>>> Transaction counting modified. (ROOT - 5702).
+=======
+   void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
+   void UpdateListsOnUnloaded(const cling::Transaction &T);
+>>>>>>> Corrections. (ROOT-5702).
 
 private: // Private Utility Functions
    TCling();
