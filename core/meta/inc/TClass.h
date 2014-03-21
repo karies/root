@@ -71,9 +71,12 @@ namespace ROOT {
 }
 
 namespace ROOT {
-   class TMapTypeToTClass;
+   class TMapTypeToTClass; 
 }
 typedef ROOT::TMapTypeToTClass IdMap_t;
+
+class TMapDeclIdToTClass;
+typedef TMapDeclIdToTClass DeclIdMap_t;
 
 class TClass : public TDictionary {
 
@@ -108,6 +111,8 @@ public:
                         // containing this dictionary has been loaded in memory.
       kLoaded = kHasTClassInit
    };
+
+   const TClass* fgMultipleClasses = (TClass*)(-1);
 
 private:
 
@@ -195,6 +200,7 @@ private:
    void StreamerDefault(void *object, TBuffer &b, const TClass *onfile_class) const;
 
    static IdMap_t    *GetIdMap();       //Map from typeid to TClass pointer
+   static DeclIdMap_t *GetDeclIdMap();  //Map from DeclId_t to TClass pointer
    static ENewType    fgCallingNew;     //Intent of why/how TClass::New() is called
    static Int_t       fgClassCount;     //provides unique id for a each class
                                         //stored in TObject::fUniqueID
@@ -402,11 +408,14 @@ public:
 
    // Function to retrieve the TClass object and dictionary function
    static void           AddClass(TClass *cl);
+   static void           AddClassToDeclIdMap(TDictionary::DeclId_t id, TClass* cl);
    static void           RemoveClass(TClass *cl);
+   static void           RemoveClassDeclId(TDictionary::DeclId_t id);
    static TClass        *GetClassOrAlias(const char *name);
    static TClass        *GetClass(const char *name, Bool_t load = kTRUE, Bool_t silent = kFALSE);
    static TClass        *GetClass(const type_info &typeinfo, Bool_t load = kTRUE, Bool_t silent = kFALSE);
    static TClass        *GetClass(ClassInfo_t *info, Bool_t load = kTRUE, Bool_t silent = kFALSE);
+   static TClass        *GetClass(DeclId_t id, Bool_t load = kTRUE, Bool_t silent = kFALSE, std::vector<TClass*>* = 0);
    static VoidFuncPtr_t  GetDict (const char *cname);
    static VoidFuncPtr_t  GetDict (const type_info &info);
 
