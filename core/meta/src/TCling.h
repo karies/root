@@ -474,18 +474,8 @@ public: // Public Interface
    std::set<TClass*>& GetModTClasses() { return fModTClasses; }
 
    void HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*>& modifiedClasses);
-<<<<<<< HEAD
-<<<<<<< HEAD
-   void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
+   void UpdateListsOnCommitted(const cling::Transaction &T);
    void UpdateListsOnUnloaded(const cling::Transaction &T);
-=======
-   virtual void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
-   virtual void UpdateListsOnUnloaded(const cling::Transaction &T);
->>>>>>> Transaction counting modified. (ROOT - 5702).
-=======
-   void UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter* interp);
-   void UpdateListsOnUnloaded(const cling::Transaction &T);
->>>>>>> Corrections. (ROOT-5702).
 
 private: // Private Utility Functions
    TCling();
@@ -506,7 +496,7 @@ private: // Private Utility Functions
    bool InsertMissingDictionaryDecl(const clang::Decl* D, std::set<std::string> &netD, clang::QualType qType, bool recurse);
    void InitRootmapFile(const char *name);
    int  ReadRootmapFile(const char *rootmapfile);
-   void HandleNewTransaction(const cling::Transaction &T);
+   Bool_t HandleNewTransaction(const cling::Transaction &T);
 
 };
 
