@@ -1941,6 +1941,9 @@ Bool_t TCling::HandleNewTransaction(const cling::Transaction &T)
 {
    // Helper function to increase the internal Cling count of transactions
    // that change the AST.
+
+   R__LOCKGUARD(gInterpreterMutex);
+
    if ((std::distance(T.decls_begin(), T.decls_end()) != 1)
       || T.deserialized_decls_begin() != T.deserialized_decls_end()
       || T.macros_begin() != T.macros_end()
