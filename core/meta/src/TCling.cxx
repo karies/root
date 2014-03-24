@@ -3703,8 +3703,9 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
             bool isThere = fMapfile->Lookup(keyname.c_str());
             if (isThere){
                Warning("ReadRootmapFile", "class %s is already in %s", keyname.c_str(), lib_name.Data());
+            } else {
+               fMapfile->SetValue(keyname.c_str(), lib_name.Data());
             }
-            fMapfile->SetValue(keyname.c_str(), lib_name.Data());
          }
          fSeenForwdDecl.insert(line);
       }
