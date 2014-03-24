@@ -394,15 +394,13 @@ void TCling__GetNormalizedContext(const ROOT::TMetaUtils::TNormalizedCtxt*& norm
 }
 
 extern "C"
-void TCling__UpdateListsOnCommitted(const cling::Transaction &T) {
+void TCling__UpdateListsOnCommitted(const cling::Transaction &T, cling::Interpreter*) {
 
    ((TCling*)gCling)->UpdateListsOnCommitted(T);
 }
 
 extern "C"
 void TCling__UpdateListsOnUnloaded(const cling::Transaction &T) {
-
-   
 
    ((TCling*)gCling)->UpdateListsOnUnloaded(T);
 }

@@ -184,7 +184,6 @@ class TMapDeclIdToTClass {
       typedef multimap<TDictionary::DeclId_t, TClass*>   DeclIdMap_t;
       typedef DeclIdMap_t::key_type                      key_type;
       typedef DeclIdMap_t::mapped_type                   mapped_type;
-      typedef DeclIdMap_t::value_type                    value_type;
       typedef DeclIdMap_t::const_iterator                const_iterator;
       typedef std::pair <const_iterator, const_iterator> equal_range;
       typedef DeclIdMap_t::size_type                     size_type;
@@ -193,10 +192,11 @@ class TMapDeclIdToTClass {
       DeclIdMap_t fMap;
 
    public:
-      void Add(const key_type &key, mapped_type &obj)
+      void Add(const key_type &key, mapped_type obj)
       {
          // Add the <key,obj> pair to the map.
-         fMap.insert(std::make_pair<TDictionary::DeclId_t, TClass*>(key, obj));
+         std::pair<const key_type, mapped_type> pair = make_pair(key, obj);
+         fMap.insert(pair);
       }
       size_type CountElementsWithKey(const key_type &key)
       {
@@ -210,7 +210,7 @@ class TMapDeclIdToTClass {
       void Remove(const key_type &key) {
          // Remove the type corresponding to the key.
          fMap.erase(key);
-      }        
+      }
 };
 
 
@@ -323,8 +323,8 @@ void TClass::AddClass(TClass *cl)
    if (cl->GetTypeInfo()) {
       GetIdMap()->Add(cl->GetTypeInfo()->name(),cl);
    }
-   if (cl->fClassInfo->GetDeclIdMap()) {
-      GetDeclIdMap()->Add(cl->fClassInfo->GetDeclIdMap(), cl);
+   if (cl->fClassInfo) {
+      //GetDeclIdMap()->Add((void*)(cl->fClassInfo), cl);
    }
 }
 
@@ -347,8 +347,8 @@ void TClass::RemoveClass(TClass *oldcl)
    if (oldcl->GetTypeInfo()) {
       GetIdMap()->Remove(oldcl->GetTypeInfo()->name());
    }
-   if (cl->fClassInfo->GetDeclIdMap()) {
-      GetDeclIdMap()->Remove(cl->fClassInfo->GetDeclIdMap());
+   if (oldcl->fClassInfo) {
+      //GetDeclIdMap()->Remove((void*)(oldcl->fClassInfo));
    }
 }
 
@@ -2937,6 +2937,7 @@ TClass *TClass::GetClass(ClassInfo_t *info, Bool_t load, Bool_t silent)
 //______________________________________________________________________________
 TClass* TClass::GetClass(DeclId_t id, Bool_t load, Bool_t silent, std::vector<TClass*>* classes)
 {
+
    if (!gROOT->GetListOfClasses())    return 0;
 
    DeclIdMap_t* map = GetDeclIdMap();
@@ -2956,6 +2957,8 @@ TClass* TClass::GetClass(DeclId_t id, Bool_t load, Bool_t silent, std::vector<TC
             vectIt = (classes)->insert(vectIt, it->second);
       }
    }
+   // To supress the warnings errors
+   if (load && silent) {}
    return 0;
 }
 
