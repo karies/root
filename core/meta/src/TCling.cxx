@@ -3704,7 +3704,6 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
             } else {
                fMapfile->SetValue(keyname.c_str(), lib_name.Data());
             }
-            fMapfile->SetValue(keyname.c_str(), lib_name.Data());
          }
          fSeenForwdDecl.insert(line);
       }
