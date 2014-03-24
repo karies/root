@@ -112,8 +112,6 @@ public:
       kLoaded = kHasTClassInit
    };
 
-   const TClass* fgMultipleClasses = (TClass*)(-1);
-
 private:
 
    mutable TObjArray *fStreamerInfo;    //Array of TVirtualStreamerInfo

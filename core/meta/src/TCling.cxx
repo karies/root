@@ -2257,7 +2257,9 @@ void TCling::SetClassInfo(TClass* cl, Bool_t reload)
 //         }
       }
    }
-   TClass::AddClassToDeclIdMap(((TClingClassInfo*)cl->fClassInfo)->GetDeclId(), cl);
+   if (cl->fClassInfo) {
+      TClass::AddClassToDeclIdMap(((TClingClassInfo*)cl->fClassInfo)->GetDeclId(), cl);
+   }
 }
 
 //______________________________________________________________________________

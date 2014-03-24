@@ -178,6 +178,8 @@ static void MoveAddressInRepository(const char * /*where*/, void *oldadd, void *
    }
 }
 
+
+
 class TMapDeclIdToTClass {
    // Wrapper class for the multimap of DeclId_t and TClass.
    public:
@@ -187,6 +189,9 @@ class TMapDeclIdToTClass {
       typedef DeclIdMap_t::const_iterator                const_iterator;
       typedef std::pair <const_iterator, const_iterator> equal_range;
       typedef DeclIdMap_t::size_type                     size_type;
+
+      // FIXME: Declaring and initializing it in the header file => error.
+      constexpr static TClass* fgMultipleClasses = (TClass*)(-1);
 
    private:
       DeclIdMap_t fMap;
@@ -2948,7 +2953,7 @@ TClass* TClass::GetClass(DeclId_t id, Bool_t load, Bool_t silent, std::vector<TC
    }
    else {
       if (!classes) {
-         return const_cast<TClass*>(((map->Find(id)).first)->second->fgMultipleClasses);
+         return DeclIdMap_t::fgMultipleClasses;
       }   
       else {
          DeclIdMap_t::equal_range iter = map->Find(id);
