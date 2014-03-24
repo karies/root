@@ -3646,6 +3646,7 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
       TString lib_name = "";
       std::string line;
       while (getline(file, line, '\n')) {
+         if (fSeenForwdDecl.find(line) != fSeenForwdDecl.end()) continue;
          if ((line.substr(0, 8) == "Library.") || 
              (line.substr(0, 8) == "Declare.")) {
             file.close();
@@ -3700,10 +3701,12 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
             if (gDebug > 6)
                Info("ReadRootmapFile", "class %s in %s", keyname.c_str(), lib_name.Data());
             bool isThere = fMapfile->Lookup(keyname.c_str());
-            if (!isThere){
-               fMapfile->SetValue(keyname.c_str(), lib_name.Data());
+            if (isThere){
+               Warning("ReadRootmapFile", "class %s is already in %s", keyname.c_str(), lib_name.Data());
             }
+            fMapfile->SetValue(keyname.c_str(), lib_name.Data());
          }
+         fSeenForwdDecl.insert(line);
       }
       file.close();
    }
