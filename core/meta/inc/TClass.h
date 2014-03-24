@@ -71,7 +71,7 @@ namespace ROOT {
 }
 
 namespace ROOT {
-   class TMapTypeToTClass; 
+   class TMapTypeToTClass;
 }
 typedef ROOT::TMapTypeToTClass IdMap_t;
 
