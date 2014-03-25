@@ -3644,7 +3644,6 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
       TString lib_name = "";
       std::string line;
       while (getline(file, line, '\n')) {
-         if (fSeenForwdDecl.find(line) != fSeenForwdDecl.end()) continue;
          if ((line.substr(0, 8) == "Library.") || 
              (line.substr(0, 8) == "Declare.")) {
             file.close();
@@ -3656,6 +3655,10 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
             while (getline(file, line, '\n')) {
                if (line[0] == '[') break;
                if (line.empty()) continue;
+               if (fSeenForwdDecl.find(line) != fSeenForwdDecl.end()) {
+                  Warning("ReadRootmapFile", "namespace decl %s was declared before.", line.c_str());
+                  continue;
+               }
                cling::Transaction* T = 0;
                cling::Interpreter::CompilationResult compRes= fInterpreter->declare(line.c_str(), &T);
                assert(cling::Interpreter::kSuccess == compRes &&
@@ -3669,6 +3672,7 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
                if (NamespaceDecl* NSD = dyn_cast<NamespaceDecl>(T->getFirstDecl().getSingleDecl())) {
                   evsAdder.TraverseDecl(NSD);
                }
+               fSeenForwdDecl.insert(line);
             }
          }
          const char firstChar=line[0];
@@ -3698,14 +3702,13 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
             std::string keyname = line.substr(keyLen, line.length()-keyLen);
             if (gDebug > 6)
                Info("ReadRootmapFile", "class %s in %s", keyname.c_str(), lib_name.Data());
-            bool isThere = fMapfile->Lookup(keyname.c_str());
+            TEnvRec* isThere = fMapfile->Lookup(keyname.c_str());
             if (isThere){
-               Warning("ReadRootmapFile", "class %s is already in %s", keyname.c_str(), lib_name.Data());
+               Warning("ReadRootmapFile", "class %s is already in %s", keyname.c_str(), isThere->GetValue());
             } else {
                fMapfile->SetValue(keyname.c_str(), lib_name.Data());
             }
          }
-         fSeenForwdDecl.insert(line);
       }
       file.close();
    }
