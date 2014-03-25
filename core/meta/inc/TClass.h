@@ -72,11 +72,10 @@ namespace ROOT {
 
 namespace ROOT {
    class TMapTypeToTClass;
+   class TMapDeclIdToTClass;
 }
 typedef ROOT::TMapTypeToTClass IdMap_t;
-
-class TMapDeclIdToTClass;
-typedef TMapDeclIdToTClass DeclIdMap_t;
+typedef ROOT::TMapDeclIdToTClass DeclIdMap_t;
 
 class TClass : public TDictionary {
 

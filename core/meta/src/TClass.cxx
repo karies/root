@@ -178,47 +178,6 @@ static void MoveAddressInRepository(const char * /*where*/, void *oldadd, void *
    }
 }
 
-
-
-class TMapDeclIdToTClass {
-   // Wrapper class for the multimap of DeclId_t and TClass.
-   public:
-      typedef multimap<TDictionary::DeclId_t, TClass*>   DeclIdMap_t;
-      typedef DeclIdMap_t::key_type                      key_type;
-      typedef DeclIdMap_t::mapped_type                   mapped_type;
-      typedef DeclIdMap_t::const_iterator                const_iterator;
-      typedef std::pair <const_iterator, const_iterator> equal_range;
-      typedef DeclIdMap_t::size_type                     size_type;
-
-      // FIXME: Declaring and initializing it in the header file => error.
-      constexpr static TClass* fgMultipleClasses = (TClass*)(-1);
-
-   private:
-      DeclIdMap_t fMap;
-
-   public:
-      void Add(const key_type &key, mapped_type obj)
-      {
-         // Add the <key,obj> pair to the map.
-         std::pair<const key_type, mapped_type> pair = make_pair(key, obj);
-         fMap.insert(pair);
-      }
-      size_type CountElementsWithKey(const key_type &key)
-      {
-         return fMap.count(key);
-      }
-      equal_range Find(const key_type &key) const
-      {
-         // Find the type corresponding to the key.
-         return fMap.equal_range(key);
-      }
-      void Remove(const key_type &key) {
-         // Remove the type corresponding to the key.
-         fMap.erase(key);
-      }
-};
-
-
 //______________________________________________________________________________
 //______________________________________________________________________________
 namespace ROOT {
@@ -294,6 +253,44 @@ namespace ROOT {
       }
 #endif
    };
+
+   class TMapDeclIdToTClass {
+   // Wrapper class for the multimap of DeclId_t and TClass.
+   public:
+      typedef multimap<TDictionary::DeclId_t, TClass*>   DeclIdMap_t;
+      typedef DeclIdMap_t::key_type                      key_type;
+      typedef DeclIdMap_t::mapped_type                   mapped_type;
+      typedef DeclIdMap_t::const_iterator                const_iterator;
+      typedef std::pair <const_iterator, const_iterator> equal_range;
+      typedef DeclIdMap_t::size_type                     size_type;
+
+      // FIXME: Declaring and initializing it in the header file => error.
+      constexpr static TClass* fgMultipleClasses = (TClass*)(-1);
+
+   private:
+      DeclIdMap_t fMap;
+
+   public:
+      void Add(const key_type &key, mapped_type obj)
+      {
+         // Add the <key,obj> pair to the map.
+         std::pair<const key_type, mapped_type> pair = make_pair(key, obj);
+         fMap.insert(pair);
+      }
+      size_type CountElementsWithKey(const key_type &key)
+      {
+         return fMap.count(key);
+      }
+      equal_range Find(const key_type &key) const
+      {
+         // Find the type corresponding to the key.
+         return fMap.equal_range(key);
+      }
+      void Remove(const key_type &key) {
+         // Remove the type corresponding to the key.
+         fMap.erase(key);
+      }
+   };
 }
 
 IdMap_t *TClass::GetIdMap() {
@@ -329,7 +326,7 @@ void TClass::AddClass(TClass *cl)
       GetIdMap()->Add(cl->GetTypeInfo()->name(),cl);
    }
    if (cl->fClassInfo) {
-      //GetDeclIdMap()->Add((void*)(cl->fClassInfo), cl);
+      GetDeclIdMap()->Add((void*)(cl->fClassInfo), cl);
    }
 }
 
@@ -2940,7 +2937,7 @@ TClass *TClass::GetClass(ClassInfo_t *info, Bool_t load, Bool_t silent)
 }
 
 //______________________________________________________________________________
-TClass* TClass::GetClass(DeclId_t id, Bool_t load, Bool_t silent, std::vector<TClass*>* classes)
+TClass* TClass::GetClass(DeclId_t id, Bool_t /*load*/, Bool_t /*silent*/, std::vector<TClass*>* classes)
 {
 
    if (!gROOT->GetListOfClasses())    return 0;
@@ -2962,8 +2959,6 @@ TClass* TClass::GetClass(DeclId_t id, Bool_t load, Bool_t silent, std::vector<TC
             vectIt = (classes)->insert(vectIt, it->second);
       }
    }
-   // To supress the warnings errors
-   if (load && silent) {}
    return 0;
 }
 
