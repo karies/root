@@ -3655,10 +3655,7 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
             while (getline(file, line, '\n')) {
                if (line[0] == '[') break;
                if (line.empty()) continue;
-               if (fSeenForwdDecl.find(line) != fSeenForwdDecl.end()) {
-                  Warning("ReadRootmapFile", "namespace decl %s was declared before.", line.c_str());
-                  continue;
-               }
+               if (fSeenRootmapEntry.find(line) != fSeenRootmapEntry.end()) continue;
                cling::Transaction* T = 0;
                cling::Interpreter::CompilationResult compRes= fInterpreter->declare(line.c_str(), &T);
                assert(cling::Interpreter::kSuccess == compRes &&
@@ -3672,7 +3669,6 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
                if (NamespaceDecl* NSD = dyn_cast<NamespaceDecl>(T->getFirstDecl().getSingleDecl())) {
                   evsAdder.TraverseDecl(NSD);
                }
-               fSeenForwdDecl.insert(line);
             }
          }
          const char firstChar=line[0];
@@ -3704,11 +3700,19 @@ int TCling::ReadRootmapFile(const char *rootmapfile)
                Info("ReadRootmapFile", "class %s in %s", keyname.c_str(), lib_name.Data());
             TEnvRec* isThere = fMapfile->Lookup(keyname.c_str());
             if (isThere){
-               Warning("ReadRootmapFile", "class %s is already in %s", keyname.c_str(), isThere->GetValue());
+               if (firstChar == 'n') {
+                  if (gDebug > 3)
+                     Info("ReadRootmapFile", "namespace %s found in %s is already in %s",
+                          keyname.c_str(), lib_name.Data(), isThere->GetValue());
+               } else if (!TClassEdit::IsSTLCont(keyname.c_str())) {
+                  Warning("ReadRootmapFile", "%s %s found in %s is already in %s", line.substr(0, keyLen).c_str(),
+                          keyname.c_str(), lib_name.Data(), isThere->GetValue());
+               }
             } else {
                fMapfile->SetValue(keyname.c_str(), lib_name.Data());
             }
          }
+         fSeenRootmapEntry.insert(line);
       }
       file.close();
    }
