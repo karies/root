@@ -4499,9 +4499,12 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
    TEnum* e = 0;
    TFunctionTemplate* functiontemplate = 0;
    TListOfDataMembers* datamembers = 0;
-   TListOfDataMembers* globals = (TListOfDataMembers*)gROOT->GetListOfGlobals();
+   TListOfFunctions* functions = 0;
+   TListOfFunctionTemplates* functiontemplates = 0;
+   TListOfEnums* enums = 0;
+   TListOfDataMembers* globals = 0;
    for(cling::Transaction::const_iterator I = T.decls_begin(), E = T.decls_end();
-       I != E; ++I)
+       I != E; ++I) {
       for (DeclGroupRef::const_iterator DI = I->m_DGR.begin(),
               DE = I->m_DGR.end(); DI != DE; ++DI) {
          // Deal with global variables and globa enum constants.
@@ -4532,9 +4535,10 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
             }
          // Deal with global enums.
          } else if (const EnumDecl* ED = dyn_cast<EnumDecl>(*DI)) {
-            TListOfEnums* enums = (TListOfEnums*)gROOT->GetListOfEnums();
+            enums = (TListOfEnums*)gROOT->GetListOfEnums();
             e = (TEnum*)enums->FindObject(ED->getNameAsString().c_str());
             if (e) {
+               globals = (TListOfDataMembers*)gROOT->GetListOfGlobals();
                TIter iEnumConst(e->GetConstants());
                while (TEnumConstant* enumConst = (TEnumConstant*)iEnumConst()) {
                   // Since the enum is already created and valid that ensures us that
@@ -4551,76 +4555,79 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
          // Deal with classes. Unload the class and the data members will be not accessible anymore
          // Cannot declare the members in a different declaration like redeclarable namespaces.
          } else if (const clang::RecordDecl* RD = dyn_cast<RecordDecl>(*DI)) {
-            TClass* cl = TClass::GetClass(RD);
-            if (cl == (TClass*)(-1)) {
-               //check -1 and multiple key
-               std::vector<TClass*> vectTClass;
-               cl = TClass::GetClass(RD, kTRUE, kTRUE, &vectTClass);
+            std::vector<TClass*> vectTClass;
+            if (TClass::GetClass(RD, vectTClass)) {
                for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
                     CI != CE; ++CI) {
                   (*CI)->ResetClassInfo();
                }
-            } else if (cl) {
-               cl->ResetClassInfo();
             }
          // Deal with namespaces. Unload the members of the current redeclaration only.
          } else if (const clang::NamespaceDecl* ND = dyn_cast<NamespaceDecl>(*DI)) {
-            TClass* cl;
             if (ND->isOriginalNamespace()) {
-               cl = TClass::GetClass(ND);
-               if (cl) {
-                  cl->ResetClassInfo();
+               std::vector<TClass*> vectTClass;
+               if (TClass::GetClass(ND, vectTClass)) {
+                  for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
+                       CI != CE; ++CI) {
+                     (*CI)->ResetClassInfo();
+                  }
                }
             } else {
-               cl = TClass::GetClass(ND->getCanonicalDecl());
-               TListOfDataMembers* datamembers = (TListOfDataMembers*)cl->GetListOfDataMembers();
-               TListOfFunctions* functions = (TListOfFunctions*)cl->GetListOfMethods();
-               TListOfEnums* enums = (TListOfEnums*)cl->GetListOfEnums();
-               TListOfFunctionTemplates* functiontemplates = (TListOfFunctionTemplates*)cl->GetListOfFunctionTemplates();
-               // If this is a redeclaration of the namespace, we iterate over the members to unload them
-               for (DeclContext::decl_iterator RI = ND->decls_begin(), RE = ND->decls_end(); RI != RE; ++RI) {
-                  if (isa<VarDecl>(*RI) || isa<EnumConstantDecl>(*RI)) {
-                     clang::ValueDecl* VD = dyn_cast<ValueDecl>(*RI);
-                     var = (TDataMember*)datamembers->FindObject(VD->getNameAsString().c_str());   
-                     if (var) {
-                        // Unload the global by setting the DataMemberInfo_t to 0
-                        datamembers->Unload(var);
-                        var->Update(0);
-                     }
-                  }
-                  else if (const FunctionDecl* FD = dyn_cast<FunctionDecl>(*RI)) {
-                     function = (TFunction*)functions->FindObject(FD->getNameAsString().c_str());
-                     if (function) {
-                        functions->Unload(function);
-                        function->Update(0);
-                     }
-                  } else if (const EnumDecl* ED = dyn_cast<EnumDecl>(*RI)) {
-                     e = (TEnum*)enums->FindObject(ED->getNameAsString().c_str());
-                     if (e) {
-                        TIter iEnumConst(e->GetConstants());
-                        while (TEnumConstant* enumConst = (TEnumConstant*)iEnumConst()) {
-                           // Since the enum is already created and valid that ensures us that
-                           // we have the enum constants created as well.
-                           enumConst = (TEnumConstant*)globals->FindObject(enumConst->GetName());
-                           if (enumConst && enumConst->IsValid()) {
-                              globals->Unload(enumConst);
-                              enumConst->Update(0);
+               std::vector<TClass*> vectTClass;
+               if (TClass::GetClass(ND->getCanonicalDecl(), vectTClass)) {
+                  for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
+                       CI != CE; ++CI) {
+                     TClass* cl = (*CI);
+                     TListOfDataMembers* datamembers = (TListOfDataMembers*)cl->GetListOfDataMembers();
+                     TListOfFunctions* functions = (TListOfFunctions*)cl->GetListOfMethods();
+                     TListOfEnums* enums = (TListOfEnums*)cl->GetListOfEnums();
+                     TListOfFunctionTemplates* functiontemplates = (TListOfFunctionTemplates*)cl->GetListOfFunctionTemplates();
+                     // If this is a redeclaration of the namespace, we iterate over the members to unload them
+                     for (DeclContext::decl_iterator RI = ND->decls_begin(), RE = ND->decls_end(); RI != RE; ++RI) {
+                        if (isa<VarDecl>(*RI) || isa<EnumConstantDecl>(*RI)) {
+                           clang::ValueDecl* VD = dyn_cast<ValueDecl>(*RI);
+                           var = (TDataMember*)datamembers->FindObject(VD->getNameAsString().c_str());
+                           if (var) {
+                              // Unload the global by setting the DataMemberInfo_t to 0
+                              datamembers->Unload(var);
+                              var->Update(0);
+                           }
+                        } else if (const FunctionDecl* FD = dyn_cast<FunctionDecl>(*RI)) {
+                           function = (TFunction*)functions->FindObject(FD->getNameAsString().c_str());
+                           if (function) {
+                              functions->Unload(function);
+                              function->Update(0);
+                           }
+                        } else if (const EnumDecl* ED = dyn_cast<EnumDecl>(*RI)) {
+                           e = (TEnum*)enums->FindObject(ED->getNameAsString().c_str());
+                           if (e) {
+                              TIter iEnumConst(e->GetConstants());
+                              while (TEnumConstant* enumConst = (TEnumConstant*)iEnumConst()) {
+                                 // Since the enum is already created and valid that ensures us that
+                                 // we have the enum constants created as well.
+                                 enumConst = (TEnumConstant*)globals->FindObject(enumConst->GetName());
+                                 if (enumConst && enumConst->IsValid()) {
+                                    globals->Unload(enumConst);
+                                    enumConst->Update(0);
+                                 }
+                              }
+                              enums->Unload(e);
+                              e->Update(0);
+                           }
+                        } else if (const FunctionTemplateDecl* FTD = dyn_cast<FunctionTemplateDecl>(*RI)) {
+                           functiontemplate = (TFunctionTemplate*)functiontemplates->FindObject(FTD->getNameAsString().c_str());
+                           if (functiontemplate) {
+                              functiontemplates->Unload(functiontemplate);
+                              functiontemplate->Update(0);
                            }
                         }
-                        enums->Unload(e);
-                        e->Update(0);
                      }
-                  } else if (const FunctionTemplateDecl* FTD = dyn_cast<FunctionTemplateDecl>(*RI)) {
-                     functiontemplate = (TFunctionTemplate*)functiontemplates->FindObject(FTD->getNameAsString().c_str());
-                     if (functiontemplate) {
-                        functiontemplates->Unload(functiontemplate);
-                        functiontemplate->Update(0);
-                     }
-                  }   
-               }      
+                  }
+               }
             }
          }
       }
+   }
 }
 
 

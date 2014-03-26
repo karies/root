@@ -264,9 +264,6 @@ namespace ROOT {
       typedef std::pair <const_iterator, const_iterator> equal_range;
       typedef DeclIdMap_t::size_type                     size_type;
 
-      // FIXME: Declaring and initializing it in the header file => error.
-      constexpr static TClass* fgMultipleClasses = (TClass*)(-1);
-
    private:
       DeclIdMap_t fMap;
 
@@ -2937,29 +2934,19 @@ TClass *TClass::GetClass(ClassInfo_t *info, Bool_t load, Bool_t silent)
 }
 
 //______________________________________________________________________________
-TClass* TClass::GetClass(DeclId_t id, Bool_t /*load*/, Bool_t /*silent*/, std::vector<TClass*>* classes)
+Bool_t TClass::GetClass(DeclId_t id, std::vector<TClass*> &classes)
 {
 
    if (!gROOT->GetListOfClasses())    return 0;
 
    DeclIdMap_t* map = GetDeclIdMap();
-   DeclIdMap_t::size_type count = map->CountElementsWithKey(id);
-   if (!count) return 0;
-   if (count == 1) {
-      return ((map->Find(id)).first)->second;
-   }
-   else {
-      if (!classes) {
-         return DeclIdMap_t::fgMultipleClasses;
-      }   
-      else {
-         DeclIdMap_t::equal_range iter = map->Find(id);
-         std::vector<TClass*>::iterator vectIt = classes->begin();
-         for (DeclIdMap_t::const_iterator it = iter.first; it != iter.second; ++it)
-            vectIt = (classes)->insert(vectIt, it->second);
-      }
-   }
-   return 0;
+   // Get all the TClass pointer that have the same DeclId.
+   DeclIdMap_t::equal_range iter = map->Find(id);
+   if (iter.first == iter.second) return false;
+   std::vector<TClass*>::iterator vectIt = classes.begin();
+   for (DeclIdMap_t::const_iterator it = iter.first; it != iter.second; ++it)
+      vectIt = classes.insert(vectIt, it->second);
+   return true;
 }
 
 //______________________________________________________________________________
