@@ -29,6 +29,8 @@
 #include "clang/AST/DeclGroup.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/FileManager.h"
+#include "clang/Basic/TargetInfo.h"
+#include "clang/CodeGen/BackendUtil.h"
 #include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Parse/Parser.h"
 #include "clang/Lex/Preprocessor.h"
@@ -456,6 +458,12 @@ namespace cling {
   }
 
   bool IncrementalParser::transformTransactionIR(Transaction* T) {
+    // Invoke clang's IR passes
+    clang::EmitBackendOutput(m_CI->getDiagnostics(), m_CI->getCodeGenOpts(),
+                             m_CI->getTargetOpts(), m_CI->getLangOpts(),
+                   m_CI->getASTContext().getTargetInfo().getTargetDescription(),
+                             T->getModule(), clang::Backend_EmitNothing,
+                             0 /*raw_ostream*/);
     // Transform IR
     bool success = true;
     for (size_t i = 0; success && i < m_IRTransformers.size(); ++i)
