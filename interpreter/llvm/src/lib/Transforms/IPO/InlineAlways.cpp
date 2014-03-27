@@ -54,7 +54,11 @@ public:
 
   using llvm::Pass::doFinalization;
   virtual bool doFinalization(CallGraph &CG) {
-    return removeDeadFunctions(CG, /*AlwaysInlineOnly=*/ true);
+    // Do not run for cling: we need to keep the inlined functions because we
+    // might need them later (to inline them again) and CodeGen will not re-emit
+    // these functions.
+    return false; // module unchanged
+    //return removeDeadFunctions(CG, /*AlwaysInlineOnly=*/ true);
   }
 };
 
