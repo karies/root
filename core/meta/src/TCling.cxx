@@ -4498,11 +4498,10 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
    TFunction* function = 0;
    TEnum* e = 0;
    TFunctionTemplate* functiontemplate = 0;
-   TListOfDataMembers* datamembers = 0;
-   TListOfFunctions* functions = 0;
-   TListOfFunctionTemplates* functiontemplates = 0;
-   TListOfEnums* enums = 0;
-   TListOfDataMembers* globals = 0;
+   TListOfFunctions* functions = (TListOfFunctions*)gROOT->GetListOfGlobalFunctions();
+   TListOfFunctionTemplates* functiontemplates = (TListOfFunctionTemplates*)gROOT->GetListOfFunctionTemplates();
+   TListOfEnums* enums = (TListOfEnums*)gROOT->GetListOfEnums();
+   TListOfDataMembers* globals = (TListOfDataMembers*)gROOT->GetListOfGlobals();
    for(cling::Transaction::const_iterator I = T.decls_begin(), E = T.decls_end();
        I != E; ++I) {
       for (DeclGroupRef::const_iterator DI = I->m_DGR.begin(),
@@ -4510,16 +4509,14 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
          // Deal with global variables and globa enum constants.
          if (isa<VarDecl>(*DI) || isa<EnumConstantDecl>(*DI)) {
             clang::ValueDecl* VD = dyn_cast<ValueDecl>(*DI);
-            datamembers = (TListOfDataMembers*)gROOT->GetListOfGlobals();
-            var = (TDataMember*)datamembers->FindObject(VD->getNameAsString().c_str());
+            var = (TDataMember*)globals->FindObject(VD->getNameAsString().c_str());
             if (var && var->IsValid()) {
                // Unload the global by setting the DataMemberInfo_t to 0
-               datamembers->Unload(var);
+               globals->Unload(var);
                var->Update(0);
             }
          // Deal with global functions.
          } else if (const FunctionDecl* FD = dyn_cast<FunctionDecl>(*DI)) {
-            functions = (TListOfFunctions*)gROOT->GetListOfGlobalFunctions();
             function = (TFunction*)functions->FindObject(FD->getNameAsString().c_str());
             if (function && function->IsValid()) {
                functions->Unload(function);
@@ -4527,7 +4524,6 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
             }
          // Deal with global function templates.
          } else if (const FunctionTemplateDecl* FTD = dyn_cast<FunctionTemplateDecl>(*DI)) {
-            functiontemplates = (TListOfFunctionTemplates*)gROOT->GetListOfFunctionTemplates();
             functiontemplate = (TFunctionTemplate*)functiontemplates->FindObject(FTD->getNameAsString().c_str());
             if (functiontemplate) {
                functiontemplates->Unload(functiontemplate);
@@ -4535,7 +4531,6 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
             }
          // Deal with global enums.
          } else if (const EnumDecl* ED = dyn_cast<EnumDecl>(*DI)) {
-            enums = (TListOfEnums*)gROOT->GetListOfEnums();
             e = (TEnum*)enums->FindObject(ED->getNameAsString().c_str());
             if (e) {
                globals = (TListOfDataMembers*)gROOT->GetListOfGlobals();
@@ -4605,9 +4600,9 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
                               while (TEnumConstant* enumConst = (TEnumConstant*)iEnumConst()) {
                                  // Since the enum is already created and valid that ensures us that
                                  // we have the enum constants created as well.
-                                 enumConst = (TEnumConstant*)globals->FindObject(enumConst->GetName());
+                                 enumConst = (TEnumConstant*)datamembers->FindObject(enumConst->GetName());
                                  if (enumConst && enumConst->IsValid()) {
-                                    globals->Unload(enumConst);
+                                    datamembers->Unload(enumConst);
                                     enumConst->Update(0);
                                  }
                               }
