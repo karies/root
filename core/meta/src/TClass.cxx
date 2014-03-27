@@ -74,6 +74,7 @@
 #include <typeinfo>
 #include <cmath>
 #include <assert.h>
+#include <vector>
 
 #include "TListOfDataMembers.h"
 #include "TListOfFunctions.h"
@@ -331,7 +332,7 @@ void TClass::AddClass(TClass *cl)
 void TClass::AddClassToDeclIdMap(TDictionary::DeclId_t id, TClass* cl)
 {
    // static: Add a TClass* to the map of classes.
-   
+
    if (!cl || !id) return;
    GetDeclIdMap()->Add(id, cl);
 }

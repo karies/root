@@ -45,7 +45,7 @@
 #include "TMemberInspector.h"
 #include "TMethod.h"
 #include "TMethodArg.h"
-#include "TFunctionTemplate.h" 
+#include "TFunctionTemplate.h"
 #include "TObjArray.h"
 #include "TObjString.h"
 #include "TString.h"
@@ -2188,7 +2188,7 @@ void TCling::SetClassInfo(TClass* cl, Bool_t reload)
    TClingClassInfo* TClinginfo = (TClingClassInfo*) cl->fClassInfo;
    if (TClinginfo) {
       TClass::RemoveClassDeclId(TClinginfo->GetDeclId());
-   }   
+   }
    delete TClinginfo;
    cl->fClassInfo = 0;
    std::string name(cl->GetName());
@@ -2696,7 +2696,7 @@ TClass *TCling::GenerateTClass(ClassInfo_t *classinfo, Bool_t silent /* = kFALSE
    // Add the new TClass to the map of declid and TClass*.
    if (cl) {
       TClass::AddClassToDeclIdMap(((TClingClassInfo*)classinfo)->GetDeclId(), cl);
-   }  
+   }
    return cl;
 }
 
@@ -4511,7 +4511,7 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
          if (isa<VarDecl>(*DI) || isa<EnumConstantDecl>(*DI)) {
             clang::ValueDecl* VD = dyn_cast<ValueDecl>(*DI);
             datamembers = (TListOfDataMembers*)gROOT->GetListOfGlobals();
-            var = (TDataMember*)datamembers->FindObject(VD->getNameAsString().c_str());   
+            var = (TDataMember*)datamembers->FindObject(VD->getNameAsString().c_str());
             if (var && var->IsValid()) {
                // Unload the global by setting the DataMemberInfo_t to 0
                datamembers->Unload(var);
