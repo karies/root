@@ -448,9 +448,6 @@ namespace cling {
     CI->getCodeGenOpts().CXXCtorDtorAliases = 0; // aliasing the complete
                                                  // ctor to the base ctor causes
                                                  // the JIT to crash
-    // When asserts are on, TURN ON not compare the VerifyModule
-    assert(CI->getCodeGenOpts().VerifyModule = 1);
-
     return CI;
   }
 
