@@ -156,6 +156,15 @@ namespace cling {
     return m_PerFunctionPasses.get();
   }
 
+  llvm::PassManager *BackendPass::getPerModulePasses() {
+    if (!m_PerModulePasses) {
+      m_PerModulePasses.reset(new PassManager());
+      m_PerModulePasses->add(new DataLayoutPass(m_Module));
+      m_TM->addAnalysisPasses(*m_PerModulePasses);
+    }
+    return m_PerModulePasses.get();
+  }
+
   llvm::TargetMachine*
   BackendPass::CreateTargetMachine(clang::DiagnosticsEngine& Diags,
                                    const clang::TargetOptions& TargetOpts,
@@ -425,6 +434,9 @@ namespace cling {
     if (CodeGenOpts.VerifyModule)
       FPM->add(createVerifierPass());
     PMBuilder.populateFunctionPassManager(*FPM);
+
+    // The Inliner is a module pass; register it.
+    PMBuilder.populateModulePassManager(*getPerModulePasses());
   }
 
   // pin the vtable and OwningPtrs' dtors.

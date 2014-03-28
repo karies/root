@@ -23,8 +23,10 @@ namespace clang {
 namespace llvm {
   namespace legacy {
     class FunctionPassManager;
+    class PassManager;
   }
   using legacy::FunctionPassManager;
+  using legacy::PassManager;
   class Module;
   class Target;
   class TargetMachine;
@@ -38,6 +40,7 @@ namespace cling {
   class BackendPass: public TransactionTransformer {
     llvm::Module* m_Module;
     llvm::OwningPtr<llvm::FunctionPassManager> m_PerFunctionPasses;
+    llvm::OwningPtr<llvm::PassManager> m_PerModulePasses;
     llvm::OwningPtr<llvm::TargetMachine> m_TM;
 
   public:
@@ -68,6 +71,7 @@ namespace cling {
                         const clang::CodeGenOptions& CodeGenOpts);
 
     llvm::FunctionPassManager *getPerFunctionPasses();
+    llvm::PassManager *getPerModulePasses();
   };
 } // end namespace cling
 #endif // CLING_TRANSACTION_TRANSFORMER_H
