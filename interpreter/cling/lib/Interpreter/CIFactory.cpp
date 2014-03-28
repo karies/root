@@ -448,6 +448,8 @@ namespace cling {
     CI->getCodeGenOpts().CXXCtorDtorAliases = 0; // aliasing the complete
                                                  // ctor to the base ctor causes
                                                  // the JIT to crash
+    CI->getCodeGenOpts().VerifyModule = 0; // takes too long
+
     return CI;
   }
 
