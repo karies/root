@@ -3461,8 +3461,8 @@ void TCling::Execute(TObject* obj, TClass* cl, TMethod* method,
 
 //______________________________________________________________________________
 void TCling::ExecuteWithArgsAndReturn(TMethod* method, void* address,
-                                      const std::vector<void*>& args
-                                      /*= std::vector()*/,
+                                      const void* args[] /*=0*/,
+                                      int nargs /*=0*/,
                                       void* ret/*= 0*/) const
 {
    if (!method) {
@@ -3473,7 +3473,7 @@ void TCling::ExecuteWithArgsAndReturn(TMethod* method, void* address,
    TClingCallFunc func(fInterpreter);
    TClingMethodInfo* minfo = (TClingMethodInfo*) method->fInfo;
    func.Init(minfo);
-   func.ExecWithArgsAndReturn(address, args, ret);
+   func.ExecWithArgsAndReturn(address, args, nargs, ret);
 }
 
 //______________________________________________________________________________
@@ -5075,12 +5075,12 @@ void TCling::CallFunc_ExecWithReturn(CallFunc_t* func, void* address, void* ret)
 
 //______________________________________________________________________________
 void TCling::CallFunc_ExecWithArgsAndReturn(CallFunc_t* func, void* address,
-                                            const std::vector<void*>& args
-                                            /*=std::vector<void*>()*/,
+                                            const void* args[] /*=0*/,
+                                            int nargs /*=0*/,
                                             void* ret/*=0*/) const
 {
    TClingCallFunc* f = (TClingCallFunc*) func;
-   f->ExecWithArgsAndReturn(address, args, ret);
+   f->ExecWithArgsAndReturn(address, args, nargs, ret);
 }
 
 //______________________________________________________________________________
