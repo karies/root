@@ -23,6 +23,23 @@
 
 using namespace clang;
 
+namespace {
+  static
+  bool HasAccessibleCopyConstructor(const CXXRecordDecl* CXXRD, void* UserData){
+    Sema* S = (Sema*)UserData;
+    // Check this class's copy constructor.
+    if (CXXConstructorDecl* Ctor
+        = S->LookupCopyingConstructor(const_cast<CXXRecordDecl*>(CXXRD), 0)){
+      if (Ctor->isInvalidDecl()) return false;
+      if (Ctor->getAccess() != AS_public && Ctor->getAccess() != AS_none)
+        return false;
+    }
+    // Check the class's copy constructor of all bases.
+    return CXXRD->forallBases(&HasAccessibleCopyConstructor, UserData,
+                              true /*AllowShortCircuit*/);
+  }
+}
+
 namespace cling {
   ValueExtractionSynthesizer::ValueExtractionSynthesizer(clang::Sema* S)
     : TransactionTransformer(S), m_Context(&S->getASTContext()), m_gClingVD(0),
@@ -165,6 +182,27 @@ namespace cling {
   }
 
   Expr* ValueExtractionSynthesizer::SynthesizeSVRInit(Expr* E) const {
+
+    QualType ETy = E->getType();
+
+    // The expr result is transported as reference, pointer, array, float etc
+    // based on the desugared type. We should still expose the typedef'ed
+    // (sugared) type to the cling::Value.
+    QualType desugaredTy = ETy.getDesugaredType(*m_Context);
+
+    bool isValidValue = true;
+    if (const RecordType* RT = dyn_cast<RecordType>(desugaredTy)) {
+      if (CXXRecordDecl* CXXRD = dyn_cast<CXXRecordDecl>(RT->getDecl()))
+        isValidValue = HasAccessibleCopyConstructor(CXXRD, m_Sema);
+
+      if (!isa<ExprWithCleanups>(E)) {
+        // returning a lvalue (not a temporary): the value should contain
+        // a reference to the lvalue instead of copying it.
+        desugaredTy = m_Context->getLValueReferenceType(desugaredTy);
+        ETy = m_Context->getLValueReferenceType(ETy);
+      }
+    }
+
     // Build a reference to gCling
     ExprResult gClingDRE
       = m_Sema->BuildDeclRefExpr(m_gClingVD, m_Context->VoidPtrTy,
@@ -177,21 +215,10 @@ namespace cling {
     ExprResult wrapperSVRDRE
       = m_Sema->BuildDeclRefExpr(FD->getParamDecl(0), m_Context->VoidPtrTy,
                                  VK_RValue, E->getLocStart());
-    QualType ETy = E->getType();
-    QualType desugaredTy = ETy.getDesugaredType(*m_Context);
-
-    // The expr result is transported as reference, pointer, array, float etc
-    // based on the desugared type. We should still expose the typedef'ed
-    // (sugared) type to the cling::Value.
-    if (desugaredTy->isRecordType() && !isa<ExprWithCleanups>(E)) {
-      // returning a lvalue (not a temporary): the value should contain
-      // a reference to the lvalue instead of copying it.
-      desugaredTy = m_Context->getLValueReferenceType(desugaredTy);
-      ETy = m_Context->getLValueReferenceType(ETy);
-    }
+    uint64_t ETyUInt64 = isValidValue ? (uint64_t)ETy.getAsOpaquePtr() : 0;
     Expr* ETyVP
       = utils::Synthesize::CStyleCastPtrExpr(m_Sema, m_Context->VoidPtrTy,
-                                             (uint64_t)ETy.getAsOpaquePtr());
+                                             ETyUInt64);
 
     llvm::SmallVector<Expr*, 4> CallArgs;
     CallArgs.push_back(gClingDRE.take());
@@ -200,7 +227,17 @@ namespace cling {
 
     ExprResult Call;
     SourceLocation noLoc;
-    if (desugaredTy->isVoidType()) {
+    if (!isValidValue) {
+      // Need to set the value to invalid i.e. 0 type.
+      // We need to synthesize setValueNoAlloc(...), E, because we still need
+      // to run E.
+      Call = m_Sema->ActOnCallExpr(/*Scope*/0, m_UnresolvedNoAlloc,
+                                   E->getLocStart(), CallArgs,
+                                   E->getLocEnd());
+      Call = m_Sema->CreateBuiltinBinOp(Call.get()->getLocStart(), BO_Comma,
+                                        Call.take(), E);
+    }
+    else if (desugaredTy->isVoidType()) {
       // In cases where the cling::Value gets reused we need to reset the
       // previous settings to void.
       // We need to synthesize setValueNoAlloc(...), E, because we still need
