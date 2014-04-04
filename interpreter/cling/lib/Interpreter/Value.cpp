@@ -202,4 +202,17 @@ void* Value::GetDtorWrapperPtr(const clang::RecordDecl* RD,
   return interp.compileFunction(funcname, code, true /*ifUniq*/,
                                 false /*withAccessControl*/);
 }
+   
+void Value::dump() const {
+   dump(llvm::outs());
+}
+void Value::dump(std::raw_ostream& out) const {
+   QualType QT = getType();
+   if (BuiltinType* BT = dyn_cast<BuiltinType>(QT->getTypePtr()) {
+      switch BT->getKind() {
+         ...
+      }
+   }
+}
+
 } // namespace cling

@@ -153,6 +153,23 @@ namespace cling {
     /// Values referencing an object are treated as pointers to the object.
     template <typename T>
     T simplisticCastAs() const;
+    
+    /// \brief Print the type and value, calling custom printer if neede.
+    //
+    /// For non-builtins, user code can supply dedicated printing functions
+    ///\code
+    ///   template <typename POSSIBLYDERIVED>
+    ///   std::string printValue(const MyClass* const p, POSSIBLYDERIVED* ac,
+    ///                          const ValuePrinterInfo& VPI);
+    ///\endcode
+    /// Printing the type can be re-implemented for non-builtins by supplying
+    ///\code
+    ///   template <typename POSSIBLYDERIVED>
+    ///   std::string printType(const MyClass* const p, POSSIBLYDERIVED* ac,
+    ///                         const ValuePrinterInfo& VPI);
+    ///\endcode
+    void dump() const;
+    void dump(std::raw_ostream& out) const;
   };
 
   template <typename T>
