@@ -1967,6 +1967,36 @@ void TStreamerSTLstring::Streamer(TBuffer &R__b)
 
 //______________________________________________________________________________
 
+//////////////////////////////////////////////////////////////////////////
+//                                                                      //
+// TStreamerMemberOffsets provides data member offsets                  //
+//                                                                      //
+//////////////////////////////////////////////////////////////////////////
+
+ClassImp(TStreamerOffsets)
+
+//______________________________________________________________________________
+TStreamerOffsets::TStreamerOffsets(Int_t size, Int_t nOffsets,
+                                   const Int_t* offsets):
+TStreamerElement(GetSEName(), "", 0, TVirtualStreamerInfo::kOffsets, ""),
+fNOffsets(nOffsets)
+{
+   // Initialize the offsets.
+   SetSize(size);
+   fOffsets = new Int_t[nOffsets];
+   memcpy(fOffsets, offsets, sizeof(Int_t) * nOffsets);
+}
+
+//______________________________________________________________________________
+TStreamerOffsets::~TStreamerOffsets()
+{
+   // Destruct the offset streamer element.
+   delete [] fOffsets;
+}
+
+
+//______________________________________________________________________________
+
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
 // TStreamerArtificial implements StreamerElement injected by a TSchemaRule. //

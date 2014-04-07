@@ -57,6 +57,7 @@
 #pragma link C++ class TStreamerString-;
 #pragma link C++ class TStreamerSTL-;
 #pragma link C++ class TStreamerSTLstring-;
+#pragma link C++ class TStreamerOffsets+;
 #pragma link C++ class TStreamerElement-;
 #pragma link C++ class TToggle;
 #pragma link C++ class TToggleGroup;

@@ -410,6 +410,25 @@ public:
    ClassDef(TStreamerSTLstring,2)  //Streamer element of type  C++ string
 };
 
+//________________________________________________________________________
+class TStreamerOffsets: public TStreamerElement {
+   TStreamerOffsets(const TStreamerOffsets&) = delete;
+   TStreamerOffsets&operator=(const TStreamerOffsets&) = delete;
+
+   Int_t  fNOffsets; // Number of data members and thus member offsets
+   Int_t *fOffsets; //[fNOffsets] Offsets of data members
+public:
+   TStreamerOffsets(): fNOffsets(0), fOffsets(0) {}
+   TStreamerOffsets(Int_t size, Int_t nOffsets, const Int_t* offsets);
+   virtual       ~TStreamerOffsets();
+   Int_t          GetOffset(Int_t i) const { return fOffsets[i]; }
+   const Int_t   *GetOffsets() const { return fOffsets; }
+   Int_t          GetNOffsets() const { return fNOffsets; }
+   static const char* GetSEName() { return "@Offsets"; }
+
+   ClassDef(TStreamerOffsets,1)  //I/O dictionary offset streamer element
+};
+
 class TVirtualObject;
 class TBuffer;
 
