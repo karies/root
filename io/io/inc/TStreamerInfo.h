@@ -149,6 +149,7 @@ public:
       kSTL         = 300, kSTLstring = 365,
       kStreamer    = 500, kStreamLoop = 501,
       kCache       = 600,  // Cache the value in memory than is not part of the object but is accessible via a SchemaRule
+      kOffsets     = 700,
       kArtificial  = 1000,
       kCacheNew    = 1001,
       kCacheDelete = 1002,
@@ -182,6 +183,7 @@ public:
    void                Build();
    void                BuildCheck();
    void                BuildEmulated(TFile *file);
+   void                BuildOffsets();
    void                BuildOld();
    virtual Bool_t      BuildFor( const TClass *cl );
    void                CallShowMembers(const void* obj, TMemberInspector &insp, Bool_t isTransient) const;
