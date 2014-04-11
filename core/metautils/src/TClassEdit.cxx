@@ -668,6 +668,18 @@ string TClassEdit::GetLong64_Name(const string& original)
 }
 
 //______________________________________________________________________________
+string TClassEdit::GetTemplateName(const char* name)
+{
+   string result = name;
+   int pos = result.find_first_of('<');
+   if (result[pos] == '<') {
+      // do I really need NULL or 0 would suffice
+      result[pos] = NULL;
+   }
+   return 0;
+}
+
+
 int TClassEdit::GetSplit(const char *type, vector<string>& output, int &nestedLoc, EModType mode)
 {
    ///////////////////////////////////////////////////////////////////////////

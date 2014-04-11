@@ -78,9 +78,11 @@ namespace ROOT {
 namespace ROOT {
    class TMapTypeToTClass;
    class TMapDeclIdToTClass;
+   class TMapTmpltNameToTClass;
 }
 typedef ROOT::TMapTypeToTClass IdMap_t;
 typedef ROOT::TMapDeclIdToTClass DeclIdMap_t;
+typedef ROOT::TMapTmpltNameToTClass TmpltNameMap_t;
 
 class TClass : public TDictionary {
 
@@ -238,8 +240,10 @@ private:
 
    static IdMap_t    *GetIdMap();       //Map from typeid to TClass pointer
    static DeclIdMap_t *GetDeclIdMap();  //Map from DeclId_t to TClass pointer
-   static std::atomic<Int_t>     fgClassCount;  //provides unique id for a each class
-                                                //stored in TObject::fUniqueID
+   static TmpltNameMap_t *GetTmpltNameMap();  //Map from DeclId_t to TClass pointer
+   static ENewType    fgCallingNew;     //Intent of why/how TClass::New() is called
+   static Int_t       fgClassCount;     //provides unique id for a each class
+                                        //stored in TObject::fUniqueID
    // Internal status bits
    enum { kLoading = BIT(14), kUnloading = BIT(14) };
    // Internal streamer type.
@@ -467,6 +471,7 @@ public:
    static TClass        *GetClass(const type_info &typeinfo, Bool_t load = kTRUE, Bool_t silent = kFALSE);
    static TClass        *GetClass(ClassInfo_t *info, Bool_t load = kTRUE, Bool_t silent = kFALSE);
    static Bool_t         GetClass(DeclId_t id, std::vector<TClass*> &classes);
+   static Bool_t         GetClass(const char* name, std::vector<TClass*> &classes);
    static VoidFuncPtr_t  GetDict (const char *cname);
    static VoidFuncPtr_t  GetDict (const type_info &info);
 

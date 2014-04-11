@@ -72,6 +72,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <typeinfo>
 #include <cmath>
 #include <assert.h>
@@ -302,6 +303,37 @@ namespace ROOT {
          fMap.erase(key);
       }
    };
+
+   class TMapTmpltNameToTClass {
+   // Wrapper class for the multimap of Template Names to TClass pointers.
+   public:
+      typedef unordered_multimap<string, TClass*>        TmpltNameMap_t;
+      typedef TmpltNameMap_t::key_type                   key_type;
+      typedef TmpltNameMap_t::mapped_type                mapped_type;
+      typedef TmpltNameMap_t::const_iterator             const_iterator;
+      typedef std::pair <const_iterator, const_iterator> equal_range;
+      typedef TmpltNameMap_t::size_type                  size_type;
+
+   private:
+      TmpltNameMap_t fMap;
+
+   public:
+      void Add(const key_type &key, mapped_type obj)
+      {
+         // Add the <key,obj> pair to the map.
+         std::pair<const key_type, mapped_type> pair = make_pair(key, obj);
+         fMap.insert(pair);
+      }
+      equal_range Find(const key_type &key) const
+      {
+         // Find the type corresponding to the key.
+         return fMap.equal_range(key);
+      }
+      void Remove(const key_type &key) {
+         // Remove the type corresponding to the key.
+         fMap.erase(key);
+      }
+   };
 }
 
 IdMap_t *TClass::GetIdMap() {
@@ -319,10 +351,21 @@ DeclIdMap_t *TClass::GetDeclIdMap() {
 
 #ifdef R__COMPLETE_MEM_TERMINATION
    static DeclIdMap_t gDeclIdMapObject;
-   return &gIdMap;
+   return &gDeclIdMap;
 #else
    static DeclIdMap_t *gDeclIdMap = new DeclIdMap_t;
    return gDeclIdMap;
+#endif
+}
+
+TmpltNameMap_t *TClass::GetTmpltNameMap() {
+
+#ifdef R__COMPLETE_MEM_TERMINATION
+   static TmpltNameMap_t gTmpltNameMapObject;
+   return &gTmpltNameMap;
+#else
+   static TmpltNameMap_t *gTmpltNameMap = new TmpltNameMap_t;
+   return gTmpltNameMap;
 #endif
 }
 
@@ -1238,6 +1281,12 @@ void TClass::Init(const char *name, Version_t cversion,
    SetBit(kLoading);
    // Advertise ourself as the loading class for this class name
    TClass::AddClass(this);
+
+   // Check if TClass is a ClassTemplateSpecialization
+   std::string templateKey = TClassEdit::GetTemplateName(fName);
+   if (!templateKey.empty()) {
+      GetTmpltNameMap()->Add(templateKey.c_str(), this);
+   }
 
    Bool_t isStl = TClassEdit::IsSTLCont(fName);
 
@@ -3076,6 +3125,21 @@ Bool_t TClass::GetClass(DeclId_t id, std::vector<TClass*> &classes)
    if (iter.first == iter.second) return false;
    std::vector<TClass*>::iterator vectIt = classes.begin();
    for (DeclIdMap_t::const_iterator it = iter.first; it != iter.second; ++it)
+      vectIt = classes.insert(vectIt, it->second);
+   return true;
+}
+
+//______________________________________________________________________________
+Bool_t TClass::GetClass(const char* name, std::vector<TClass*> &classes)
+{
+   if (!gROOT->GetListOfClasses())    return false;
+
+   TmpltNameMap_t* map = GetTmpltNameMap();
+   // Get all the TClass pointer that have the same DeclId.
+   TmpltNameMap_t::equal_range iter = map->Find(name);
+   if (iter.first == iter.second) return false;
+   std::vector<TClass*>::iterator vectIt = classes.begin();
+   for (TmpltNameMap_t::const_iterator it = iter.first; it != iter.second; ++it)
       vectIt = classes.insert(vectIt, it->second);
    return true;
 }
