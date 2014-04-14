@@ -496,12 +496,20 @@ namespace cling {
     ///
     CompilationResult emitAllDecls(Transaction* T);
 
+    ///\brief Looks up a file or library according to the current interpreter
+    /// include paths and system include paths.
+    ///\param[in] file - The name of the file.
+    ///
+    ///\returns the canonical path to the file or library or empty string if not
+    /// found.
+    ///
+    std::string lookupFileOrLibrary(llvm::StringRef file);
+
     ///\brief Loads header file or shared library.
     ///
     ///\param [in] filename - The file to loaded.
     ///\param [in] allowSharedLib - Whether to try to load the file as shared
     ///                             library.
-    ///
     ///\returns result of the compilation.
     ///
     CompilationResult loadFile(const std::string& filename,
@@ -509,7 +517,7 @@ namespace cling {
 
     ///\brief Unloads (forgets) given number of transactions.
     ///
-    ///\param[in] numberOfTransactions - how many transactions to revert 
+    ///\param[in] numberOfTransactions - how many transactions to revert
     ///                                  starting from the last.
     ///
     void unload(unsigned numberOfTransactions);

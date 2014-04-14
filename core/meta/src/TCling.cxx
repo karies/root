@@ -990,7 +990,8 @@ void TCling::RegisterModule(const char* modulename,
                             const char** includePaths,
                             const char* payloadCode,                            
                             void (*triggerFunc)(),
-                            const FwdDeclArgsToKeepCollection_t& fwdDeclsArgToSkip)
+                            const FwdDeclArgsToKeepCollection_t& fwdDeclsArgToSkip,
+                            const char** classesHeaders)
 {
    // Inject the module named "modulename" into cling; load all headers.
    // headers is a 0-terminated array of header files to #include after
@@ -1123,6 +1124,29 @@ void TCling::RegisterModule(const char* modulename,
       }
    }
 
+   // Now we register all the headers necessary for the class
+   // Typical format of the array:
+   //    {"A", "classes.h", "@",
+   //     "vector<A>", "vector", "@",
+   //     "myClass", payloadCode, "@",
+   //    nullptr};
+
+   size_t theHash;
+   std::string temp;
+   std::hash<std::string> hashFcn;
+   for (const char** classesHeader = classesHeaders; *classesHeader; ++classesHeader) {
+      temp=*classesHeader;
+      theHash = hashFcn(*classesHeader);
+      classesHeader++;
+      for (const char** classesHeader_inner = classesHeader; 0!=strcmp(*classesHeader_inner,"@"); ++classesHeader_inner,++classesHeader){
+         // This is done in order to distinguish headers from files and from the payloadCode
+         if (payloadCode == *classesHeader_inner ){
+            fClassesPayloadsMap[theHash] = payloadCode;
+         }
+         fClassesHeadersMap[theHash].push_back(*classesHeader_inner);
+      }
+   }
+   
    // Now that all the header have been registered/compiled, let's
    // make sure to 'reset' the TClass that have a class init in this module
    // but already had their type information available (using information/header
@@ -1377,6 +1401,12 @@ void TCling::InspectMembers(TMemberInspector& insp, const void* obj,
       return;
    }
 
+   static TClassRef clRefString("std::string");
+   if (clRefString == cl) {
+      // We stream std::string without going through members..
+      return;
+   }
+
    const char* cobj = (const char*) obj; // for ptr arithmetics
 
    static clang::PrintingPolicy
@@ -1405,6 +1435,8 @@ void TCling::InspectMembers(TMemberInspector& insp, const void* obj,
       Error("InspectMembers", "Cannot find Decl for class %s is not a CXXRecordDecl.", clname);
       return;
    }
+
+   cling::Interpreter::PushTransactionRAII deserRAII(fInterpreter);
 
    const clang::ASTRecordLayout& recLayout
       = astContext.getASTRecordLayout(recordDecl);
@@ -1583,7 +1615,33 @@ void TCling::InspectMembers(TMemberInspector& insp, const void* obj,
                sBaseName.c_str(), clname);
          continue;
       }
-      int64_t baseOffset = recLayout.getBaseClassOffset(baseDecl).getQuantity();
+      int64_t baseOffset;
+      if (iBase->isVirtual()) {
+         if (!obj) {
+            Error("InspectMembers",
+                  "Base %s of class %s is virtual but no object provided",
+                  sBaseName.c_str(), clname);
+            continue;
+         }
+         TClingClassInfo* ci = (TClingClassInfo*)cl->GetClassInfo();
+         TClingClassInfo* baseCi = (TClingClassInfo*)baseCl->GetClassInfo();
+         if (ci && baseCi) {
+            baseOffset = ci->GetBaseOffset(baseCi, const_cast<void*>(obj),
+                                           true /*isDerivedObj*/);
+            if (baseOffset == -1) {
+               Error("InspectMembers",
+                     "Error calculating offset of virtual base %s of class %s",
+                     sBaseName.c_str(), clname);
+            }
+         } else {
+            Error("InspectMembers",
+                  "Cannot calculate offset of virtual base %s of class %s",
+                  sBaseName.c_str(), clname);
+            continue;
+         }
+      } else {
+         baseOffset = recLayout.getBaseClassOffset(baseDecl).getQuantity();
+      }
       if (baseCl->IsLoaded()) {
          // For loaded class, CallShowMember will (especially for TObject)
          // call the virtual ShowMember rather than the class specific version
@@ -1875,14 +1933,29 @@ Int_t TCling::Load(const char* filename, Bool_t system)
 
    // Used to return 0 on success, 1 on duplicate, -1 on failure, -2 on "fatal".
    R__LOCKGUARD2(gInterpreterMutex);
+   cling::DynamicLibraryManager* DLM = fInterpreter->getDynamicLibraryManager();
+   std::string canonLib = DLM->lookupLibrary(filename);
    cling::DynamicLibraryManager::LoadLibResult res
-      = fInterpreter->getDynamicLibraryManager()->loadLibrary(filename, system);
+      = cling::DynamicLibraryManager::kLoadLibNotFound;
+   if (!canonLib.empty()) {
+      if (system)
+         res = DLM->loadLibrary(filename, system);
+      else {
+         // For the non system libs, we'd like to be able to unload them.
+         // FIXME: Here we lose the information about kLoadLibAlreadyLoaded case.
+         cling::Interpreter::CompilationResult compRes;
+         fMetaProcessor->process(Form(".L %s", canonLib.c_str()), compRes, /*cling::Value*/0);
+         if (compRes == cling::Interpreter::kSuccess)
+            res = cling::DynamicLibraryManager::kLoadLibSuccess;
+      }
+   }
+
    if (res == cling::DynamicLibraryManager::kLoadLibSuccess) {
       UpdateListOfLoadedSharedLibraries();
    }
    switch (res) {
    case cling::DynamicLibraryManager::kLoadLibSuccess: return 0;
-   case cling::DynamicLibraryManager::kLoadLibExists:  return 1;
+   case cling::DynamicLibraryManager::kLoadLibAlreadyLoaded:  return 1;
    default: break;
    };
    return -1;
@@ -3653,7 +3726,7 @@ namespace {
       // forward declarations in rootmaps and to set the external visible
       // storage flag for them.
    public:
-      ExtVisibleStorageAdder(std::set<const NamespaceDecl*>& nsSet): fNSSet(nsSet) {};
+      ExtVisibleStorageAdder(std::unordered_set<const NamespaceDecl*>& nsSet): fNSSet(nsSet) {};
       bool VisitNamespaceDecl(NamespaceDecl* nsDecl) {
          // We want to enable the external lookup for this namespace
          // because it may shadow the lookup of other names contained
@@ -3663,7 +3736,7 @@ namespace {
          return true;
       }
    private:
-      std::set<const NamespaceDecl*>& fNSSet;
+      std::unordered_set<const NamespaceDecl*>& fNSSet;
    
    };
 
@@ -4606,6 +4679,8 @@ void TCling::UpdateListsOnUnloaded(const cling::Transaction &T)
    TListOfDataMembers* globals = (TListOfDataMembers*)gROOT->GetListOfGlobals();
    for(cling::Transaction::const_iterator I = T.decls_begin(), E = T.decls_end();
        I != E; ++I) {
+      if (I->m_Call == cling::Transaction::kCCIHandleVTable)
+         continue;
       for (DeclGroupRef::const_iterator DI = I->m_DGR.begin(),
               DE = I->m_DGR.end(); DI != DE; ++DI) {
          // Deal with global variables and globa enum constants.
@@ -5028,21 +5103,9 @@ void TCling::SetTempLevel(int val) const
 //______________________________________________________________________________
 int TCling::UnloadFile(const char* path) const
 {
-
-   if (fInterpreter->getDynamicLibraryManager()->isLibraryLoaded(path)) {
-      // Signal that the list of shared libs needs to be updated.
-      const_cast<TCling*>(this)->fPrevLoadedDynLibInfo = 0;
-      const_cast<TCling*>(this)->fSharedLibs = "";
-
-      Error("UnloadFile", "Unloading of shared libraries not yet implemented!\n"
-            "Not unloading file %s!", path);
-
-      return -1;
-   }
-
    // Unload a shared library or a source file.
    cling::Interpreter::CompilationResult compRes;
-   fMetaProcessor->process(TString::Format(".U %s", path).Data(), compRes, /*cling::Value*/0);
+   fMetaProcessor->process(Form(".U %s", path), compRes, /*cling::Value*/0);
    return compRes == cling::Interpreter::kFailure;
 }
 

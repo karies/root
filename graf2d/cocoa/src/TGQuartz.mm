@@ -447,9 +447,21 @@ void TGQuartz::GetTextExtent(UInt_t &w, UInt_t &h, char *text)
       h = 0;
       return;
    }
-   
-   if (fPimpl->fFontManager.SelectFont(GetTextFont(), GetTextSize()))
-      fPimpl->fFontManager.GetTextBounds(w, h, text);
+
+   if (fPimpl->fFontManager.SelectFont(GetTextFont(), GetTextSize())) {
+      const unsigned fontIndex = GetTextFont() / 10;
+      if (fontIndex == 12 || fontIndex == 15) {//Greek and math symbols.
+         typedef std::vector<UniChar>::size_type size_type;
+
+         std::vector<UniChar> unichars(std::strlen(text));
+         for (size_type i = 0, len = unichars.size(); i < len; ++i)
+            unichars[i] = 0xF000 + (unsigned char)text[i];
+         
+         fPimpl->fFontManager.GetTextBounds(w, h, unichars);
+      } else {
+         fPimpl->fFontManager.GetTextBounds(w, h, text);
+      }
+   }
 }
 
 //______________________________________________________________________________
@@ -465,6 +477,23 @@ Int_t TGQuartz::GetFontAscent() const
 }
 
 //______________________________________________________________________________
+Int_t TGQuartz::GetFontAscent(const char *text) const
+{
+   // Returns the ascent of the current font (in pixels).
+   // The ascent of a font is the distance from the baseline
+   // to the highest position characters extend to.
+   
+   //In case of any problem we can always resort to the old version:
+   if (!text || !text[0])//How it's usually tested in ROOT
+      return GetFontAscent();
+   
+   if (fPimpl->fFontManager.SelectFont(GetTextFont(), GetTextSize()))
+      return Int_t(fPimpl->fFontManager.GetAscent(text));
+
+   return 0;
+}
+
+//______________________________________________________________________________
 Int_t TGQuartz::GetFontDescent() const
 {
    // Returns the descent of the current font (in pixels.
@@ -472,6 +501,23 @@ Int_t TGQuartz::GetFontDescent() const
    // to the lowest point characters extend to.
    if (fPimpl->fFontManager.SelectFont(GetTextFont(), GetTextSize()))
       return Int_t(fPimpl->fFontManager.GetDescent());
+
+   return 0;
+}
+
+//______________________________________________________________________________
+Int_t TGQuartz::GetFontDescent(const char *text) const
+{
+   // Returns the descent of the current font (in pixels.
+   // The descent is the distance from the base line
+   // to the lowest point characters extend to.
+
+   //That's how it's tested in ROOT:
+   if (!text || !text[0])
+      return GetFontDescent();
+
+   if (fPimpl->fFontManager.SelectFont(GetTextFont(), GetTextSize()))
+      return Int_t(fPimpl->fFontManager.GetDescent(text));
 
    return 0;
 }

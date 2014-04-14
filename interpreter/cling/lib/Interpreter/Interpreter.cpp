@@ -590,7 +590,7 @@ namespace cling {
     CompilationOptions CO;
     CO.DeclarationExtraction = 0;
     CO.ValuePrinting = CompilationOptions::VPEnabled;
-    CO.ResultEvaluation = 0;
+    CO.ResultEvaluation = (bool)V;
 
     return EvaluateInternal(input, CO, V);
   }
@@ -933,18 +933,38 @@ namespace cling {
     return Interpreter::kSuccess;
   }
 
+  std::string Interpreter::lookupFileOrLibrary(llvm::StringRef file) {
+    const FileEntry* FE = 0;
+
+    //Copied from clang's PPDirectives.cpp
+    bool isAngled = false;
+    // Clang doc says:
+    // "LookupFrom is set when this is a \#include_next directive, it
+    // specifies the file to start searching from."
+    const DirectoryLookup* LookupFrom = 0;
+    const DirectoryLookup* CurDir = 0;
+    Preprocessor& PP = getCI()->getPreprocessor();
+    // PP::LookupFile uses it to issue 'nice' diagnostic
+    SourceLocation fileNameLoc;
+    FE = PP.LookupFile(fileNameLoc, file, isAngled, LookupFrom, CurDir,
+                       /*SearchPath*/0, /*RelativePath*/ 0,
+                       /*suggestedModule*/0, /*SkipCache*/false);
+    if (FE)
+      return FE->getName();
+    return getDynamicLibraryManager()->lookupLibrary(file);
+  }
+
   Interpreter::CompilationResult
   Interpreter::loadFile(const std::string& filename,
                         bool allowSharedLib /*=true*/) {
     if (allowSharedLib) {
-      bool tryCode;
-      if (getDynamicLibraryManager()->loadLibrary(filename, false, &tryCode)
-          == DynamicLibraryManager::kLoadLibSuccess)
+      DynamicLibraryManager* DLM = getDynamicLibraryManager();
+      switch (DLM->loadLibrary(filename, /*permanent*/false)) {
+      case DynamicLibraryManager::kLoadLibSuccess: // Intentional fall through
+      case DynamicLibraryManager::kLoadLibAlreadyLoaded:
         return kSuccess;
-      if (!tryCode) {
-        llvm::errs() << "ERROR in cling::Interpreter::loadFile(): cannot find "
-                     << filename << "!\n";
-        return kFailure;
+      default:
+        break;
       }
     }
 
