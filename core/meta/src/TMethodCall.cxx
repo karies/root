@@ -407,36 +407,42 @@ TFunction *TMethodCall::GetMethod()
 }
 
 //______________________________________________________________________________
-void TMethodCall::Execute(void *object)
+void TMethodCall::Execute(void *object, TInterpreterValue* res /* =0 */)
 {
    // Execute the method (with preset arguments) for the specified object.
 
    if (!fFunc) return;
-   
+
    R__LOCKGUARD2(gInterpreterMutex);
    void *address = 0;
    if (object) address = (void*)((Long_t)object + fOffset);
    if (!fDtorOnly && fMethod[0]=='~') {
       Error("Execute","TMethodCall can no longer be use to call the operator delete and the destructor at the same time");
    }
-   gCling->CallFunc_Exec(fFunc,address); 
+   if (res) {
+      gCling->CallFunc_Exec(fFunc, address, *res);
+   } else {
+      gCling->CallFunc_Exec(fFunc, address);
+   }
 }
 
 //______________________________________________________________________________
-void TMethodCall::Execute(void *object, const char *params)
+void TMethodCall::Execute(void *object, const char *params, TInterpreterValue* res /* =0 */)
 {
    // Execute the method for the specified object and argument values.
 
    if (!fFunc) return;
-   
+
    R__LOCKGUARD2(gInterpreterMutex);
    gCling->CallFunc_SetArgs(fFunc, (char *)params);
 
    void *address = 0;
    if (object) address = (void*)((Long_t)object + fOffset);
-   gCling->SetTempLevel(1);
-   gCling->CallFunc_Exec(fFunc,address);
-   gCling->SetTempLevel(-1);
+   if (res) {
+      gCling->CallFunc_Exec(fFunc, address, *res);
+   } else {
+      gCling->CallFunc_Exec(fFunc, address, *res);
+   }
 }
 
 //______________________________________________________________________________

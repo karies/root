@@ -33,6 +33,7 @@
 
 class TClass;
 class TFunction;
+class TInterpreterValue;
 
 class TMethodCall : public TObject {
 
@@ -88,8 +89,8 @@ public:
    void     SetParam(Long64_t ll);
    void     SetParam(ULong64_t ull);
 
-   void     Execute(void *object);
-   void     Execute(void *object, const char *params);
+   void     Execute(void *object, TInterpreterValue* res = 0);
+   void     Execute(void *object, const char *params, TInterpreterValue* res = 0);
    void     Execute(void *object, Long_t &retLong);
    void     Execute(void *object, const char *params, Long_t &retLong);
    void     Execute(void *object, Double_t &retDouble);
@@ -98,8 +99,8 @@ public:
    void     Execute(void *object, char **retText);
    void     Execute(void *object, const char *params, char **retText);
 
-   void     Execute();
-   void     Execute(const char *params);
+   void     Execute(TInterpreterValue* res = 0);
+   void     Execute(const char *params, TInterpreterValue* res = 0);
    void     Execute(Long_t &retLong);
    void     Execute(const char *params, Long_t &retLong);
    void     Execute(Double_t &retDouble);
@@ -108,10 +109,10 @@ public:
    ClassDef(TMethodCall,0)  //Method calling interface
 };
 
-inline void TMethodCall::Execute()
-   { Execute((void *)0); }
-inline void TMethodCall::Execute(const char *params)
-   { Execute((void *)0, params); }
+inline void TMethodCall::Execute(TInterpreterValue* res)
+   { Execute((void *)0, res); }
+inline void TMethodCall::Execute(const char *params, TInterpreterValue* res)
+   { Execute((void *)0, params, res); }
 inline void TMethodCall::Execute(Long_t &retLong)
    { Execute((void *)0, retLong); }
 inline void TMethodCall::Execute(const char *params, Long_t &retLong)
