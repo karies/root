@@ -1095,7 +1095,7 @@ void TStreamerInfo::BuildOffsets()
    // Add the TStreamerMemberOffsets element describing the data member
    // offsets of all members of the current class, i.e. non-recursively.
 
-   // Check whether the element was alreday added:
+   // Check whether the element was already added:
    if (fElements->FindObject(TStreamerOffsets::GetStaticName()))
       return;
 
