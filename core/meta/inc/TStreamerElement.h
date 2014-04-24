@@ -416,7 +416,7 @@ class TStreamerOffsets: public TStreamerElement {
    TStreamerOffsets&operator=(const TStreamerOffsets&) = delete;
 
    Int_t  fNOffsets; // Number of data members and thus member offsets
-   Int_t *fOffsets; //[fNOffsets] Offsets of data members
+   Int_t *fOffsets;  //[fNOffsets] Offsets of data members
 public:
    TStreamerOffsets(): fNOffsets(0), fOffsets(0) {}
    TStreamerOffsets(Int_t size, Int_t nOffsets, const Int_t* offsets);
