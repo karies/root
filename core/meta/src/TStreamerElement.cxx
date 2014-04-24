@@ -1978,7 +1978,8 @@ ClassImp(TStreamerOffsets)
 //______________________________________________________________________________
 TStreamerOffsets::TStreamerOffsets(Int_t size, Int_t nOffsets,
                                    const Int_t* offsets):
-TStreamerElement(GetSEName(), "", 0, TVirtualStreamerInfo::kOffsets, ""),
+TStreamerElement(GetStaticName(), "", 0,
+                 TVirtualStreamerInfo::kOffsets, ""),
 fNOffsets(nOffsets)
 {
    // Initialize the offsets.
