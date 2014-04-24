@@ -1090,6 +1090,36 @@ Bool_t TStreamerInfo::BuildFor( const TClass *in_memory_cl )
 }
 
 //______________________________________________________________________________
+void TStreamerInfo::BuildOffsets()
+{
+   // Add the TStreamerMemberOffsets element describing the data member
+   // offsets of all members of the current class, i.e. non-recursively.
+
+   // Check whether the element was already added:
+   if (fElements->FindObject(TStreamerOffsets::GetStaticName()))
+      return;
+
+   if (!fClass && fClass->GetState() != TClass::kInterpreted) {
+      Error("BuildOffsets", "Can only build offsets on interpreted TClass!");
+      return;
+   }
+   std::vector<Int_t> offsets;
+   TIter next(fElements);
+   while (TStreamerElement* el = (TStreamerElement*)next()) {
+      // Skip those that are skipped in TStreamerInfo::Stream().
+      // !kWrite elements only exist in files; we have an interpreted TClass.
+      if (el->IsA() == TStreamerArtificial::Class()
+          || el->TestBit(TStreamerElement::kRepeat)
+          || el->TestBit(TStreamerElement::kCache))
+         continue;
+      offsets.push_back(el->GetOffset());
+   }
+   TStreamerOffsets* smo
+      = new TStreamerOffsets(fSize, (Int_t)offsets.size(), offsets.data());
+   fElements->Add(smo);
+}
+
+//______________________________________________________________________________
 // Helper function for BuildOld
 namespace {
    Bool_t ClassWasMovedToNamespace(TClass *oldClass, TClass *newClass)

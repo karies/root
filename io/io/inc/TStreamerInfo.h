@@ -152,6 +152,7 @@ public:
       kArtificial  = 1000,
       kCacheNew    = 1001,
       kCacheDelete = 1002,
+      kOffsets     = 1003, // a TStreamerOffsets
       kMissing     = 99999
    };
 
@@ -182,6 +183,7 @@ public:
    void                Build();
    void                BuildCheck();
    void                BuildEmulated(TFile *file);
+   void                BuildOffsets();
    void                BuildOld();
    virtual Bool_t      BuildFor( const TClass *cl );
    void                CallShowMembers(const void* obj, TMemberInspector &insp, Bool_t isTransient) const;

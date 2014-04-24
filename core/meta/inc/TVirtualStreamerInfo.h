@@ -78,9 +78,10 @@ public:
       kSTLstring   = ROOT::kSTLstring /* 365 */,
       kStreamer    = 500, kStreamLoop = 501,
       kCache       = 600,  // Cache the value in memory than is not part of the object but is accessible via a SchemaRule
-      kArtificial  = 1000, 
+      kArtificial  = 1000,
       kCacheNew    = 1001,
       kCacheDelete = 1002,
+      kOffsets     = 1003, // a TStreamerOffsets
       kMissing     = 99999
    };
 
