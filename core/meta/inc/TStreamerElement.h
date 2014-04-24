@@ -424,7 +424,7 @@ public:
    Int_t          GetOffset(Int_t i) const { return fOffsets[i]; }
    const Int_t   *GetOffsets() const { return fOffsets; }
    Int_t          GetNOffsets() const { return fNOffsets; }
-   static const char* GetSEName() { return "@Offsets"; }
+   static const char* GetStaticName() { return "@Offsets"; }
 
    ClassDef(TStreamerOffsets,2)  //I/O dictionary offset streamer element
 };

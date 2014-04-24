@@ -1096,7 +1096,7 @@ void TStreamerInfo::BuildOffsets()
    // offsets of all members of the current class, i.e. non-recursively.
 
    // Check whether the element was alreday added:
-   if (fElements->FindObject(TStreamerOffsets::GetSEName()))
+   if (fElements->FindObject(TStreamerOffsets::GetStaticName()))
       return;
 
    if (!fClass && fClass->GetState() != TClass::kInterpreted) {
