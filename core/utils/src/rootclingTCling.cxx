@@ -58,8 +58,7 @@ bool AddStreamerInfoToROOTFile(const char* normName)
    TVirtualStreamerInfo* SI = cl->GetStreamerInfo();
    if (!SI)
       return false;
-   //FIXME: merge with TStreamerOffsets branch, then:
-   // SI->BuildOffsets();
+   ((TStreamerInfo*)SI)->BuildOffsets();
    gStreamerInfos.AddLast(SI);
    return true;
 }
