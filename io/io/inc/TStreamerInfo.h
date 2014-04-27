@@ -180,7 +180,7 @@ public:
    TStreamerInfo();
    TStreamerInfo(TClass *cl);
    virtual            ~TStreamerInfo();
-   void                Build();
+   void                Build(bool local = false);
    void                BuildCheck();
    void                BuildEmulated(TFile *file);
    void                BuildOffsets();

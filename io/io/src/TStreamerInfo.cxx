@@ -202,11 +202,12 @@ TStreamerInfo::~TStreamerInfo()
 }
 
 //______________________________________________________________________________
-void TStreamerInfo::Build()
+void TStreamerInfo::Build(bool local /*=false*/)
 {
    // Build the I/O data structure for the current class version.
    // A list of TStreamerElement derived classes is built by scanning
    // one by one the list of data members of the analyzed class.
+   // If local, don't complain about missing base class and member streamer info.
 
    R__LOCKGUARD(gInterpreterMutex);
 
@@ -291,7 +292,7 @@ void TStreamerInfo::Build()
                // element from being inserted into the compiled info.
                element->SetType(-1);
             }
-            if (!clm->IsLoaded() && !(isCollection || isString)) {
+            if (!local && !clm->IsLoaded() && !(isCollection || isString)) {
                // Don't complain about the base classes of collections nor of
                // std::string.
                Warning("Build", "%s: base class %s has no streamer or dictionary it will not be saved", GetName(), clm->GetName());
@@ -407,13 +408,13 @@ void TStreamerInfo::Build()
             if (((TStreamerSTL*)element)->GetSTLtype() != ROOT::kSTLvector) {
                if (fClass->IsLoaded()) {
                   if (!element->GetClassPointer()->IsLoaded()) {
-                     Error("Build","The class \"%s\" is compiled and for its the data member \"%s\", we do not have a dictionary for the collection \"%s\", we will not be able to read or write this data member.",GetName(),dmName,element->GetClassPointer()->GetName());
+                     Error("Build","The class \"%s\" is compiled and for its data member \"%s\", we do not have a dictionary for the collection \"%s\", we will not be able to read or write this data member.",GetName(),dmName,element->GetClassPointer()->GetName());
                      delete element;
                      continue;
                   }
-               } else if (fClass->GetState() == TClass::kInterpreted) {
+               } else if (!local && fClass->GetState() == TClass::kInterpreted) {
                   if (element->GetClassPointer()->GetCollectionProxy()->GetProperties() & TVirtualCollectionProxy::kIsEmulated) {
-                     Error("Build","The class \"%s\" is interpreted and for its the data member \"%s\", we do not have a dictionary for the collection \"%s\", we will not be able to read or write this data member.",GetName(),dmName,element->GetClassPointer()->GetName());
+                     Error("Build","The class \"%s\" is interpreted and for its data member \"%s\", we do not have a dictionary for the collection \"%s\", we will not be able to read or write this data member.",GetName(),dmName,element->GetClassPointer()->GetName());
                      delete element;
                      continue;
                   }
@@ -434,7 +435,7 @@ void TStreamerInfo::Build()
                      element = new TStreamerObjectPointer(dmName, dmTitle, offset, dmFull);
                   } else {
                      element = new TStreamerObjectAnyPointer(dmName, dmTitle, offset, dmFull);
-                     if (!streamer && !clm->GetStreamer() && !clm->IsLoaded()) {
+                     if (!local && !streamer && !clm->GetStreamer() && !clm->IsLoaded()) {
                         Error("Build", "%s: %s has no streamer or dictionary, data member %s will not be saved", GetName(), dmFull, dmName);
                      }
                   }
@@ -445,7 +446,7 @@ void TStreamerInfo::Build()
                element = new TStreamerString(dmName, dmTitle, offset);
             } else {
                element = new TStreamerObjectAny(dmName, dmTitle, offset, dmFull);
-               if (!streamer && !clm->GetStreamer() && !clm->IsLoaded()) {
+               if (!local && !streamer && !clm->GetStreamer() && !clm->IsLoaded()) {
                   Warning("Build", "%s: %s has no streamer or dictionary, data member \"%s\" will not be saved", GetName(), dmFull, dmName);
                }
             }

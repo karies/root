@@ -109,7 +109,7 @@ public:
    TVirtualStreamerInfo();
    TVirtualStreamerInfo(TClass * /*cl*/);
    virtual            ~TVirtualStreamerInfo();
-   virtual void        Build() = 0;
+   virtual void        Build(bool /*local*/ = false) = 0;
    virtual void        BuildCheck() = 0;
    virtual void        BuildEmulated(TFile *file) = 0;
    virtual void        BuildOld() = 0;
