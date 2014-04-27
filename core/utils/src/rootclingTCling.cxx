@@ -59,6 +59,12 @@ bool AddStreamerInfoToROOTFile(const char* normName)
    Version_t classVersion = cl->GetClassVersion();
    if (classVersion == 0)
       return true;
+   // Custom streamers of any form will not need offsets.
+   if (cl->GetStreamerFunc() || cl->GetStreamer())
+      return true;
+   // If this is a proxied collection then offsets are not needed.
+   if (cl->GetCollectionProxy())
+      return true;
    TStreamerInfo* SI = new TStreamerInfo(cl);
    // Must register the SI "temporarily" in the ListOfStreamerInfos
    // for the resolution of counter elements:
