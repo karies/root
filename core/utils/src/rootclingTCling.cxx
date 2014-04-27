@@ -55,11 +55,20 @@ bool AddStreamerInfoToROOTFile(const char* normName)
    TClass* cl = TClass::GetClass(normName, kTRUE /*load*/);
    if (!cl)
       return false;
-   TVirtualStreamerInfo* SI = cl->GetStreamerInfo();
-   if (!SI)
-      return false;
-   //FIXME: merge with TStreamerOffsets branch, then:
-   // SI->BuildOffsets();
+   // If the class is not persistent we return success.
+   Version_t classVersion = cl->GetClassVersion();
+   if (classVersion == 0)
+      return true;
+   // If this is a proxied collection then offsets are not needed.
+   if (cl->GetCollectionProxy())
+      return true;
+   TStreamerInfo* SI = new TStreamerInfo(cl);
+   // Must register the SI "temporarily" in the ListOfStreamerInfos
+   // for the resolution of counter elements:
+   TObjArray *sinfos = const_cast<TObjArray*>(cl->GetStreamerInfos());
+   sinfos->AddAtAndExpand(SI, classVersion);
+   SI->Build(true /*local*/);
+   SI->BuildOffsets();
    gStreamerInfos.AddLast(SI);
    return true;
 }
