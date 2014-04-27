@@ -56,9 +56,14 @@ bool AddStreamerInfoToROOTFile(const char* normName)
    if (!cl)
       return false;
    // If the class is not persistent we return success.
-   if (cl->GetClassVersion() == 0)
+   Version_t classVersion = cl->GetClassVersion();
+   if (classVersion == 0)
       return true;
    TStreamerInfo* SI = new TStreamerInfo(cl);
+   // Must register the SI "temporarily" in the ListOfStreamerInfos
+   // for the resolution of counter elements:
+   TObjArray *sinfos = const_cast<TObjArray*>(cl->GetStreamerInfos());
+   sinfos->AddAtAndExpand(SI, classVersion);
    SI->Build(true /*local*/);
    SI->BuildOffsets();
    gStreamerInfos.AddLast(SI);
