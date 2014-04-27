@@ -280,7 +280,9 @@ void TStreamerInfo::Build(bool local /*=false*/)
             delete element;
             element = 0;
          } else {
-            clm->GetStreamerInfo();
+            if (!local) {
+               clm->GetStreamerInfo();
+            }
             if ((clm == TObject::Class()) && fClass->CanIgnoreTObjectStreamer()) {
                // -- An ignored TObject base class.
                // Note: The TClass kIgnoreTObjectStreamer == BIT(15), but
