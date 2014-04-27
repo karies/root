@@ -58,10 +58,9 @@ bool AddStreamerInfoToROOTFile(const char* normName)
    // If the class is not persistent we return success.
    if (cl->GetClassVersion() == 0)
       return true;
-   TVirtualStreamerInfo* SI = cl->GetStreamerInfo();
-   if (!SI)
-      return false;
-   ((TStreamerInfo*)SI)->BuildOffsets();
+   TStreamerInfo* SI = new TStreamerInfo(cl);
+   SI->Build(true /*local*/);
+   SI->BuildOffsets();
    gStreamerInfos.AddLast(SI);
    return true;
 }
