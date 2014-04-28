@@ -47,6 +47,7 @@
 #include "TMethodArg.h"
 #include "TMethodCall.h"
 #include "TObjArray.h"
+#include "TProtoClass.h"
 #include "TROOT.h"
 #include "TRealData.h"
 #include "TStreamer.h"
@@ -675,7 +676,9 @@ void TBuildRealData::Inspect(TClass* cl, const char* pname, const char* mname, c
          if (dmclass) {
             if (dmclass->Property()) {
                if (dmclass->Property() & kIsAbstract) {
-                  ::Warning("TBuildRealDataRecursive::Inspect()",": data member class: '%s'  is abstract.\n", dmclass->GetName());
+                  ::Warning("TBuildRealData::Inspect()",
+                            "type %s of data member '%s' is an abstract class.",
+                            dmclass->GetName(), dm->GetName());
                }
             }
             if ((dmclass != cl) && !dm->IsaPointer()) {
@@ -1132,6 +1135,7 @@ void TClass::Init(const char *name, Version_t cversion,
    fTypeInfo       = typeinfo;
    fIsA            = isa;
    if ( fIsA ) fIsA->SetClass(this);
+   // See also TCling::GenerateTClass() which will update fClassVersion after creation!
    fStreamerInfo   = new TObjArray(fClassVersion+2+10,-1); // +10 to read new data by old
    fProperty       = -1;
 
@@ -3640,6 +3644,19 @@ TMethod *TClass::GetMethod(const char *method, const char *params,
 }
 
 //______________________________________________________________________________
+void TClass::FillProto(TProtoClass* pcl) const
+{
+   // Fill a TProtoClass with data from this class.
+   pcl->fRealData = fRealData;
+   pcl->fBase = fBase;
+   pcl->fData = fData;
+   pcl->fCheckSum = fCheckSum;
+   pcl->fSizeof = fSizeof;
+   pcl->fCanSplit = fCanSplit;
+   pcl->fProperty = fProperty;
+}
+
+//______________________________________________________________________________
 TMethod* TClass::FindClassOrBaseMethodWithId(DeclId_t declId) {
    // Find a method with decl id in this class or its bases.
    TFunction *f = GetMethodList()->Get(declId);
@@ -3833,13 +3850,6 @@ TVirtualStreamerInfo* TClass::GetStreamerInfo(Int_t version /* = 0 */) const
       sinfo = (TVirtualStreamerInfo*) fStreamerInfo->At(fClassVersion);
    }
    if (!sinfo) {
-      if (fClassInfo && fRealData==0 &&  (gCling->ClassInfo_Property(fClassInfo) & kIsAbstract) ) {
-         // This class is abstract, we can not build a proper StreamerInfo unless we already have
-         // the list of real data.
-         // We have to wait until one of the derived class creates its StreamerInfo.
-
-         return 0;
-      }
       // We just were not able to find a streamer info, we have to make a new one.
       TMmallocDescTemp setreset;
       sinfo = TVirtualStreamerInfo::Factory()->NewInfo(const_cast<TClass*>(this));
@@ -5960,3 +5970,8 @@ ROOT::DirAutoAdd_t TClass::GetDirectoryAutoAdd() const
    return fDirAutoAdd;
 }
 
+//______________________________________________________________________________
+TProtoClass::~TProtoClass()
+{
+   // Destructor; implemented in TClass.cxx to pin vtable.
+}
