@@ -21,7 +21,8 @@
 //                                                                      //
 // TProtoClass                                                          //
 //                                                                      //
-// Stores enough data to create a TClass from a dictionary.             //
+// Stores enough information to create a TClass from a dictionary       //
+// without interpreter information.                                     //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -39,7 +40,7 @@ public:
    TProtoClass& operator=(const TProtoClass&) = delete;
 
    TProtoClass() {}
-   virtual ~TProtoClass();
+   virtual ~TProtoClass(); // implemented in TClass.cxx to pin vtable
 
    ClassDef(TProtoClass,2); //Persistent TClass
 };
