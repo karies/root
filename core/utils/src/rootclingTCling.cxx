@@ -17,9 +17,10 @@
 #include "TFile.h"
 #include "TClass.h"
 #include "TStreamerInfo.h"
+#include "TProtoClass.h"
 
 std::string gPCMFilename;
-TObjArray gStreamerInfos;
+TObjArray gProtoClasses;
 
 extern "C"
 cling::Interpreter* TCling__GetInterpreter()
@@ -47,7 +48,7 @@ void CloseStreamerInfoROOTFile()
    // Don't use TFile::Open(); we don't need plugins.
    TFile dictFile(gPCMFilename.c_str(), "RECREATE");
    // Instead of plugins:
-   gStreamerInfos.Write("__StreamerInfoOffsets", TObject::kSingleKey);
+   gProtoClasses.Write("__ProtoClasses", TObject::kSingleKey);
 }
 
 extern "C"
@@ -62,5 +63,8 @@ bool AddStreamerInfoToROOTFile(const char* normName)
    // If this is a proxied collection then offsets are not needed.
    if (cl->GetCollectionProxy())
       return true;
+   TProtoClass* pcl = new TProtoClass();
+   cl->FillProto(pcl);
+   gProtoClasses.AddLast(pcl);
    return true;
 }
