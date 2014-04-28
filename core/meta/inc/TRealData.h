@@ -34,10 +34,10 @@ class TDataMember;
 class TRealData : public TObject {
 
 private:
-   TDataMember     *fDataMember;     //pointer to data member descriptor
+   TDataMember     *fDataMember;     //!pointer to data member descriptor
    Long_t           fThisOffset;     //offset with the THIS object pointer
    TString          fName;           //Concatenated names of this realdata
-   TMemberStreamer *fStreamer;       //Object to stream the data member.
+   TMemberStreamer *fStreamer;       //!Object to stream the data member.
    Bool_t           fIsObject;       //true if member is an object
 
    TRealData(const TRealData& rhs);  // Copying TRealData in not allowed.
@@ -61,7 +61,7 @@ public:
    void                SetIsObject(Bool_t isObject) {fIsObject=isObject;}
    void                WriteRealData(void *pointer, char *&buffer);
 
-   ClassDef(TRealData,0)  //Description of persistent data members
+   ClassDef(TRealData,2)  //Description of persistent data members
 };
 
 #endif
