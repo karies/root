@@ -775,6 +775,9 @@ TCling::TCling(const char *name, const char *title)
 {
    // Initialize the cling interpreter interface.
 
+   // rootcling also uses TCling for generating the dictionary ROOT files.
+   bool fromRootCling = dlsym(RTLD_DEFAULT, "usedToIdentifyRootClingByDlSym");
+
    llvm::install_fatal_error_handler(&exceptionErrorHandler);
 
    fTemporaries = new std::vector<cling::Value>();
@@ -787,9 +790,11 @@ TCling::TCling(const char *name, const char *title)
    std::string interpInclude = ROOT::TMetaUtils::GetInterpreterExtraIncludePath(false);
    clingArgsStorage.push_back(interpInclude);
 
-   std::string pchFilename = interpInclude.substr(2) + "/allDict.cxx.pch";
-   clingArgsStorage.push_back("-include-pch");
-   clingArgsStorage.push_back(pchFilename);
+   if (!fromRootCling) {
+      std::string pchFilename = interpInclude.substr(2) + "/allDict.cxx.pch";
+      clingArgsStorage.push_back("-include-pch");
+      clingArgsStorage.push_back(pchFilename);
+   }
 
    // clingArgsStorage.push_back("-Xclang");
    // clingArgsStorage.push_back("-fmodules");
@@ -804,6 +809,14 @@ TCling::TCling(const char *name, const char *title)
 #endif // ROOTINCDIR
    clingArgsStorage.push_back("-I");
    clingArgsStorage.push_back(include);
+
+   // rootcling needs to run in syntax-only mode, i.e. without execution. Detect
+   // rootcling by looking for a rootcling-only symbol:
+   if (fromRootCling) {
+      clingArgsStorage.push_back("-D__ROOTCLING__");
+      clingArgsStorage.push_back("-fsyntax-only");
+      ROOT::TMetaUtils::SetPathsForRelocatability(clingArgsStorage);
+   }
 
    std::vector<const char*> interpArgs;
    for (std::vector<std::string>::const_iterator iArg = clingArgsStorage.begin(),
@@ -844,7 +857,9 @@ TCling::TCling(const char *name, const char *title)
       ::Info("TCling::TCling", "Using one PCM.");
 
    // For the list to also include string, we have to include it now.
-   fInterpreter->declare("#include \"Rtypes.h\"\n"+ gInterpreterClassDef +"#include <string>\n"
+   fInterpreter->declare("#include \"Rtypes.h\"\n"
+                         + (fromRootCling ? "" : gInterpreterClassDef)
+                         + "#include <string>\n"
                          "using namespace std;");
 
    // We are now ready (enough is loaded) to init the list of opaque typedefs.
@@ -1184,9 +1199,12 @@ void TCling::RegisterModule(const char* modulename,
    if (fClingCallbacks)
      SetClassAutoloading(oldValue);
 
-   // Might be pulled in through PCH
+   // rootcling also uses TCling for generating the dictionary ROOT files.
+   bool fromRootCling = dlsym(RTLD_DEFAULT, "usedToIdentifyRootClingByDlSym");
+   // __ROOTCLING__ might be pulled in through PCH
    fInterpreter->declare("#ifdef __ROOTCLING__\n"
-                         "#undef __ROOTCLING__\n" + gInterpreterClassDef +
+                         "#undef __ROOTCLING__\n"
+                         + (fromRootCling ? "" : gInterpreterClassDef) +
                          "#endif");
 
    if (dyLibName) {
@@ -4308,6 +4326,9 @@ Int_t TCling::AutoLoad(const char* cls)
    Int_t status = 0;
    if (!gROOT || !gInterpreter || gROOT->TestBit(TObject::kInvalidObject)) {
       return status;
+   }
+   if (fClingCallbacks && !fClingCallbacks->IsAutoloadingEnabled ()) {
+      return 0;
    }
    // Prevent the recursion when the library dictionary are loaded.
    Int_t oldvalue = SetClassAutoloading(false);
