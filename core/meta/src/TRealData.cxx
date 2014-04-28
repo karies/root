@@ -13,6 +13,7 @@
 #include "TDataMember.h"
 #include "TClass.h"
 #include "TStreamer.h"
+#include "TList.h"
 
 ClassImp(TRealData)
 
@@ -82,3 +83,34 @@ TMemberStreamer *TRealData::GetStreamer() const
    return fStreamer; // return fDataMember->GetStreamer();
 }
 
+//______________________________________________________________________________
+void TRealData::Streamer(TBuffer& b) {
+   // Stream an object of TRealData.
+   this->TObject::Streamer(b);
+   if (b.IsReading()) {
+      TString clName;
+      TString dmName;
+      b >> clName;
+      b >> dmName;
+      b >> fThisOffset;
+      b >> fName;
+      b >> fIsObject;
+
+      TClass* cl = TClass::GetClass(clName);
+      if (!cl) {
+         Error("Streamer", "Cannot find class %s\n", clName.Data());
+      } else {
+         fDataMember = (TDataMember*) cl->GetListOfDataMembers()->FindObject(dmName);
+         if (!fDataMember) {
+            Error("Streamer", "Cannot find data member %s::%s\n",
+                  clName.Data(), dmName.Data());
+         }
+      }
+   } else {
+      b << TString(fDataMember->GetClass()->GetName());
+      b << TString(fDataMember->GetName());
+      b << fThisOffset;
+      b << fName;
+      b << fIsObject;
+   }
+}
