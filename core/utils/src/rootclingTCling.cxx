@@ -47,8 +47,8 @@ void CloseStreamerInfoROOTFile()
    TVirtualStreamerInfo::SetFactory(new TStreamerInfo());
    // Don't use TFile::Open(); we don't need plugins.
    TFile dictFile(gPCMFilename.c_str(), "RECREATE");
-   // Instead of plugins:
    gProtoClasses.Write("__ProtoClasses", TObject::kSingleKey);
+   gProtoClasses.Delete();
 }
 
 extern "C"
