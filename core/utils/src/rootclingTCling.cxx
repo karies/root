@@ -63,8 +63,6 @@ bool AddStreamerInfoToROOTFile(const char* normName)
    // If this is a proxied collection then offsets are not needed.
    if (cl->GetCollectionProxy())
       return true;
-   TProtoClass* pcl = new TProtoClass();
-   cl->FillProto(pcl);
-   gProtoClasses.AddLast(pcl);
+   gProtoClasses.AddLast(new TProtoClass(cl));
    return true;
 }
