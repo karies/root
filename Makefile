@@ -1063,7 +1063,7 @@ releasenotes:
 	@$(MAKERELNOTES)
 
 etc/allDict.cxx.pch: $(ROOTCLINGSTAGE1DEP) $(ALLHDRS) $(CLINGETCPCH) $(ORDER_) $(ALLLIBS)
-	@$(MAKEONEPCM) $(ROOT_SRCDIR) "$(MODULES)" $(CLINGETCPCH)
+	@$(MAKEONEPCM) $(ROOT_SRCDIR) "core/base core/thread io/io" $(CLINGETCPCH)
 
 ifeq ($(BUILDX11),yes)
 ifeq ($(BUILDASIMAGE),yes)
