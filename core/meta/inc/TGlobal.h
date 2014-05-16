@@ -43,6 +43,7 @@ public:
    virtual void  *GetAddress() const;
    virtual const char *GetTypeName() const;
    virtual const char *GetFullTypeName() const;
+   virtual Bool_t IsValid();
    virtual Long_t Property() const;
    virtual bool   Update(DataMemberInfo_t *info);
 

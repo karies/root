@@ -135,6 +135,14 @@ Bool_t   TFile::fgOnlyStaged = 0;
 
 const Int_t kBEGIN = 100;
 
+namespace {
+static struct AddPseudoGlobals {
+AddPseudoGlobals() {
+  gROOT->GetListOfGlobals()->Add(new TGlobalMappedFunction("gFile", "TFile*", 0));
+}
+} gAddPseudoGlobals;
+}
+
 ClassImp(TFile)
 
 //*-*x17 macros/layout_file

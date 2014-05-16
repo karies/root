@@ -113,6 +113,10 @@
 #include "TListOfFunctions.h"
 #include "TListOfFunctionTemplates.h"
 #include "TFunctionTemplate.h"
+#include "TGClient.h"
+#include "X3DBuffer.h"
+#include "TFile.h"
+#include "TVirtualGL.h"
 
 #include <string>
 namespace std {} using namespace std;
@@ -1417,6 +1421,21 @@ TCollection *TROOT::GetListOfGlobals(Bool_t load)
       fGlobals = new TListOfDataMembers(0);
       fGlobals->Add(new TGlobalMappedFunction("gROOT", "TROOT*",
                                               (TGlobalMappedFunction::GlobalFunc_t)&ROOT::GetROOT));
+      fGlobals->Add(new TGlobalMappedFunction("gPad", "TVirtualPad*",
+                                              (TGlobalMappedFunction::GlobalFunc_t)&TVirtualPad::Pad));
+      fGlobals->Add(new TGlobalMappedFunction("gClient", "TGClient*", 0));
+      fGlobals->Add(new TGlobalMappedFunction("gSize3D", "TGClient*",
+                                              (TGlobalMappedFunction::GlobalFunc_t)*gFuncSize3D));
+      fGlobals->Add(new TGlobalMappedFunction("gFile", "TFile*", 0));
+      fGlobals->Add(new TGlobalMappedFunction("gInterpreter", "TInterpreter*",
+                                              (TGlobalMappedFunction::GlobalFunc_t)&TInterpreter::Instance));
+      fGlobals->Add(new TGlobalMappedFunction("gVirtualX", "TTVirtualX*",
+                                              (TGlobalMappedFunction::GlobalFunc_t)&TVirtualX::Instance));
+      fGlobals->Add(new TGlobalMappedFunction("gDirectory", "TDirectory*",
+                                              (TGlobalMappedFunction::GlobalFunc_t)&TDirectory::CurrentDirectory));
+
+      fGlobals->Add(new TGlobalMappedFunction("gGLManager", "TTGLManager*",
+                                              (TGlobalMappedFunction::GlobalFunc_t)&TGLManager::Instance));
    }
 
    if (!fInterpreter)
