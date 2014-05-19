@@ -1399,8 +1399,7 @@ TCollection *TROOT::GetListOfGlobals(Bool_t load)
       fGlobals->Add(new TGlobalMappedFunction("gPad", "TVirtualPad*",
                                               (TGlobalMappedFunction::GlobalFunc_t)&TVirtualPad::Pad));
       fGlobals->Add(new TGlobalMappedFunction("gClient", "TGClient*", 0));
-      fGlobals->Add(new TGlobalMappedFunction("gSize3D", "TGClient*",
-                                              (TGlobalMappedFunction::GlobalFunc_t)*gFuncSize3D));
+      fGlobals->Add(new TGlobalMappedFunction("gSize3D", "TGClient*", 0));
       fGlobals->Add(new TGlobalMappedFunction("gFile", "TFile*", 0));
       fGlobals->Add(new TGlobalMappedFunction("gInterpreter", "TInterpreter*",
                                               (TGlobalMappedFunction::GlobalFunc_t)&TInterpreter::Instance));
