@@ -117,6 +117,7 @@
 #include "TSchemaRule.h"
 #include "TSchemaRuleSet.h"
 #include "TThreadSlots.h"
+#include "TGlobal.h"
 
 using std::sqrt;
 
