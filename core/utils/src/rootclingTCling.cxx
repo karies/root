@@ -12,13 +12,17 @@
 // Provides bindings to TCling (compiled with rtti) from rootcling (compiled
 // without rtti).
 
-#include "TCling.h"
-#include "TROOT.h"
-#include "TFile.h"
+#include "rootclingTCling.h"
+
 #include "TClass.h"
-#include "TStreamerInfo.h"
-#include <iostream>
+#include "TClassEdit.h"
+#include "TCling.h"
+#include "TFile.h"
 #include "TProtoClass.h"
+#include "TROOT.h"
+#include "TStreamerInfo.h"
+
+#include <iostream>
 
 std::string gPCMFilename;
 std::vector<std::string> gClassesToStore;
