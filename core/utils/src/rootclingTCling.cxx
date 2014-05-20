@@ -79,7 +79,9 @@ bool CloseStreamerInfoROOTFile()
    TVirtualStreamerInfo::SetFactory(new TStreamerInfo());
 
    TObjArray protoClasses;
-   for (const auto normName: gClassesToStore) {
+   TObjArray typedefs;
+
+   for (const auto& normName: gClassesToStore) {
       TClass* cl = TClass::GetClass(normName.c_str(), kTRUE /*load*/);
       if (!cl) {
          std::cerr << "ERROR in CloseStreamerInfoROOTFile(): cannot find class "
@@ -94,10 +96,25 @@ bool CloseStreamerInfoROOTFile()
          continue;
       cl->Property(); // Force initialization of the bits and property fields.
       protoClasses.AddLast(new TProtoClass(cl));
+
+      std::string::size_type posTmplt = normName.find('<');
+      if (posTmplt != std::string::npos
+          && normName.find(',', posTmplt) != std::string::npos) {
+         // This is a template, probably with multiple arguments. It might
+         // have a default.
+         std::string shortName
+            = TClassEdit::ShortType(normName.c_str(), TClassEdit::kDropAllDefault);
+         if (shortName != normName) {
+            TDataType* dt = new TDataType(shortName.c_str());
+            dt->SetType(normName.c_str());
+            dt->Property(); // Force initialization of the bits and property fields.
+            dt->GetTypeName(); // Force caching of type name.
+            typedefs.AddLast(dt);
+         }
+      }
    }
 
-   TObjArray typedefs;
-   for (const auto dtname: gTypedefsToStore) {
+   for (const auto& dtname: gTypedefsToStore) {
       TDataType* dt = (TDataType*)gROOT->GetListOfTypes()->FindObject(dtname.c_str());
       if (!dt) {
          std::cerr << "ERROR in CloseStreamerInfoROOTFile(): cannot find class "
