@@ -26,6 +26,9 @@
 #include "TDictionary.h"
 #endif
 
+extern "C" {
+   bool CloseStreamerInfoROOTFile();
+}
 
 enum EDataType {
    kChar_t   = 1,  kUChar_t  = 11, kShort_t    = 2,  kUShort_t = 12,
@@ -78,6 +81,8 @@ public:
    static void AddBuiltins(TCollection* types);
 
    ClassDef(TDataType,2)  //Basic data type descriptor
+
+   friend bool CloseStreamerInfoROOTFile();
 };
 
 #endif
