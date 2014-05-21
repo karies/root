@@ -130,7 +130,7 @@ const char *TDataType::GetTypeName(EDataType type)
       case 19: return "Float16_t";
       case kVoid_t: return "void";
       case kDataTypeAliasUnsigned_t: return "UInt_t";
-      case kSignedChar_t: return "SignedChar_t";
+      case kDataTypeAliasSignedChar_t: return "SignedChar_t";
       case kOther_t:  return "";
       case kNoType_t: return "";
       case kchar:     return "Char_t";
@@ -218,7 +218,9 @@ EDataType TDataType::GetType(const type_info &typeinfo)
       retType = kDouble32_t;
    } else if (!strcmp(typeid(char*).name(), typeinfo.name())) {
       retType = kCharStar;
-   } else if (!strcmp(typeid(signed char).name(), typeinfo.name()))
+   } else if (!strcmp(typeid(signed char).name(), typeinfo.name())) {
+      retType = kDataTypeAliasSignedChar_t;
+   }
    return retType;
 }
 
@@ -267,8 +269,6 @@ const char *TDataType::AsString(void *buf) const
       line.Form( "%g", *(double *)buf);
    else if (!strcmp("char*", name))
       line.Form( "%s", *(char**)buf);
-   else if (!strcmp("signed char", name))
-      line.Form( "%s", *(signed char *)buf);
 
    return line;
 }
@@ -336,7 +336,7 @@ void TDataType::SetType(const char *name)
       fType = kDouble_t;
       fSize = sizeof(Double_t);
    } else if (!strcmp("signed char", name)) {
-      fType = kSignedChar_t;
+      fType = kDataTypeAliasSignedChar_t;
       fSize = sizeof(Char_t);
    }
 
@@ -417,7 +417,7 @@ void TDataType::AddBuiltins(TCollection* types)
       fgBuiltins[kCharStar] = new TDataType("char*");
 
       fgBuiltins[kDataTypeAliasUnsigned_t] = new TDataType("unsigned");
-      fgBuiltins[kSignedChar_t] = new TDataType("signed char");
+      fgBuiltins[kDataTypeAliasSignedChar_t] = new TDataType("signed char");
    }
 
    for (Int_t i = 0; i < (Int_t)kNumDataTypes; ++i) {
