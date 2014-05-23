@@ -2293,6 +2293,7 @@ void TTabCom::InitPatterns()
               "[_a-zA-Z][_a-zA-Z0-9]* *:: *[_a-zA-Z0-9]*$");
    SetPattern(kCXX_DirectMember,
               "[_a-zA-Z][_a-zA-Z0-9()]* *\\. *[_a-zA-Z0-9()]*$");  //
+
    SetPattern(kCXX_IndirectMember,
               "[_a-zA-Z][_a-zA-Z0-9()]* *-> *[_a-zA-Z0-9()]*$");    // frodo
 
