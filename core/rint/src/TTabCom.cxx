@@ -418,17 +418,7 @@ const TSeqCollection *TTabCom::GetListOfClasses()
    // Return the list of classes.
    if (!fpClasses) {
       fpClasses = new TContainer;
-      Int_t totalNumberOfClasses = gClassTable->Classes();
-      // start from begining
-      gClassTable->Init();
-
-      // iterate over classes
-      for (Int_t i = 0; i < totalNumberOfClasses; i++) {
-         // get class name
-         const char *cname = gClassTable->Next();
-         fpClasses->Add(new TObjString(cname));
-      }
-
+      // Iterate over the table from the map file.
       THashList* entries = gInterpreter->GetMapfile()->GetTable();
       TIter next(entries);
       TString classname;
@@ -439,7 +429,19 @@ const TSeqCollection *TTabCom::GetListOfClasses()
          // Remove Library.
          if(classname.BeginsWith("Library."))
             classname.Remove(0, 7);
-         fpClasses->Add(new TObjString(classname));
+            fpClasses->Add(new TObjString(classname));
+         }
+      }
+      // Iterate over the ClassTable.
+      Int_t totalNumberOfClasses = gClassTable->Classes();
+      // start from begining
+      gClassTable->Init();
+      // iterate over classes
+      for (Int_t i = 0; i < totalNumberOfClasses; i++) {
+         // get class name
+         const char *cname = gClassTable->Next();
+         if (!fpClasses->FindObject(cname)) {
+            fpClasses->Add(new TObjString(cname));
       }
    }
 
