@@ -219,7 +219,6 @@ private: // data members
    TSeqCollection* fpEnvVars;
    TSeqCollection* fpFiles;
    TSeqCollection* fpGlobals;
-   TSeqCollection* fpGlobalFuncs;
    TSeqCollection* fpPragmas;
    TSeqCollection* fpSysIncFiles;
    TSeqCollection* fpUsers;
