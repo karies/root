@@ -359,7 +359,6 @@ void TTabCom::RehashFiles()
 void TTabCom::RehashGlobalFunctions()
 {
    // Reload global functions.
-   ClearGlobalFunctions();
    GetListOfGlobalFunctions();
 }
 
@@ -553,10 +552,10 @@ const TSeqCollection *TTabCom::GetListOfGlobals()
 }
 
 //______________________________________________________________________________
-const TSeqCollection *TTabCom::GetListOfGlobalFunctions()
+TCollection *TTabCom::GetListOfGlobalFunctions()
 {
    // Return the list of global functions.
-   return (TSeqCollection*) gROOT->GetListOfGlobalFunctions(true);
+   return gROOT->GetListOfGlobalFunctions(true);
 }
 
 //______________________________________________________________________________
@@ -2095,7 +2094,7 @@ Int_t TTabCom::Hook(char *buf, int *pLoc, std::ostream& out)
          const TSeqCollection *pC1 = GetListOfGlobals();
          if (pC1) pList->AddAll(pC1);
          //
-         const TSeqCollection *pC3 = GetListOfGlobalFunctions();
+         TCollection *pC3 = GetListOfGlobalFunctions();
          if (pC3) pList->AddAll(pC3);
 
          pos = Complete("[_a-zA-Z][_a-zA-Z0-9]*$", pList, "", out);
