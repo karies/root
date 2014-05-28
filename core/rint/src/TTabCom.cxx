@@ -428,8 +428,7 @@ const TSeqCollection *TTabCom::GetListOfClasses()
          // Remove Library.
          if(classname.BeginsWith("Library."))
             classname.Remove(0, 7);
-            fpClasses->Add(new TObjString(classname));
-         }
+         fpClasses->Add(new TObjString(classname));
       }
       // Iterate over the ClassTable.
       Int_t totalNumberOfClasses = gClassTable->Classes();
@@ -441,6 +440,7 @@ const TSeqCollection *TTabCom::GetListOfClasses()
          const char *cname = gClassTable->Next();
          if (!fpClasses->FindObject(cname)) {
             fpClasses->Add(new TObjString(cname));
+         }
       }
    }
 
