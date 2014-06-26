@@ -3449,15 +3449,13 @@ void TClass::GetMissingDictionariesForMembers(TCollection& result, TCollection& 
 void TClass::GetMissingDictionariesForPairElements(TCollection& result, TCollection& visited, bool recurse)
 {
    // Pair is a special case and we have to check its elements for missing dictionaries
-   // if the recurse flag is on only. This is to be consitent with the other containers.
+   // Pair is a transparent container so we should always look at its.
 
-   if(recurse) {
-      TVirtualStreamerInfo *SI = (TVirtualStreamerInfo*)this->GetStreamerInfo();
-      for (int i = 0; i < 2; i++) {
-         TClass* pairElement = ((TStreamerElement*)SI->GetElements()->At(i))->GetClass();
-         if (pairElement) {
-            pairElement->GetMissingDictionariesWithRecursionCheck(result, visited, recurse);
-         }
+   TVirtualStreamerInfo *SI = (TVirtualStreamerInfo*)this->GetStreamerInfo();
+   for (int i = 0; i < 2; i++) {
+      TClass* pairElement = ((TStreamerElement*)SI->GetElements()->At(i))->GetClass();
+      if (pairElement) {
+         pairElement->GetMissingDictionariesWithRecursionCheck(result, visited, recurse);
       }
    }
 }
