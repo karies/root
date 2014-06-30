@@ -275,6 +275,7 @@ private:
 private:
    TClass(const TClass& tc);
    TClass& operator=(const TClass&);
+   static Bool_t GetTemplateInstance(const char* name, std::vector<TClass*> &classes);
 
 protected:
    TVirtualStreamerInfo     *FindStreamerInfo(TObjArray* arr, UInt_t checksum) const;
@@ -471,7 +472,6 @@ public:
    static TClass        *GetClass(const type_info &typeinfo, Bool_t load = kTRUE, Bool_t silent = kFALSE);
    static TClass        *GetClass(ClassInfo_t *info, Bool_t load = kTRUE, Bool_t silent = kFALSE);
    static Bool_t         GetClass(DeclId_t id, std::vector<TClass*> &classes);
-   static Bool_t         GetClass(const char* name, std::vector<TClass*> &classes);
    static VoidFuncPtr_t  GetDict (const char *cname);
    static VoidFuncPtr_t  GetDict (const type_info &info);
 

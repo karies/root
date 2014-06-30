@@ -3130,7 +3130,7 @@ Bool_t TClass::GetClass(DeclId_t id, std::vector<TClass*> &classes)
 }
 
 //______________________________________________________________________________
-Bool_t TClass::GetClass(const char* name, std::vector<TClass*> &classes)
+Bool_t TClass::GetTemplateInstance(const char* name, std::vector<TClass*> &classes)
 {
    if (!gROOT->GetListOfClasses())    return false;
 

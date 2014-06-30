@@ -135,7 +135,6 @@ namespace TClassEdit {
    int         GetSplit  (const char *type, std::vector<std::string> &output, int &nestedLoc, EModType mode = TClassEdit::kNone);
    ROOT::ESTLType STLKind   (const char *type, size_t len = 0);    //Kind of stl container
    std::string GetTemplateName(const char* name);
-   ROOT::ESTLType STLKind   (const char *type);    //Kind of stl container
    int         STLArgs   (int kind);            //Min number of arguments without allocator
    std::string ResolveTypedef(const char *tname, bool resolveAll = false);
    std::string ShortType (const char *typeDesc, int mode);
