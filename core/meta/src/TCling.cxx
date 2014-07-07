@@ -343,16 +343,19 @@ void TCling::HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*
          std::string buf;
          PrintingPolicy Policy(RD->getASTContext().getPrintingPolicy());
          llvm::raw_string_ostream stream(buf);
-         RD->getNameForDiagnostic(stream, Policy, /*Qualified=*/false);
+         RD->getNameForDiagnostic(stream, Policy, /*Qualified=*/true);
          stream.flush();
          // If the enum is unnamed we do not add it to the list of enums i.e unusable.
          if (!buf.empty()) {
             const char* name = buf.c_str();
-            std::vector<TClass*> vectTClass;
-            if (TClass::GetClass(name, vectTClass)) {
-               for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
-                    CI != CE; ++CI) { 
-                  (*CI)->ResetClassInfo();
+            if (strcmp(name, "Double32_t") || strcmp(name, "double")
+                || strcmp(name, "Float16_t") || strcmp(name, "float")) {
+               std::vector<TClass*> vectTClass;
+               if (TClass::GetTemplateInstance(name, vectTClass)) {
+                  for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
+                        CI != CE; ++CI) {
+                     (*CI)->ResetClassInfo();
+                  }
                }
             }
          }
