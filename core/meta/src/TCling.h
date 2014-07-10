@@ -51,6 +51,7 @@ namespace clang {
    class NamespaceDecl;
    class Type;
    class QualType;
+   class TemplateArgument;
 }
 namespace cling {
    class Interpreter;
@@ -509,7 +510,9 @@ private: // Private Utility Functions
    int  ReadRootmapFile(const char *rootmapfile);
    Bool_t HandleNewTransaction(const cling::Transaction &T);
    void UnloadClassMembers(TClass* cl, const clang::DeclContext* DC);
-
+   void UpdateTemplateClassInfo(const clang::CXXRecordDecl* RD);
+   void UpdateTemplateInfo(const clang::CXXRecordDecl* RD);
+   void UpdateDependingOnTemplateKind(const clang::CXXRecordDecl* RD, const clang::TemplateArgument& TA);
 };
 
 #endif

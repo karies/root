@@ -324,6 +324,71 @@ TEnum* TCling::CreateEnum(void *VD, TClass *cl) const
    return enumType;
 }
 
+void TCling::UpdateTemplateClassInfo(const clang::CXXRecordDecl* RD) {
+   // Get the name of the template and update the info.
+   std::string buf;
+   PrintingPolicy Policy(RD->getASTContext().getPrintingPolicy());
+   llvm::raw_string_ostream stream(buf);
+   RD->getNameForDiagnostic(stream, Policy, /*Qualified=*/true);
+   stream.flush();
+   if (!buf.empty()) {
+      const char* name = buf.c_str();
+      std::vector<TClass*> vectTClass;
+      if (TClass::GetTemplateInstance(name, vectTClass)) {
+         for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
+            CI != CE; ++CI) {
+            (*CI)->ResetClassInfo();
+         }
+      }
+   }
+}
+
+void TCling::UpdateDependingOnTemplateKind(const clang::CXXRecordDecl* RD, const clang::TemplateArgument& TA) {
+   // Check that the argument has a type and get that type to filter only the
+   // double and float templates.
+   if (TA.getKind() == clang::TemplateArgument::Type) {
+      clang::QualType QT = TA.getAsType();
+      // Strip all the pointers and references for the type
+      const clang::Type* T = TMetaUtils::GetUnderlyingType(QT);
+      // Check the built-in type
+      const clang::BuiltinType* BT = llvm::dyn_cast<clang::BuiltinType>(T);
+      if (BT) {
+         if(BT->getKind() == clang::BuiltinType::Float
+            || BT->getKind() == clang::BuiltinType::Double) {
+            UpdateTemplateClassInfo(RD);
+         }
+      // If not a built-in type recurse.
+      } else {
+         UpdateTemplateInfo(QT->getAsCXXRecordDecl());
+      }
+   } else if (TA.getKind() == clang::TemplateArgument::Template) {
+      // Do I recurse, if so from TemplateArgument->getAsDecl returns a ValueDecl which
+      // could be a CXXRecordDecl?
+   } else if (TA.getKind() == clang::TemplateArgument::Pack) {
+      for (clang::TemplateArgument::pack_iterator PI = TA.pack_begin(), PE = TA.pack_end();
+         PI != PE; PI++) {
+         UpdateDependingOnTemplateKind(RD, *PI);
+      }
+   } else {
+      //Is this an exhaustive list of cases for template arguments?
+   }
+}
+
+void TCling::UpdateTemplateInfo(const clang::CXXRecordDecl* RD) {
+
+   const clang::ClassTemplateSpecializationDecl* CTSD
+         = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(RD);
+
+   if (CTSD && CTSD->getTemplateSpecializationKind() != clang::TSK_Undeclared) {
+      // Get the tempalte arguments and loop over them.
+      const clang::TemplateArgumentList& TAL = CTSD->getTemplateArgs();
+      for (unsigned index = 0; index < TAL.size(); index++) {
+         const clang::TemplateArgument TA = TAL.get(index);
+         UpdateDependingOnTemplateKind(RD, TA);
+      }
+   }
+}
+
 void TCling::HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*> &modifiedTClasses) {
    // Handle new declaration.
    // Record the modified class, struct and namespaces in 'modifiedTClasses'.
@@ -338,31 +403,10 @@ void TCling::HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*
       return;
 
    // Don't list templates.
+   // Apdate templated the can have multiple names for the same TClass pointer.
    if (const clang::CXXRecordDecl* RD = dyn_cast<clang::CXXRecordDecl>(D)) {
-      if (const clang::ClassTemplateDecl* CTD = RD->getDescribedClassTemplate()) {
-         clang::TemplateParameterList* TPL = CTD->getTemplateParameters();
-         for (clang::TemplateParameterList::const_iterator PI = TPL->begin(),
-              PE = TPL->end(); PI != PE; ++PI) {
-            const char* paramName = (*PI)->getName().data();
-            if (strcmp(paramName, "Double32_t") || strcmp(paramName, "double")
-               || strcmp(paramName, "Float16_t") || strcmp(paramName, "float")) {
-               std::string buf;
-               PrintingPolicy Policy(CTD->getASTContext().getPrintingPolicy());
-               llvm::raw_string_ostream stream(buf);
-               CTD->getNameForDiagnostic(stream, Policy, /*Qualified=*/true);
-               stream.flush();
-               if (!buf.empty()) {
-                  const char* name = buf.c_str();
-                  std::vector<TClass*> vectTClass;
-                  if (TClass::GetTemplateInstance(name, vectTClass)) {
-                     for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
-                        CI != CE; ++CI) {
-                        (*CI)->ResetClassInfo();
-                     }
-                  }
-               }
-            }
-         }
+      if (RD->getDescribedClassTemplate()) {
+            UpdateTemplateInfo(RD);
       }
    } else if (const clang::FunctionDecl* FD = dyn_cast<clang::FunctionDecl>(D)) {
       if (FD->getDescribedFunctionTemplate())

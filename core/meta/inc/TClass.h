@@ -275,7 +275,6 @@ private:
 private:
    TClass(const TClass& tc);
    TClass& operator=(const TClass&);
-   static Bool_t GetTemplateInstance(const char* name, std::vector<TClass*> &classes);
 
 protected:
    TVirtualStreamerInfo     *FindStreamerInfo(TObjArray* arr, UInt_t checksum) const;
@@ -284,6 +283,7 @@ protected:
    void                      GetMissingDictionariesForMembers(TCollection& result, TCollection& visited, bool recurse);
    void                      GetMissingDictionariesWithRecursionCheck(TCollection& result, TCollection& visited, bool recurse);
    void                      GetMissingDictionariesForPairElements(TCollection& result, TCollection& visited, bool recurse);
+   static Bool_t             GetTemplateInstance(const char* name, std::vector<TClass*> &classes);
 
 public:
    TClass();
