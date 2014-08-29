@@ -324,7 +324,7 @@ TEnum* TCling::CreateEnum(void *VD, TClass *cl) const
    return enumType;
 }
 
-void TCling::UpdateTemplateClassInfo(const clang::CXXRecordDecl* RD) {
+void TCling::ResetClassInfoTemplateAlias(const clang::CXXRecordDecl* RD) {
    // Get the name of the template and update the info.
    std::string buf;
    PrintingPolicy Policy(RD->getASTContext().getPrintingPolicy());
@@ -334,6 +334,7 @@ void TCling::UpdateTemplateClassInfo(const clang::CXXRecordDecl* RD) {
    if (!buf.empty()) {
       const char* name = buf.c_str();
       std::vector<TClass*> vectTClass;
+      // Only for names already in the map?
       if (TClass::GetTemplateInstance(name, vectTClass)) {
          for (std::vector<TClass*>::iterator CI = vectTClass.begin(), CE = vectTClass.end();
             CI != CE; ++CI) {
@@ -355,7 +356,7 @@ void TCling::UpdateDependingOnTemplateKind(const clang::CXXRecordDecl* RD, const
       if (BT) {
          if(BT->getKind() == clang::BuiltinType::Float
             || BT->getKind() == clang::BuiltinType::Double) {
-            UpdateTemplateClassInfo(RD);
+            ResetClassInfoTemplateAlias(RD);
          }
       // If not a built-in type recurse.
       } else {
@@ -377,10 +378,10 @@ void TCling::UpdateDependingOnTemplateKind(const clang::CXXRecordDecl* RD, const
 void TCling::UpdateTemplateInfo(const clang::CXXRecordDecl* RD) {
 
    const clang::ClassTemplateSpecializationDecl* CTSD
-         = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(RD);
+         = (clang::ClassTemplateSpecializationDecl*)(RD);
 
    if (CTSD && CTSD->getTemplateSpecializationKind() != clang::TSK_Undeclared) {
-      // Get the tempalte arguments and loop over them.
+      // Get the template arguments and loop over them.
       const clang::TemplateArgumentList& TAL = CTSD->getTemplateArgs();
       for (unsigned index = 0; index < TAL.size(); index++) {
          const clang::TemplateArgument TA = TAL.get(index);
@@ -406,7 +407,7 @@ void TCling::HandleNewDecl(const void* DV, bool isDeserialized, std::set<TClass*
    // Apdate templated the can have multiple names for the same TClass pointer.
    if (const clang::CXXRecordDecl* RD = dyn_cast<clang::CXXRecordDecl>(D)) {
       if (RD->getDescribedClassTemplate()) {
-            UpdateTemplateInfo(RD);
+         UpdateTemplateInfo(RD);
       }
    } else if (const clang::FunctionDecl* FD = dyn_cast<clang::FunctionDecl>(D)) {
       if (FD->getDescribedFunctionTemplate())

@@ -672,7 +672,7 @@ string TClassEdit::GetTemplateName(const char* name)
 {
    string result = name;
    int pos = result.find_first_of('<');
-   if (result[pos] == '<') {
+   if (pos > 0) {
       // do I really need NULL or 0 would suffice
       result[pos] = 0;
    }

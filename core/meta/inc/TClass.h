@@ -240,10 +240,10 @@ private:
 
    static IdMap_t    *GetIdMap();       //Map from typeid to TClass pointer
    static DeclIdMap_t *GetDeclIdMap();  //Map from DeclId_t to TClass pointer
+   static std::atomic<Int_t>     fgClassCount;  //provides unique id for a each class
+                                                //stored in TObject::fUniqueID
    static TmpltNameMap_t *GetTmpltNameMap();  //Map from DeclId_t to TClass pointer
-   static ENewType    fgCallingNew;     //Intent of why/how TClass::New() is called
-   static Int_t       fgClassCount;     //provides unique id for a each class
-                                        //stored in TObject::fUniqueID
+
    // Internal status bits
    enum { kLoading = BIT(14), kUnloading = BIT(14) };
    // Internal streamer type.
