@@ -1,0 +1,8 @@
+#!/bin/bash
+srcdir="%ROOTSRCDIR%"
+objdir="%ROOTOBJDIR%"
+modules="%MODULES%"
+clinghdrs="%CLINGHDRS%"
+pchfile="$1"
+shift
+"$objdir/build/unix/makeonepcm.sh" "$srcdir" "$objdir" "$pchfile" "$modules" $clinghdrs $*
