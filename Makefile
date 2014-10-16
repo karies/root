@@ -508,7 +508,9 @@ STATICOBJLIST := $(ROOT_SRCDIR)/build/unix/staticobjectlist.sh
 MAKESTATICLIB := $(ROOT_SRCDIR)/build/unix/makestaticlib.sh
 MAKESTATIC    := $(ROOT_SRCDIR)/build/unix/makestatic.sh
 RECONFIGURE   := $(ROOT_SRCDIR)/build/unix/reconfigure.sh
-MAKEONEPCM    := $(ROOT_SRCDIR)/build/unix/makeonepcm.sh
+MAKEONEPCM    := build/unix/makeonepcm.sh
+MAKEUSERPCH   := build/unix/makeuserpch.sh
+MAKEUSERPCHIN := $(ROOT_SRCDIR)/config/makeuserpch.in
 ifeq ($(PLATFORM),win32)
 MAKELIB       := $(ROOT_SRCDIR)/build/win/makelib.sh
 MAKECOMPDATA  := $(ROOT_SRCDIR)/build/win/compiledata.sh
@@ -1097,8 +1099,21 @@ changelog:
 releasenotes:
 	@$(MAKERELNOTES)
 
-$(ROOTPCH): $(ROOTCLINGSTAGE1DEP) $(ALLHDRS) $(CLINGETCPCH) $(ORDER_) $(ALLLIBS)
-	@$(MAKEONEPCM) $(ROOT_SRCDIR) "$(MODULES)" $(CLINGETCPCH)
+$(ROOTPCH): $(MAKEONEPCM) $(MAKEUSERPCH) $(ROOTCLINGSTAGE1DEP) $(ALLHDRS) $(CLINGETCPCH) $(ORDER_) $(ALLLIBS)
+	@$(MAKEUSERPCH) $(ROOTPCH)
+
+$(MAKEONEPCM): $(ROOT_SRCDIR)/$(MAKEONEPCM)
+	@mkdir -p $(dir $@)
+	@cp $< $@
+
+$(MAKEUSERPCH): $(MAKEUSERPCHIN)
+	@mkdir -p $(dir $@)
+	@sed -e 's,%ROOTSRCDIR%,$(ROOT_SRCDIR),g'\
+	     -e 's,%ROOTOBJDIR%,$(ROOT_OBJDIR),g'\
+             -e 's,%MODULES%,$(MODULES),g'\
+	     -e 's,%CLINGHDRS%,$(CLINGETCPCH),g' $< > $@
+	@chmod a+x $@
+
 
 ifeq ($(BUILDX11),yes)
 ifeq ($(BUILDASIMAGE),yes)
