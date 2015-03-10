@@ -1177,6 +1177,11 @@ namespace cling {
   }
 
   bool TransactionUnloader::RevertTransaction(Transaction* T) {
+    if (Transaction* Parent = T->getParent()) {
+      Parent->removeNestedTransaction(T);
+      T->setParent(0);
+    }
+
     DeclUnloader DeclU(m_Sema, m_CodeGen, T);
     bool Successful = true;
 
@@ -1195,6 +1200,9 @@ namespace cling {
           if (D->getTemplateSpecializationKind() == TSK_Undeclared)
             continue;
 
+      if (Call == Transaction::kCCINone)
+        RevertTransaction(*T->rnested_begin());
+
       for (DeclGroupRef::const_iterator
              Di = DGR.end() - 1, E = DGR.begin() - 1; Di != E; --Di) {
         // Get rid of the declaration. If the declaration has name we should
@@ -1205,6 +1213,7 @@ namespace cling {
 #endif
       }
     }
+    assert(T->rnested_begin() == T->rnested_end() && "nested transactions mismatch");
 
     for (Transaction::const_reverse_macros_iterator MI = T->rmacros_begin(),
            ME = T->rmacros_end(); MI != ME; ++MI) {
