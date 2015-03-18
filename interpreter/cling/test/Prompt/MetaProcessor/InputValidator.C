@@ -18,3 +18,4 @@
 ("http://foo.bar/whatever")
 //CHECK: (const char [24]) "http://foo.bar/whatever"
 .q
+

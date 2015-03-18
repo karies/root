@@ -12,3 +12,4 @@
 .x Commands.macro
 // CHECK: I am a function called f.
 // CHECK-NOT: 0
+
