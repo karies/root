@@ -424,7 +424,7 @@ public:
         Paths = nullptr;
       }
     } else {
-      AmbiguityKind SavedAK;
+      AmbiguityKind SavedAK = Ambiguity;
       bool WasAmbiguous = false;
       if (ResultKind == Ambiguous) {
         SavedAK = Ambiguity;
