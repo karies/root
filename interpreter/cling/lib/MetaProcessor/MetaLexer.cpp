@@ -149,6 +149,8 @@ namespace cling {
     // lex until the next one or the end of the line.
    
     const char* const start = curPos;
+    const char* prevPos;
+   
     LexPunctuator(*curPos++, Tok); // '"' or "'"
     assert( (Tok.getKind() >= tok::quote && Tok.getKind() <= tok::apostrophe) );
     tok::TokenKind EndTokKind = Tok.getKind();
@@ -156,24 +158,34 @@ namespace cling {
 
     //consuming the string
     while (true) {
+        prevPos = curPos;
       
-      // "AB\"foo \0x12 \012 \n"
-      /*  bool escape = false;
-      while ( (escape || *curPos != *start) && *curPos != '\0' && *curPos != '\r' && *curPos != '\n') {
-        escape = ( (*curPos) == '\\' );
-        ++curPos;
-      }*/
-      if (*curPos == '\0') {
-        Tok.setBufStart(curPos);
-        Tok.setKind(tok::eof);
-        Tok.setLength(0);
-        return;
-      }
-      MetaLexer::LexPunctuator(*curPos++, Tok);
-      if (Tok.is(EndTokKind)) {
-        Tok.setLength(curPos - start + 1);
-        return;
-      }
+        if(*curPos == '\\'){
+      
+          MetaLexer::LexPunctuator(*curPos++, Tok);
+          Token temp_tok;
+          MetaLexer::LexPunctuator(*curPos, temp_tok);
+        
+          switch (temp_tok.getKind()) {
+              case tok::quote: case tok::backslash:
+                  curPos++;
+           }
+        }
+         
+        if (*curPos == '\0') {
+          Tok.setBufStart(curPos);
+          Tok.setKind(tok::eof);
+          Tok.setLength(0);
+          return;
+        }
+      
+        if(*prevPos != '\\')
+           MetaLexer::LexPunctuator(*curPos++, Tok);
+      
+        if (Tok.is(EndTokKind)){
+          Tok.setLength(curPos - start + 1);
+          return;
+        }
     }
   }
 
