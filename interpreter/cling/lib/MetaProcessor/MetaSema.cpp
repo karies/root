@@ -90,6 +90,7 @@ namespace cling {
                                                  Value* result) {
 
     // Check if there is a function named after the file.
+    assert(!args.empty() && "Arguments must be provided (at least \"()\"");
     cling::Transaction* T = 0;
     MetaSema::ActionResult actionResult = actOnLCommand(file, &T);
     if (actionResult == AR_Success) {
@@ -102,7 +103,7 @@ namespace cling {
       }
 
       StringRefPair pairFuncExt = pairPathFile.second.rsplit('.');
-      std::string expression = pairFuncExt.first.str() + "(" + args.str() + ")";
+      std::string expression = pairFuncExt.first.str() + args.str();
       // Give the user some context in case we have a problem in an invocation.
       expression += " /* invoking function corresponding to '.x' */";
 
@@ -121,31 +122,7 @@ namespace cling {
           << pairFuncExt.first;
         return AR_Success;
       }
-      else if (args.empty()) {
-        // No arguments passed - can we call it?
-        if (FunctionDecl* FD = dyn_cast<FunctionDecl>(ND)) {
-          // Check whether we can call it with no arguments.
-          bool canCall = true;
-          for (auto Param: FD->params()) {
-            if (!Param->hasDefaultArg()) {
-              canCall = false;
-              break;
-            }
-          }
-          if (!canCall) {
-            // FIXME: Produce clang diagnostics no viable function to call.
-            unsigned diagID
-              = Diags.getCustomDiagID (DiagnosticsEngine::Level::Warning,
-                           "function '%0' cannot be called with no arguments.");
-            //FIXME: Figure out how to pass in proper source locations, which we
-            // can use with -verify.
-            Diags.Report(noLoc, diagID)
-              << FD->getNameAsString();
-            return AR_Success;
-          }
-        } // FIXME: else no function to call!
-      }
-
+      
       if (m_Interpreter.echo(expression, result) != Interpreter::kSuccess)
         actionResult = AR_Failure;
     }

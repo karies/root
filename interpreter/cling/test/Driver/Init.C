@@ -6,10 +6,8 @@
 // LICENSE.TXT for details.
 //------------------------------------------------------------------------------
 
-// RUN: cat %s | %cling | FileCheck %s
-//XFAIL: *
-// This test should test the unnamed macro support once it is moved in cling.
-.x Commands.macro
-// CHECK: I am a function called f.
-// CHECK-NOT: 0
+//RUN: cat %s | %cling 2>&1 | FileCheck %s
 
+#include <initializer_list>
+auto l {'a', 'b', '\''};
+l // CHECK: (class std::initializer_list<char> &) @0x{{.*}}

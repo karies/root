@@ -20,6 +20,7 @@
 #ifndef SSE_INTRINSICS_H
 #define SSE_INTRINSICS_H
 
+#include <cassert>
 #include "../common/windows_fix_intrin.h"
 
 // The GCC xxxintrin.h headers do not make sure that the intrinsics have C linkage. This not really
@@ -508,6 +509,8 @@ namespace SSE
 #endif
             break;
 #else
+        default:
+            assert(0 && "VD: INVALID SIZE");
         case 1:
             f = _mm_cvtss_f32(_mm_castsi128_ps(_mm_srli_si128(_mm_castps_si128(v), 4)));
             break;

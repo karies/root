@@ -44,8 +44,10 @@ namespace cling {
     Tok.startToken(curPos);
     char C = *curPos++;
     switch (C) {
-    case '[': case ']': case '(': case ')': case '{': case '}': case '"':
-    case '\'': case '\\': case ',': case '.': case '!': case '?': case '>':
+    case '"': case '\'':
+      return LexQuotedStringAndAdvance(--curPos, Tok);
+    case '[': case ']': case '(': case ')': case '{': case '}': 
+    case '\\': case ',': case '.': case '!': case '?': case '>':
     case '&': case '#': case '@':
       // INTENTIONAL FALL THROUGHs
       return LexPunctuator(C, Tok);
@@ -125,6 +127,9 @@ namespace cling {
                                           bool skipComments /*false*/) {
     Tok.startToken(curPos);
     while (true) {
+      
+      if(*curPos == '\\')
+        curPos += 2;
       // On comment skip until the eof token.
       if (!skipComments && curPos[0] == '/' && curPos[1] == '/') {
         while (*curPos != '\0' && *curPos != '\r' && *curPos != '\n')
@@ -145,30 +150,45 @@ namespace cling {
  void MetaLexer::LexQuotedStringAndAdvance(const char*& curPos, Token& Tok) {
     // Tok must be the starting quote (single or double), and we will
     // lex until the next one or the end of the line.
-
+   
+    const char* const start = curPos;
+    const char* prevPos;
+   
+    LexPunctuator(*curPos++, Tok); // '"' or "'"
     assert( (Tok.getKind() >= tok::quote && Tok.getKind() <= tok::apostrophe) );
+    tok::TokenKind EndTokKind = Tok.getKind();
+    Tok.setKind(tok::raw_ident);
 
-    char start = '\0';
-    if (Tok.is(tok::quote)) start = '"';
-    else if (Tok.is(tok::apostrophe)) start = '\'';
-
-    Tok.startToken(curPos);
+    //consuming the string
     while (true) {
-      bool escape = false;
-      while ( (escape || *curPos != start)
-              && *curPos != '\0' && *curPos != '\r' && *curPos != '\n') {
-        escape = ( (*curPos) == '\\' );
-        ++curPos;
-      }
-      if (*curPos == '\0') {
-        Tok.setBufStart(curPos);
-        Tok.setKind(tok::eof);
-        Tok.setLength(0);
-        return;
-      }
-      MetaLexer::LexPunctuator(*curPos++, Tok);
-      if (Tok.isNot(tok::unknown))
-        return;
+        prevPos = curPos;
+      
+        if(*curPos == '\\'){
+      
+          MetaLexer::LexPunctuator(*curPos++, Tok);
+          Token temp_tok;
+          MetaLexer::LexPunctuator(*curPos, temp_tok);
+        
+          switch (temp_tok.getKind()) {
+              case tok::quote: case tok::backslash:
+                  curPos++;
+           }
+        }
+         
+        if (*curPos == '\0') {
+          Tok.setBufStart(curPos);
+          Tok.setKind(tok::eof);
+          Tok.setLength(0);
+          return;
+        }
+      
+        if(*prevPos != '\\')
+           MetaLexer::LexPunctuator(*curPos++, Tok);
+      
+        if (Tok.is(EndTokKind)){
+          Tok.setLength(curPos - start + 1);
+          return;
+        }
     }
   }
 
