@@ -14,6 +14,11 @@ if(NOT EXISTS textinput)
   include_directories(${TEXTINPUTSRC})
 endif()
 
+if(NOT EXISTS textinput)
+  set(TEXTINPUTSRC ${CMAKE_SOURCE_DIR}/core/textinput/src/)
+  include_directories(${TEXTINPUTSRC})
+endif()
+
 add_cling_library(clingUserInterface
   UserInterface.cpp
   ${TEXTINPUTSRC}textinput/Editor.cpp
