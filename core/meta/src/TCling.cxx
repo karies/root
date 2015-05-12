@@ -215,7 +215,15 @@ using namespace ROOT;
 namespace {
    static const std::string gInterpreterClassDef = "#undef ClassDef\n"
                 "#define ClassDef(name, id) \\\n"
-                "_ClassDefInterp_(name,id) \\\n"
+                "_ClassDefInterp_(name,id,virtual,) \\\n"
+                "static int DeclFileLine() { return __LINE__; } \n"
+                "#undef ClassDefNV\n"
+                "#define ClassDefNV(name, id) \\\n"
+                "_ClassDefInterp_(name,id,,) \\\n"
+                "static int DeclFileLine() { return __LINE__; }\n"
+                "#undef ClassDefOverride\n"
+                "#define ClassDefOverride(name, id) \\\n"
+                "_ClassDefInterp_(name,id,,override) \\\n"
                 "static int DeclFileLine() { return __LINE__; }\n";
 }
 
