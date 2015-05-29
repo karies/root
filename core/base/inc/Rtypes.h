@@ -392,4 +392,20 @@ namespace ROOT {                                                     \
 # define R__LOAD_LIBRARY(LIBRARY)
 #endif
 
+#ifdef __CLING__
+# define R__ADD_INCLUDE_PATH(PATH) _R_PragmaStr(cling add_include_path ( #PATH ))
+#elif defined(R__WIN32)
+# define R__ADD_INCLUDE_PATH(PATH) _R_PragmaStr(comment(path, #PATH))
+#else
+# define R__ADD_INCLUDE_PATH(PATH)
+#endif
+
+#ifdef __CLING__
+# define R__ADD_LIBRARY_PATH(PATH) _R_PragmaStr(cling add_library_path ( #PATH ))
+#elif defined(R__WIN32)
+# define R__ADD_LIBRARY_PATH(PATH) _R_PragmaStr(comment(path, #PATH))
+#else
+# define R__ADD_LIBRARY_PATH(PATH)
+#endif
+
 #endif
