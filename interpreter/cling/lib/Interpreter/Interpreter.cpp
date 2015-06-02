@@ -1031,31 +1031,6 @@ namespace cling {
     return getDynamicLibraryManager()->lookupLibrary(canonicalFile);
   }
 
-  void Interpreter::replaceEnvVars(std::string &Path){
-
-    std::size_t fpos = Path.find("$");
-
-    while(fpos != std::string::npos) {
-      std::size_t spos = Path.find("/", fpos + 1);
-      std::size_t length;
-
-      if(spos != std::string::npos) // if we found a "/"
-        length = spos - fpos;
-      else // we didn't find any "/"
-        length = Path.size();
-
-      std::string envVar = Path.substr(fpos + 1, length -1); //"HOME"
-      const char* envVar_c = envVar.c_str();
-      char* fullPath_c = getenv(envVar_c); // e.g. "/home/user"
-      std::string fullPath = std::string(fullPath_c);
-      std::string pattern = "\\$" + envVar; //e.g. pattern(\\$HOME)
-      std::regex e(pattern);
-      Path = std::regex_replace (Path, e, fullPath) ; //replace  with the full path
-      fpos = Path.find("$", fpos + 1); //search for next env variable
-    }
-    //Path = Path + "/";
-  }
-
   Interpreter::CompilationResult
   Interpreter::loadFile(const std::string& filename,
                         bool allowSharedLib /*=true*/,

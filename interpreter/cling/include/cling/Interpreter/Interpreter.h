@@ -17,7 +17,6 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
-#include <regex>
 
 // FIXME: workaround until JIT supports exceptions
 #include <setjmp.h>
@@ -517,11 +516,6 @@ namespace cling {
     /// found.
     ///
     std::string lookupFileOrLibrary(llvm::StringRef file);
-
-    ///
-    ///function to replace the environmental variables in a given path.
-    ///
-    void replaceEnvVars(std::string &LibPath);
 
     ///\brief Loads header file or shared library.
     ///

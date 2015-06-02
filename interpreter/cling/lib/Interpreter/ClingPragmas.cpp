@@ -22,6 +22,65 @@ using namespace cling;
 using namespace clang;
 
 namespace {
+   static void replaceEnvVars(std::string &Path){
+
+    std::size_t fpos = Path.find("$");
+
+    while (fpos != std::string::npos) {
+      std::size_t spos = Path.find("/", fpos + 1);
+      std::size_t length;
+
+      if (spos != std::string::npos) // if we found a "/"
+        length = spos - fpos;
+      else // we didn't find any "/"
+        length = Path.length();
+
+      std::string envVar = Path.substr(fpos + 1, length -1); //"HOME"
+      std::string fullPath{getenv(envVar.c_str())};
+      Path.replace(fpos, length, fullPath);
+      fpos = Path.find("$", fpos + 1); //search for next env variable
+    }
+  }
+  static std::string HandlePragmaHelper(Preprocessor &PP,
+                      PragmaIntroducerKind Introducer,
+                      Token &FirstToken,
+                      Interpreter &m_Interp,
+                      std::string errorMessage,
+                      std::string pragmaInst){
+   struct SkipToEOD_t {
+        Preprocessor& m_PP;
+        SkipToEOD_t(Preprocessor& PP): m_PP(PP) {}
+        ~SkipToEOD_t() { m_PP.DiscardUntilEndOfDirective(); }
+      } SkipToEOD(PP);
+
+      Token Tok;
+      PP.Lex(Tok);
+      if (Tok.isNot(tok::l_paren)) {
+        llvm::errs() << errorMessage;
+        return "";
+      }
+      std::string Literal;
+      if (!PP.LexStringLiteral(Tok, Literal, pragmaInst.c_str(),
+                               false /*allowMacroExpansion*/)) {
+        // already diagnosed.
+        return "";
+      }
+      if((pragmaInst == "pragma cling add_include_path") || (pragmaInst == "pragma cling add_library_path")){
+        { if (Literal.find("$") != std::string::npos)
+           replaceEnvVars(Literal);
+        }
+      }
+
+      clang::Parser& P = m_Interp.getParser();
+      Parser::ParserCurTokRestoreRAII savedCurToken(P);
+      // After we have saved the token reset the current one to something which
+      // is safe (semi colon usually means empty decl)
+      Token& CurTok = const_cast<Token&>(P.getCurToken());
+      CurTok.setKind(tok::semi);
+
+      return Literal;
+  }
+
   class PHLoad: public PragmaHandler {
     Interpreter& m_Interp;
 
@@ -33,33 +92,10 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-
-      struct SkipToEOD_t {
-        Preprocessor& m_PP;
-        SkipToEOD_t(Preprocessor& PP): m_PP(PP) {}
-        ~SkipToEOD_t() { m_PP.DiscardUntilEndOfDirective(); }
-      } SkipToEOD(PP);
-
-      Token Tok;
-      PP.Lex(Tok);
-      if (Tok.isNot(tok::l_paren)) {
-        llvm::errs() << "cling::PHLoad: expect '(' after #pragma cling load!\n";
-        return;
-      }
-      std::string FileName;
-      if (!PP.LexStringLiteral(Tok, FileName, "pragma cling load",
-                               false /*allowMacroExpansion*/)) {
-        // already diagnosed.
-        return;
-      }
+      std::string file;
+      file = HandlePragmaHelper(PP, Introducer, FirstToken, m_Interp,
+                                           "cling::PHLoad: expect '(' after #pragma cling load!\n", "pragma cling load");
       Preprocessor::CleanupAndRestoreCacheRAII cleanupRAII(PP);
-      clang::Parser& P = m_Interp.getParser();
-      Parser::ParserCurTokRestoreRAII savedCurToken(P);
-      // After we have saved the token reset the current one to something which
-      // is safe (semi colon usually means empty decl)
-      Token& CurTok = const_cast<Token&>(P.getCurToken());
-      CurTok.setKind(tok::semi);
-
       // We can't PushDeclContext, because we go up and the routine that pops
       // the DeclContext assumes that we drill down always.
       // We have to be on the global context. At that point we are in a
@@ -68,9 +104,8 @@ namespace {
         = m_Interp.getCI()->getASTContext().getTranslationUnitDecl();
       Sema::ContextAndScopeRAII pushedDCAndS(m_Interp.getSema(),
                                              TU, m_Interp.getSema().TUScope);
-
       Interpreter::PushTransactionRAII pushedT(&m_Interp);
-      m_Interp.loadFile(FileName, true /*allowSharedLib*/);
+      m_Interp.loadFile(file,true /*allowSharedLib*/);
     }
   };
 
@@ -85,47 +120,9 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-
-      struct SkipToEOD_t {
-        Preprocessor& m_PP;
-        SkipToEOD_t(Preprocessor& PP): m_PP(PP) {}
-        ~SkipToEOD_t() { m_PP.DiscardUntilEndOfDirective(); }
-      } SkipToEOD(PP);
-
-      Token Tok;
-      PP.Lex(Tok);
-      if (Tok.isNot(tok::l_paren)) {
-        llvm::errs() << "cling::PHAddIncPath: expect '(' after #pragma cling add_include_path!\n";
-        return;
-      }
-      std::string IncPath;
-      if (!PP.LexStringLiteral(Tok, IncPath, "pragma cling add_include_path",
-                               false /*allowMacroExpansion*/)) {
-        // already diagnosed.
-        return;
-      }
-      if (IncPath.find("$") != std::string::npos)
-        m_Interp.replaceEnvVars(IncPath);
-
-      Preprocessor::CleanupAndRestoreCacheRAII cleanupRAII(PP);
-      clang::Parser& P = m_Interp.getParser();
-      Parser::ParserCurTokRestoreRAII savedCurToken(P);
-      // After we have saved the token reset the current one to something which
-      // is safe (semi colon usually means empty decl)
-      Token& CurTok = const_cast<Token&>(P.getCurToken());
-      CurTok.setKind(tok::semi);
-
-      // We can't PushDeclContext, because we go up and the routine that pops
-      // the DeclContext assumes that we drill down always.
-      // We have to be on the global context. At that point we are in a
-      // wrapper function so the parent context must be the global.
-      TranslationUnitDecl* TU
-        = m_Interp.getCI()->getASTContext().getTranslationUnitDecl();
-      Sema::ContextAndScopeRAII pushedDCAndS(m_Interp.getSema(),
-                                             TU, m_Interp.getSema().TUScope);
-
-      Interpreter::PushTransactionRAII pushedT(&m_Interp);
-      m_Interp.AddIncludePath(IncPath);
+      m_Interp.AddIncludePath(HandlePragmaHelper(PP, Introducer, FirstToken, m_Interp,
+                                                 "cling::PHAddIncPath: expect '(' after #pragma cling add_include_path!\n",
+                                                 "pragma cling add_include_path"));
     }
   };
 
@@ -140,49 +137,10 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-
-      struct SkipToEOD_t {
-        Preprocessor& m_PP;
-        SkipToEOD_t(Preprocessor& PP): m_PP(PP) {}
-        ~SkipToEOD_t() { m_PP.DiscardUntilEndOfDirective(); }
-      } SkipToEOD(PP);
-
-      Token Tok;
-      PP.Lex(Tok);
-      if (Tok.isNot(tok::l_paren)) {
-        llvm::errs() << "cling::PHAddLibraryPath: expect '(' after #pragma cling add_library_path!\n";
-        return;
-      }
-      std::string LibPath;
-      if (!PP.LexStringLiteral(Tok, LibPath, "pragma cling add_library_path",
-                               false /*allowMacroExpansion*/)) {
-        // already diagnosed.
-        return;
-      }
-      //if the path contains environmental variable
-      if (LibPath.find("$") != std::string::npos)
-        m_Interp.replaceEnvVars(LibPath);
-
-      Preprocessor::CleanupAndRestoreCacheRAII cleanupRAII(PP);
-      clang::Parser& P = m_Interp.getParser();
-      Parser::ParserCurTokRestoreRAII savedCurToken(P);
-      // After we have saved the token reset the current one to something which
-      // is safe (semi colon usually means empty decl)
-      Token& CurTok = const_cast<Token&>(P.getCurToken());
-      CurTok.setKind(tok::semi);
-
-      // We can't PushDeclContext, because we go up and the routine that pops
-      // the DeclContext assumes that we drill down always.
-      // We have to be on the global context. At that point we are in a
-      // wrapper function so the parent context must be the global.
-      TranslationUnitDecl* TU
-        = m_Interp.getCI()->getASTContext().getTranslationUnitDecl();
-      Sema::ContextAndScopeRAII pushedDCAndS(m_Interp.getSema(),
-                                             TU, m_Interp.getSema().TUScope);
-
-      Interpreter::PushTransactionRAII pushedT(&m_Interp);
       InvocationOptions& Opts = m_Interp.getOptions();
-      Opts.LibSearchPath.push_back(LibPath);
+      Opts.LibSearchPath.push_back( HandlePragmaHelper(PP, Introducer, FirstToken, m_Interp,
+                                                       "cling::PHAddLibraryPath: expect '(' after #pragma cling add_library_path!\n",
+                                                       "pragma cling add_library_path"));
     }
   };
 }

@@ -7,18 +7,15 @@
 //------------------------------------------------------------------------------
 
 // RUN: mkdir -p %T/subdir && clang -shared %S/call_lib.c -o %T/subdir/libtest%shlibext
-// RUN: cd %T/subdir && %S/create_header.sh && cd %S
-// RUN: export ENVVAR="%T/subdir"
+// RUN: export ENVVAR_LIB="%T/subdir" ; export ENVVAR_INC="%S/subdir"
 // RUN: cat %s | %cling -I %S -Xclang -verify 2>&1 | FileCheck %s
 
-#pragma cling add_include_path("$ENVVAR")
-#pragma cling load("Include_header.h")
+#pragma cling add_include_path("$ENVVAR_INC")
+#include "Include_header.h"
 include_test()
 // CHECK: OK(int) 0
 
-#pragma cling add_library_path("$ENVVAR")
+#pragma cling add_library_path("$ENVVAR_LIB")
 #pragma cling load("libtest")
 
-// RUN: rm -rf subdir
 //expected-no-diagnostics
-.q
