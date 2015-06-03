@@ -18,4 +18,5 @@ include_test()
 #pragma cling add_library_path("$ENVVAR_LIB")
 #pragma cling load("libtest")
 
+#pragma cling add_library_path("$NONEXISTINGVARNAME")
 //expected-no-diagnostics

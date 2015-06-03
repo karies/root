@@ -22,63 +22,56 @@ using namespace cling;
 using namespace clang;
 
 namespace {
-   static void replaceEnvVars(std::string &Path){
+    static void replaceEnvVars(std::string &Path){
 
-    std::size_t fpos = Path.find("$");
+      std::size_t bpos = Path.find("$");
 
-    while (fpos != std::string::npos) {
-      std::size_t spos = Path.find("/", fpos + 1);
-      std::size_t length;
+      while (bpos != std::string::npos) {
+        std::size_t spos = Path.find("/", bpos + 1);
+        std::size_t length = Path.length();
 
       if (spos != std::string::npos) // if we found a "/"
-        length = spos - fpos;
-      else // we didn't find any "/"
-        length = Path.length();
+        length = spos - bpos;
 
-      std::string envVar = Path.substr(fpos + 1, length -1); //"HOME"
-      std::string fullPath{getenv(envVar.c_str())};
-      Path.replace(fpos, length, fullPath);
-      fpos = Path.find("$", fpos + 1); //search for next env variable
+      std::string envVar = Path.substr(bpos + 1, length -1); //"HOME"
+      const char* c_Path = getenv(envVar.c_str());
+      std::string fullPath;
+      if (c_Path != NULL){
+        fullPath = std::string(c_Path);
+      } else {
+         fullPath = std::string("");
+      }
+      Path.replace(bpos, length, fullPath);
+      bpos = Path.find("$", bpos + 1); //search for next env variable
     }
   }
-  static std::string HandlePragmaHelper(Preprocessor &PP,
-                      PragmaIntroducerKind Introducer,
-                      Token &FirstToken,
-                      Interpreter &m_Interp,
-                      std::string errorMessage,
-                      std::string pragmaInst){
-   struct SkipToEOD_t {
-        Preprocessor& m_PP;
-        SkipToEOD_t(Preprocessor& PP): m_PP(PP) {}
-        ~SkipToEOD_t() { m_PP.DiscardUntilEndOfDirective(); }
-      } SkipToEOD(PP);
 
-      Token Tok;
-      PP.Lex(Tok);
-      if (Tok.isNot(tok::l_paren)) {
-        llvm::errs() << errorMessage;
-        return "";
-      }
-      std::string Literal;
-      if (!PP.LexStringLiteral(Tok, Literal, pragmaInst.c_str(),
-                               false /*allowMacroExpansion*/)) {
-        // already diagnosed.
-        return "";
-      }
-      if((pragmaInst == "pragma cling add_include_path") || (pragmaInst == "pragma cling add_library_path")){
-        { if (Literal.find("$") != std::string::npos)
-           replaceEnvVars(Literal);
-        }
-      }
+  typedef std::pair<bool, std::string> ParseResult_t;
 
-      clang::Parser& P = m_Interp.getParser();
-      Parser::ParserCurTokRestoreRAII savedCurToken(P);
-      // After we have saved the token reset the current one to something which
-      // is safe (semi colon usually means empty decl)
-      Token& CurTok = const_cast<Token&>(P.getCurToken());
-      CurTok.setKind(tok::semi);
+  static ParseResult_t HandlePragmaHelper(Preprocessor &PP,
+                                        Token &FirstToken,
+                                        Interpreter &m_Interp,
+                                        const std::string &pragmaInst){
+    struct SkipToEOD_t {
+      Preprocessor& m_PP;
+      SkipToEOD_t(Preprocessor& PP): m_PP(PP) {}
+      ~SkipToEOD_t() { m_PP.DiscardUntilEndOfDirective(); }
+    } SkipToEOD(PP);
 
-      return Literal;
+    Token Tok;
+    PP.Lex(Tok);
+    if (Tok.isNot(tok::l_paren)) {
+      llvm::errs() << "cling:HandlePragmaHelper : expect '(' after #" << pragmaInst;
+      return ParseResult_t{false, ""};
+    }
+    std::string Literal;
+    if (!PP.LexStringLiteral(Tok, Literal, pragmaInst.c_str(),false /*allowMacroExpansion*/)) {
+      // already diagnosed.
+      return ParseResult_t{false, ""};
+    }
+    replaceEnvVars(Literal);
+
+    return ParseResult_t{true, Literal};
   }
 
   class PHLoad: public PragmaHandler {
@@ -92,20 +85,29 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-      std::string file;
-      file = HandlePragmaHelper(PP, Introducer, FirstToken, m_Interp,
-                                           "cling::PHLoad: expect '(' after #pragma cling load!\n", "pragma cling load");
+      ParseResult_t Diagnostics = HandlePragmaHelper(PP, FirstToken, m_Interp, "pragma cling load");
+
+      if (Diagnostics.second.empty()){
+        llvm::errs() << "Cannot load unnamed files.\n" ;
+        return;
+      }
+      clang::Parser& P = m_Interp.getParser();
+      Parser::ParserCurTokRestoreRAII savedCurToken(P);
+      // After we have saved the token reset the current one to something which
+      // is safe (semi colon usually means empty decl)
+      Token& CurTok = const_cast<Token&>(P.getCurToken());
+      CurTok.setKind(tok::semi);
+
       Preprocessor::CleanupAndRestoreCacheRAII cleanupRAII(PP);
       // We can't PushDeclContext, because we go up and the routine that pops
       // the DeclContext assumes that we drill down always.
       // We have to be on the global context. At that point we are in a
       // wrapper function so the parent context must be the global.
-      TranslationUnitDecl* TU
-        = m_Interp.getCI()->getASTContext().getTranslationUnitDecl();
-      Sema::ContextAndScopeRAII pushedDCAndS(m_Interp.getSema(),
-                                             TU, m_Interp.getSema().TUScope);
+      TranslationUnitDecl* TU = m_Interp.getCI()->getASTContext().getTranslationUnitDecl();
+      Sema::ContextAndScopeRAII pushedDCAndS(m_Interp.getSema(), TU, m_Interp.getSema().TUScope);
       Interpreter::PushTransactionRAII pushedT(&m_Interp);
-      m_Interp.loadFile(file,true /*allowSharedLib*/);
+
+      m_Interp.loadFile(Diagnostics.second, true /*allowSharedLib*/);
     }
   };
 
@@ -120,9 +122,13 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-      m_Interp.AddIncludePath(HandlePragmaHelper(PP, Introducer, FirstToken, m_Interp,
-                                                 "cling::PHAddIncPath: expect '(' after #pragma cling add_include_path!\n",
-                                                 "pragma cling add_include_path"));
+      ParseResult_t Diagnostics = HandlePragmaHelper(PP, FirstToken, m_Interp, "pragma cling add_include_path");
+      //if the function HandlePragmaHelper returned false,
+      if (Diagnostics.first == false){
+        return;
+      }else{
+        m_Interp.AddIncludePath(Diagnostics.second);
+      }
     }
   };
 
@@ -137,10 +143,14 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-      InvocationOptions& Opts = m_Interp.getOptions();
-      Opts.LibSearchPath.push_back( HandlePragmaHelper(PP, Introducer, FirstToken, m_Interp,
-                                                       "cling::PHAddLibraryPath: expect '(' after #pragma cling add_library_path!\n",
-                                                       "pragma cling add_library_path"));
+      ParseResult_t Diagnostics = HandlePragmaHelper(PP,FirstToken, m_Interp,"pragma cling add_library_path");
+      //if the function HandlePragmaHelper returned false,
+     if (Diagnostics.first == false){
+       return;
+     }else{ // if HandlePragmaHelper returned success, this means that it also returned the path to be included
+       InvocationOptions& Opts = m_Interp.getOptions();
+       Opts.LibSearchPath.push_back(Diagnostics.second);
+     }
     }
   };
 }

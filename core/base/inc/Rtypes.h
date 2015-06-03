@@ -379,8 +379,12 @@ namespace ROOT {                                                     \
 #define _R_PragmaStr(x) _Pragma(#x)
 #ifdef __CLING__
 # define R__LOAD_LIBRARY(LIBRARY) _R_PragmaStr(cling load ( #LIBRARY ))
+# define R__ADD_INCLUDE_PATH(PATH) _R_PragmaStr(cling add_include_path ( #PATH ))
+# define R__ADD_LIBRARY_PATH(PATH) _R_PragmaStr(cling add_library_path ( #PATH ))
 #elif defined(R__WIN32)
 # define R__LOAD_LIBRARY(LIBRARY) _R_PragmaStr(comment(lib, #LIBRARY))
+# define R__ADD_INCLUDE_PATH(PATH) _R_PragmaStr(comment(path, #PATH))
+# define R__ADD_LIBRARY_PATH(PATH) _R_PragmaStr(comment(path, #PATH))
 #else
 // No way to inform linker though preprocessor :-(
 // We could even inform the user:
@@ -390,21 +394,7 @@ namespace ROOT {                                                     \
                 ". Use -L and -l instead.")
 */
 # define R__LOAD_LIBRARY(LIBRARY)
-#endif
-
-#ifdef __CLING__
-# define R__ADD_INCLUDE_PATH(PATH) _R_PragmaStr(cling add_include_path ( #PATH ))
-#elif defined(R__WIN32)
-# define R__ADD_INCLUDE_PATH(PATH) _R_PragmaStr(comment(path, #PATH))
-#else
 # define R__ADD_INCLUDE_PATH(PATH)
-#endif
-
-#ifdef __CLING__
-# define R__ADD_LIBRARY_PATH(PATH) _R_PragmaStr(cling add_library_path ( #PATH ))
-#elif defined(R__WIN32)
-# define R__ADD_LIBRARY_PATH(PATH) _R_PragmaStr(comment(path, #PATH))
-#else
 # define R__ADD_LIBRARY_PATH(PATH)
 #endif
 
