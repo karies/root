@@ -1,5 +1,5 @@
-#include<stdio.h>
+extern "C" int printf(const char*,...);
 int include_test(){
-	printf("OK");
-	return 0;
+  printf("OK");
+  return 0;
 }
