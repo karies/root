@@ -61,7 +61,8 @@ namespace {
       return ParseResult_t{false, ""};
     }
     std::string Literal;
-    if (!PP.LexStringLiteral(Tok, Literal, pragmaInst.c_str(),false /*allowMacroExpansion*/)) {
+    if (!PP.LexStringLiteral(Tok, Literal, pragmaInst.c_str(),
+                             false /*allowMacroExpansion*/)) {
       // already diagnosed.
       return ParseResult_t {false, ""};
     }
@@ -101,8 +102,10 @@ namespace {
       // the DeclContext assumes that we drill down always.
       // We have to be on the global context. At that point we are in a
       // wrapper function so the parent context must be the global.
-      TranslationUnitDecl* TU = m_Interp.getCI()->getASTContext().getTranslationUnitDecl();
-      Sema::ContextAndScopeRAII pushedDCAndS(m_Interp.getSema(), TU, m_Interp.getSema().TUScope);
+      TranslationUnitDecl* TU =
+                  m_Interp.getCI()->getASTContext().getTranslationUnitDecl();
+      Sema::ContextAndScopeRAII pushedDCAndS(m_Interp.getSema(),
+                                             TU, m_Interp.getSema().TUScope);
       Interpreter::PushTransactionRAII pushedT(&m_Interp);
 
       m_Interp.loadFile(Result.second, true /*allowSharedLib*/);
@@ -120,7 +123,8 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-      ParseResult_t Result = HandlePragmaHelper(PP, "pragma cling add_include_path");
+      ParseResult_t Result = HandlePragmaHelper(PP,
+                                           "pragma cling add_include_path");
       //if the function HandlePragmaHelper returned false,
       if (!Result.first)
         return;
@@ -140,14 +144,17 @@ namespace {
                       PragmaIntroducerKind Introducer,
                       Token &FirstToken) override {
       // TODO: use Diagnostics!
-      ParseResult_t Result = HandlePragmaHelper(PP, "pragma cling add_library_path");
+      ParseResult_t Result = HandlePragmaHelper(PP,
+                                         "pragma cling add_library_path");
       //if the function HandlePragmaHelper returned false,
-     if (!Result.first)
-       return;
-     if (!Result.second.empty()) { // if HandlePragmaHelper returned success, this means that it also returned the path to be included
-       InvocationOptions& Opts = m_Interp.getOptions();
-       Opts.LibSearchPath.push_back(Result.second);
-     }
+      if (!Result.first)
+        return;
+      if (!Result.second.empty()) {
+      // if HandlePragmaHelper returned success, this means that
+      //it also returned the path to be included
+        InvocationOptions& Opts = m_Interp.getOptions();
+        Opts.LibSearchPath.push_back(Result.second);
+      }
     }
   };
 }
