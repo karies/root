@@ -47,7 +47,7 @@ namespace {
   typedef std::pair<bool, std::string> ParseResult_t;
 
   static ParseResult_t HandlePragmaHelper(Preprocessor &PP,
-                                        const std::string &pragmaInst) {
+                                          const std::string &pragmaInst) {
     struct SkipToEOD_t {
       Preprocessor& m_PP;
       SkipToEOD_t(Preprocessor& PP): m_PP(PP) {}
@@ -57,7 +57,8 @@ namespace {
     Token Tok;
     PP.Lex(Tok);
     if (Tok.isNot(tok::l_paren)) {
-      llvm::errs() << "cling:HandlePragmaHelper : expect '(' after #" << pragmaInst;
+      llvm::errs() << "cling:HandlePragmaHelper : expect '(' after #"
+                   << pragmaInst;
       return ParseResult_t{false, ""};
     }
     std::string Literal;
