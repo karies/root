@@ -245,7 +245,7 @@ static int DeclFileLine() { return __LINE__; }
 )ICF";
 
 // The macros below use ::Error, so let's ensure it is included
-  static const std::string TErrorClassDef = R"ICF(
+  static const std::string gClassDefInterpMacro = R"ICF(
 #ifndef ROOT_TError
 #include "TError.h"
 #endif
@@ -1120,7 +1120,7 @@ TCling::TCling(const char *name, const char *title)
                             "using std::string;");
    } else {
       fInterpreter->declare("#include \"Rtypes.h\"\n"
-                            + TErrorClassDef + "\n"
+                            + gClassDefInterpMacro + "\n"
                             + gInterpreterClassDef + "\n"
                             + "#undef ClassImp\n"
                             "#define ClassImp(X)\n"
