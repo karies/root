@@ -359,10 +359,10 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
   // lexing the #includer file.
   if (!IncludeMacroStack.empty()) {
 
-    // If we lexed the code-completion file, act as if we reached EOF.
-    if (isCodeCompletionEnabled() && CurPPLexer &&
-        SourceMgr.getLocForStartOfFile(CurPPLexer->getFileID()) ==
-            CodeCompletionFileLoc) {
+    // If we lexed the code-completion file, don't reset the Lexer.
+    if (!IncrementalProcessing && isCodeCompletionEnabled()  && CurPPLexer &&
+      SourceMgr.getLocForStartOfFile(CurPPLexer->getFileID()) ==
+        CodeCompletionFileLoc) {
       if (CurLexer) {
         Result.startToken();
         CurLexer->FormTokenWithChars(Result, CurLexer->BufferEnd, tok::eof);

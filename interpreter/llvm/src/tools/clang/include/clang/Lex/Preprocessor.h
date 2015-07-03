@@ -724,6 +724,7 @@ public:
   /// \brief Clear out the code completion handler.
   void clearCodeCompletionHandler() {
     CodeComplete = nullptr;
+    CodeCompletionReached = false;
   }
 
   /// \brief Hook used by the lexer to invoke the "natural language" code
