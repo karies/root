@@ -1,0 +1,74 @@
+//
+// Created by Axel Naumann on 09/07/15.
+//
+
+//
+//  tryouts.cxx
+//  ROOT7
+//
+//  Created by Axel Naumann on 22/03/15.
+//
+//
+
+#include "ROOT/THist.h"
+#include "ROOT/THistConcurrentFill.h"
+
+#include <iostream>
+#include <future>
+#include <random>
+
+double wasteCPUTime(std::mt19937& gen) {
+  // Simulate number crunching through gen and ridiculous num bits
+  return std::generate_canonical<double, 100>(gen)
+     + std::generate_canonical<double, 100>(gen)
+     + std::generate_canonical<double, 100>(gen)
+     + std::generate_canonical<double, 100>(gen)
+     + std::generate_canonical<double, 100>(gen);
+}
+
+using Filler_t = ROOT::THistConcurrentFiller<ROOT::TH2D, 1024>;
+
+/// This function is called within each thread: it spends some CPU time and then
+/// fills a number into the histogram, through the Filler_t. This is repeated
+/// several times.
+void theTask(Filler_t filler) {
+  std::mt19937 gen;
+
+  for (int i = 0;  i < 3000000; ++i)
+    filler.Fill({wasteCPUTime(gen), wasteCPUTime(gen)});
+}
+
+/// This example fills a histogram concurrently, from several threads.
+void concurrentHistFill(ROOT::TH2D& hist) {
+  // THistConcurrentFillManager allows multiple threads to fill the histogram
+  // concurrently.
+  //
+  // Details: each thread's Fill() calls are buffered. once the buffer is full,
+  // the THistConcurrentFillManager locks and flushes the buffer into the
+  // histogram.
+  ROOT::THistConcurrentFillManager<ROOT::TH2D> fillMgr(hist);
+
+  std::array<std::thread, 8> threads;
+
+  // Let the threads fill the histogram concurrently.
+  for (auto& thr: threads) {
+    // Each thread calls fill(), passing a dedicated filler per thread.
+    thr = std::thread(theTask, fillMgr.MakeFiller());
+  }
+
+
+  // Join them.
+  for (auto& thr: threads)
+    thr.join();
+}
+
+int main(int argc, const char* argv[]) {
+  // This histogram will be filled from several threads.
+  ROOT::TH2D hist{{100, 0., 1.}, {{0., 1., 2., 3.,10.}}};
+
+  concurrentHistFill(hist);
+
+  std::cout << hist.GetEntries() << '\n';
+
+  return 0;
+}
