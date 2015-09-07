@@ -19,6 +19,8 @@
 #include "ROOT/THistDrawOptions.h"
 #include "ROOT/TLogger.h"
 
+#include "TSystem.h"
+
 #include <memory>
 
 namespace ROOT {
@@ -38,8 +40,7 @@ protected:
 public:
   static THistPainterBase<DIMENSION>* GetPainter() {
     if (!fgPainter)
-      R__ERROR_HERE("HIST")
-      << "Missing histogram painter, please load libHistPainter";
+      gSystem->Load("libHistPainter");
     return fgPainter;
   }
 
