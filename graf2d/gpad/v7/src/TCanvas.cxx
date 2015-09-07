@@ -1,6 +1,15 @@
-//
-// Created by Axel Naumann on 10/07/15.
-//
+/// \file TCanvas.cxx
+/// \ingroup Gpad
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-07-10
+
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
 
 #include "ROOT/TCanvas.h"
 

@@ -1,13 +1,18 @@
-//
-//  THistImpl.h
-//  ROOT7
-//
-//  Created by Axel Naumann on 23/03/15.
-//
-//
+/// \file ROOT/THistImpl.h
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-03-23
 
-#ifndef ROOT_THistImpl_h
-#define ROOT_THistImpl_h
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_THistImpl
+#define ROOT7_THistImpl
 
 #include <cctype>
 #include <std/array_view.h>

@@ -1,14 +1,15 @@
-//
-// Created by Axel Naumann on 09/07/15.
-//
+/// \file concurrentfill.cxx
+/// \ingroup Tutorials
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-07-09
 
-//
-//  tryouts.cxx
-//  ROOT7
-//
-//  Created by Axel Naumann on 22/03/15.
-//
-//
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
 
 #include "ROOT/THist.h"
 #include "ROOT/THistConcurrentFill.h"

@@ -1,13 +1,18 @@
-//
-//  THistBufferedFill.h
-//  ROOT7
-//
-//  Created by Axel Naumann on 2015-07-03.
-//
-//
+/// \file ROOT/THistBufferedFill.h
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-07-03
 
-#ifndef ROOT7_THistBufferedFill_h
-#define ROOT7_THistBufferedFill_h
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_THistBufferedFill
+#define ROOT7_THistBufferedFill
 
 namespace ROOT {
 
@@ -104,4 +109,4 @@ public:
   };
 }
 
-#endif // ROOT7_THistBufferedFill_h
+#endif

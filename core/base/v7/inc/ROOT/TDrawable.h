@@ -1,9 +1,18 @@
-//
-// Created by Axel Naumann on 08/07/15.
-//
+/// \file TDirectory.h
+/// \ingroup Base
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-08-07
 
-#ifndef ROOT7_TDRAWABLE_H
-#define ROOT7_TDRAWABLE_H
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_TDrawable
+#define ROOT7_TDrawable
 
 namespace ROOT {
 namespace Internal {
@@ -23,4 +32,4 @@ public:
 } // namespace Internal
 } // namespace ROOT
 
-#endif //ROOT7_TDRAWABLE_H
+#endif

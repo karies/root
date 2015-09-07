@@ -1,9 +1,18 @@
-//
-// Created by Axel Naumann on 04/09/15.
-//
+/// \file ROOT/THistDrawOptions.h
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-09-04
 
-#ifndef ROOT7_THISTDRAWOPTIONS_H
-#define ROOT7_THISTDRAWOPTIONS_H
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_THistDrawOptions
+#define ROOT7_THistDrawOptions
 
 namespace ROOT {
 
@@ -61,4 +70,4 @@ static constexpr const THistDrawOptions<2> text(Internal::THistDrawOptionsEnum<2
 }
 
 
-#endif //ROOT7_THISTDRAWOPTIONS_H
+#endif

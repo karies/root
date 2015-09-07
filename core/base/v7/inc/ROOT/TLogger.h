@@ -1,13 +1,18 @@
-//
-//  TLogger.h
-//  ROOT7
-//
-//  Created by Axel Naumann on 29/03/15.
-//
-//
+/// \file TDirectory.h
+/// \ingroup Base
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-03-29
 
-#ifndef ROOT7_TLog_h
-#define ROOT7_TLog_h
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_TLog
+#define ROOT7_TLog
 
 #include <array>
 #include <memory>

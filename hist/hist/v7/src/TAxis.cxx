@@ -1,3 +1,16 @@
+/// \file TAxis.cxx
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-08-06
+
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
 #include "ROOT/TAxis.h"
 
 #include <cmath>

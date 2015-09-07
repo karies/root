@@ -1,13 +1,18 @@
-//
-//  THistStats.h
-//  ROOT7
-//
-//  Created by Axel Naumann on 14/06/15.
-//
-//
+/// \file ROOT/THistStats.h
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-06-14
 
-#ifndef ROOT_THistStats_h
-#define ROOT_THistStats_h
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_THistStats_h
+#define ROOT7_THistStats_h
 
 #include <vector>
 

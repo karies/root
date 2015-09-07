@@ -1,9 +1,18 @@
-//
-// Created by Axel Naumann on 06/08/15.
-//
+/// \file ROOT/THistView.h
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-08-06
 
-#ifndef ROOT7_THISTVIEW_H
-#define ROOT7_THISTVIEW_H
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_THistView
+#define ROOT7_THistView
 
 #include "ROOT/THist.h"
 
@@ -81,4 +90,4 @@ private:
 
 } // namespace ROOT
 
-#endif //ROOT7_THISTVIEW_H
+#endif

@@ -1,9 +1,17 @@
-//
-// Created by Axel Naumann on 07/08/15.
-//
+/// \file ROOT/THistBinIter.h
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-08-07
 
-#ifndef ROOT7_THISTITER_H
-#define ROOT7_THISTITER_H
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_THistBinIter
+#define ROOT7_THistBinIter
 
 #include <iterator>
 
@@ -149,4 +157,4 @@ public:
 } // namespace Internal
 } // namespace ROOT
 
-#endif //ROOT7_THISTITER_H
+#endif

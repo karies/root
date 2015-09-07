@@ -1,13 +1,18 @@
-//
-//  TAxis.h
-//  ROOT7
-//
-//  Created by Axel Naumann on 23/03/15.
-//
-//
+/// \file ROOT/TAxis.h
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-03-23
 
-#ifndef ROOT7_TAxis_h
-#define ROOT7_TAxis_h
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_TAxis
+#define ROOT7_TAxis
 
 #include <algorithm>
 #include <string>

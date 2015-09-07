@@ -1,9 +1,18 @@
-//
-// Created by Axel Naumann on 09/07/15.
-//
+/// \file ROOT/THistDrawable.h
+/// \ingroup Hist
+/// \author Axel Naumann <axel@cern.ch>
+/// \date 2015-07-09
 
-#ifndef ROOT7_THISTDRAWABLE_H
-#define ROOT7_THISTDRAWABLE_H
+/*************************************************************************
+ * Copyright (C) 1995-2015, Rene Brun and Fons Rademakers.               *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+#ifndef ROOT7_THistDrawable
+#define ROOT7_THistDrawable
 
 #include "ROOT/TCoopPtr.h"
 #include "ROOT/TDrawable.h"
@@ -63,4 +72,4 @@ public:
 } // namespace Internal
 } // namespace ROOT
 
-#endif //ROOT7_THISTDRAWABLE_H
+#endif
