@@ -15,7 +15,7 @@
 #define ROOT7_THistImpl
 
 #include <cctype>
-#include <std/array_view.h>
+#include "ROOT/RArrayView.h"
 #include <std/tuple_apply.h>
 
 #include "ROOT/TAxis.h"

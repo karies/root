@@ -14,6 +14,7 @@
 #ifndef ROOT7_THist
 #define ROOT7_THist
 
+#include "ROOT/RArrayView.h"
 #include "ROOT/TAxis.h"
 #include "ROOT/TDrawable.h"
 #include "ROOT/THistBinIter.h"

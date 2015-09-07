@@ -15,6 +15,7 @@
 #define ROOT7_THistStats_h
 
 #include <vector>
+#include "ROOT/RArrayView.h"
 
 namespace ROOT {
 

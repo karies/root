@@ -14,6 +14,8 @@
 #ifndef ROOT7_THistBufferedFill
 #define ROOT7_THistBufferedFill
 
+#include "ROOT/RArrayView.h"
+
 namespace ROOT {
 
 namespace Internal {
