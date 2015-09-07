@@ -12,7 +12,7 @@
  *************************************************************************/
 
 #ifndef ROOT7_RHYSD_ARRAY_VIEW_H
-#define ROOT_RHYSD_ARRAY_VIEW_H
+#define ROOT7_RHYSD_ARRAY_VIEW_H
 
 // From https://github.com/rhysd/array_view/blob/master/include/array_view.hpp
 

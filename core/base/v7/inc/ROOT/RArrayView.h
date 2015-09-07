@@ -28,7 +28,7 @@ namespace std {
 }
 
 #else
-#  include "rhysd_array_view.h.h"
+# include "ROOT/rhysd_array_view.h"
 #endif
 
 #endif
