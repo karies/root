@@ -34,7 +34,7 @@ public:
 };
 
 template <int DIMENSION, class PRECISION>
-TFitResult Fit(const THist<DIMENSION, PRECISION>& hist,
+TFitResult FitTo(const THist<DIMENSION, PRECISION>& hist,
                const TFunction<DIMENSION>& func,
                std::array_view<double> paramInit){
   return TFitResult();
