@@ -15,7 +15,7 @@
 #include "ROOT/TFit.h"
 #include "ROOT/TFile.h"
 
-int main(int, const char*[]) {
+void simple() {
 
   // Create a 2D histogram with an X axis with equidistant bins, and a y axis
   // with irregular binning.
@@ -36,10 +36,8 @@ int main(int, const char*[]) {
                              const std::array_view<double>& par)
                           { return par[0]*x[0]*x[0] + (par[1]-x[1])*x[1]; });
 
-  ROOT::TFitResult fitResult = ROOT::Fit(hist, func, {{0., 1.}});
+  ROOT::TFitResult fitResult = ROOT::FitTo(hist, func, {{0., 1.}});
 
   ROOT::TCoopPtr<ROOT::TFile> file = ROOT::TFile::Recreate("hist.root");
   file->Write("TheHist", &hist);
-
-  return 0;
 }

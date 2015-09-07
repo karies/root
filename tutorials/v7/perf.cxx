@@ -68,9 +68,8 @@ void time(timefunc_t r7, int count, const std::string& name) {
   time1(r7, count, name + " (ROOT7)");
 }
 
-int main(int argc, const char* argv[]) {
-  //time(createOld, createNew, 1000000, "create 2D hists");
+void perf() {
+  time(createOld, createNew, 1000000, "create 2D hists");
   time(fillNew, 100000000, "2D fills");
   time(fillBufferedNew, 100000000, "2D fills (buffered)");
-  return 0;
 }

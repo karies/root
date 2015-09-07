@@ -63,13 +63,11 @@ void concurrentHistFill(ROOT::TH2D& hist) {
     thr.join();
 }
 
-int main(int argc, const char* argv[]) {
+void concurrentfill() {
   // This histogram will be filled from several threads.
   ROOT::TH2D hist{{100, 0., 1.}, {{0., 1., 2., 3.,10.}}};
 
   concurrentHistFill(hist);
 
   std::cout << hist.GetEntries() << '\n';
-
-  return 0;
 }

@@ -172,7 +172,7 @@ void time(timefunc_t r6, timefunc_t r7, int count, const std::string& name) {
   time1(r7, count, name + " (ROOT7)");
 }
 
-int main(int argc, const char* argv[]) {
+void perfcomp() {
   int factor = 1000000;
   //factor = 1; // debug, fast!
   time(createOldII, createNewII, factor, "create 2D hists [II]");

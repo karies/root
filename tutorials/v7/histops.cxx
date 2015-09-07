@@ -14,7 +14,7 @@
 #include "ROOT/THist.h"
 #include <iostream>
 
-int main(int, const char*[]) {
+void histops() {
 
   // Create a 2D histogram with an X axis with equidistant bins, and a y axis
   // with irregular binning.
@@ -32,6 +32,4 @@ int main(int, const char*[]) {
 
   int binidx = hist1.GetImpl()->GetBinIndex({0.01, 1.02});
   std::cout << hist1.GetImpl()->GetBinContent(binidx) << std::endl;
-
-  return 0;
 }

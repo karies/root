@@ -23,20 +23,16 @@ void example() {
                                           TAxisConfig{{0., 1., 2., 3.,10.}});
 
   pHist->Fill({0.01, 1.02});
-  TDirectory::Heap().Add("hist", pHist);
+  ROOT::TDirectory::Heap().Add("hist", pHist);
 
-  auto canvas = TCanvas::Create("MyCanvas");
+  auto canvas = ROOT::TCanvas::Create("MyCanvas");
   canvas->Draw(pHist);
 }
 
-int main(int argc, const char* argv[]) {
+void draw() {
   example();
 
   // And the event loop (?) will call
   for (auto&& canv: ROOT::TCanvas::GetCanvases())
     canv->Paint();
-
-  std::cout << "Press enter..." << std::endl;
-  getchar(); // wait for input;
-  return 0;
 }
