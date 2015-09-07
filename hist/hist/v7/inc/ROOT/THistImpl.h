@@ -16,7 +16,7 @@
 
 #include <cctype>
 #include "ROOT/RArrayView.h"
-#include <std/tuple_apply.h>
+#include "ROOT/RTupleApply.h"
 
 #include "ROOT/TAxis.h"
 
@@ -163,9 +163,9 @@ template<int I, class AXES> struct FillIterRange_t;
 
 // Break recursion.
 template<class AXES> struct FillIterRange_t<-1, AXES> {
-  void operator()(Hist::AxisIterRange_t<std::tuple_size<AXES>::value> &range,
-                  const AXES&axes,
-                  const std::array<Hist::EOverflow, std::tuple_size<AXES>::value> &over) const {}
+  void operator()(Hist::AxisIterRange_t<std::tuple_size<AXES>::value>& /*range*/,
+                  const AXES& /*axes*/,
+                  const std::array<Hist::EOverflow, std::tuple_size<AXES>::value>& /*over*/) const {}
 };
 
 /** Fill `range` with begin() and end() of all axes, including under/overflow
@@ -200,7 +200,7 @@ template<int I, class COORD, class AXES> struct FillBinCoord_t;
 
 // Break recursion.
 template<class COORD, class AXES> struct FillBinCoord_t<-1, COORD, AXES> {
-  void operator()(COORD& coord, const AXES& axes, EBinCoord kind, int binidx) const {}
+  void operator()(COORD& /*coord*/, const AXES& /*axes*/, EBinCoord /*kind*/, int /*binidx*/) const {}
 };
 
 /** Fill `coord` with low bin edge or center or high bin edge of all axes.
@@ -416,7 +416,7 @@ public:
   /// The histogram (conceptually) combines pairs of bins along this axis until
   /// `x` is within the range of the axis.
   /// The axis must support growing for this to work (e.g. a `TAxisGrow`).
-  void GrowAxis(int iAxis, double x) {
+  void GrowAxis(int /*iAxis*/, double /*x*/) {
     // TODO: Implement GrowAxis()
   }
 };
