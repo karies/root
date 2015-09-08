@@ -52,7 +52,7 @@ template<int DIMENSIONS, class PRECISION>
 class THist {
 public:
   /// The type of the `THistImplBase` of this histogram.
-  using ImplBase_t = THistImplBase<DIMENSIONS, PRECISION>;
+  using ImplBase_t = Detail::THistImplBase<DIMENSIONS, PRECISION>;
   /// The coordinates type: a `DIMENSIONS`-dimensional `std::array` of `double`.
   using Coord_t = typename ImplBase_t::Coord_t;
   /// The type of weights (`PRECISION`)
