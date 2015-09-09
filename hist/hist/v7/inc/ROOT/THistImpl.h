@@ -1,3 +1,4 @@
+/// \file ROOT/THistImpl.h
 /// \ingroup Hist ROOT7
 /// \author Axel Naumann <axel@cern.ch>
 /// \date 2015-03-23
@@ -63,7 +64,7 @@ public:
   /// Number of dimensions of this histogram.
   constexpr int GetNDim() const { return DIMENSIONS; }
   /// Number of bins of this histogram, including all overflow and underflow
-  /// bins. Simply the product of all axes' number of bins.  
+  /// bins. Simply the product of all axes' number of bins.
   virtual int GetNBins() const = 0;
 
   /// Given the coordinate `x`, determine the index of the bin.
@@ -72,9 +73,9 @@ public:
   /// axes for which `x` is out of range.
   virtual int GetBinIndexAndGrow(const Coord_t& x) = 0;
 
-  /// Get the center in all dimensions of the bin with index `binidx`. 
+  /// Get the center in all dimensions of the bin with index `binidx`.
   virtual Coord_t GetBinCenter(int binidx) const = 0;
-  /// Get the lower edge in all dimensions of the bin with index `binidx`. 
+  /// Get the lower edge in all dimensions of the bin with index `binidx`.
   virtual Coord_t GetBinFrom(int binidx) const = 0;
   /// Get the upper edge in all dimensions of the bin with index `binidx`.
   virtual Coord_t GetBinTo(int binidx) const = 0;
@@ -99,10 +100,6 @@ public:
   virtual Hist::AxisIterRange_t<DIMENSIONS>
     GetRange(const std::array<Hist::EOverflow, DIMENSIONS>& withOverUnder) const = 0;
 };
-
-
-template<int DIMENSIONS, class PRECISION>
-class THistStatEntries;
 
 
 /**
@@ -237,9 +234,9 @@ struct FillIterRange_t {
 
 
 enum class EBinCoord {
-  kBinLowEdge, ///< Get the lower bin edge
+  kBinFrom, ///< Get the lower bin edge
   kBinCenter, ///< Get the bin center
-  kBinHighEdge ///< Get the bin high edge
+  kBinTo ///< Get the bin high edge
 };
 
 template<int I, class COORD, class AXES> struct FillBinCoord_t;
@@ -257,14 +254,14 @@ struct FillBinCoord_t {
     int axisbin = binidx % std::get<I>(axes).GetNBins();
     size_t coordidx = std::tuple_size<AXES>::value - I;
     switch (kind) {
-      case EBinCoord::kBinLowEdge:
-        coord[coordidx] = std::get<I>(axes).GetBinMinimum(axisbin);
+      case EBinCoord::kBinFrom:
+        coord[coordidx] = std::get<I>(axes).GetBinFrom(axisbin);
         break;
       case EBinCoord::kBinCenter:
         coord[coordidx] = std::get<I>(axes).GetBinCenter(axisbin);
         break;
-      case EBinCoord::kBinHighEdge:
-        coord[coordidx] = std::get<I>(axes).GetBinMaximum(axisbin);
+      case EBinCoord::kBinTo:
+        coord[coordidx] = std::get<I>(axes).GetBinTo(axisbin);
         break;
     }
     FillBinCoord_t<I - 1, COORD, AXES>()(coord, axes, kind,
@@ -373,7 +370,7 @@ public:
   Coord_t GetBinFrom(int binidx) const final {
     using FillBinCoord_t = Internal::FillBinCoord_t<DIMENSIONS - 1, Coord_t, decltype(fAxes)>;
     Coord_t coord;
-    FillBinCoord_t()(coord, fAxes, Internal::EBinCoord::kBinLowEdge, binidx);
+    FillBinCoord_t()(coord, fAxes, Internal::EBinCoord::kBinFrom, binidx);
     return coord;
   }
 
@@ -381,7 +378,7 @@ public:
   Coord_t GetBinTo(int binidx) const final {
     using FillBinCoord_t =  Internal::FillBinCoord_t<DIMENSIONS - 1, Coord_t, decltype(fAxes)>;
     Coord_t coord;
-    FillBinCoord_t()(coord, fAxes, Internal::EBinCoord::kBinHighEdge, binidx);
+    FillBinCoord_t()(coord, fAxes, Internal::EBinCoord::kBinTo, binidx);
     return coord;
   }
 
