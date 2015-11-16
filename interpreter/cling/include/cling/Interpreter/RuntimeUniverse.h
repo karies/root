@@ -23,7 +23,7 @@
 
 #ifdef __cplusplus
 
-#include "cling/Interpreter/RuntimeException.h"
+//#include "cling/Interpreter/RuntimeException.h"
 
 #include <new>
 
