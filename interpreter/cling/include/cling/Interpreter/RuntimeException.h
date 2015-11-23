@@ -30,7 +30,7 @@ namespace cling {
     ///\brief Exception that is thrown when a null pointer dereference is found
     /// or a method taking non-null arguments is called with NULL argument.
     ///
-    class NullDerefException : public std::exception {
+    class NullDerefException : public InterpreterException {
     private:
       clang::Sema* m_Sema;
       clang::Expr* m_Arg;

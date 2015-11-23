@@ -1866,16 +1866,15 @@ static int HandleInterpreterException(cling::MetaProcessor* metaProcessor,
                                  cling::Interpreter::CompilationResult& compRes,
                                  cling::Value* result)
 {
-   int process_result = 0;
    try {
-      process_result = metaProcessor->process(input_line, compRes, result);
+      return metaProcessor->process(input_line, compRes, result);
    }
    catch (cling::runtime::NullDerefException& ex)
    {
       Info("Handle", "%s", ex.what());
       ex.diagnose();
    }
-   return process_result;
+   return 0;
 }
 
 Long_t TCling::ProcessLine(const char* line, EErrorCode* error/*=0*/)

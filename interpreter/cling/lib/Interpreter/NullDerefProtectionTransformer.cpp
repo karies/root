@@ -191,6 +191,17 @@ namespace cling {
       return result;
     }
 
+    NodeContext VisitCXXMemberCallExpr(CXXMemberCallExpr* CME) {
+       NodeContext result(CME);
+       Expr* Callee = CME->getCallee();
+       if (isa<MemberExpr>(Callee)) {
+         NodeContext ME = Visit(Callee);
+         if (!ME.isSingleStmt())
+           result.prepend(ME.getStmts()[0]);
+       }
+       return result;
+    }
+
   private:
     Stmt* SynthesizeCheck(SourceLocation Loc, Expr* Arg) {
       assert(Arg && "Cannot call with Arg=0");

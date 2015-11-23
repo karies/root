@@ -50,12 +50,6 @@ allows a simple partial implementation for new OS'es.
 #include "compiledata.h"
 #include "RConfigure.h"
 
-namespace cling {
-   namespace runtime {
-      class NullDerefException;
-   }
-}
-
 const char *gRootDir;
 const char *gProgName;
 const char *gProgPath;
