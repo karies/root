@@ -73,23 +73,6 @@ namespace {
 
 namespace cling {
 
-#if (!_WIN32)
-  // "Declared" to the JIT in RuntimeUniverse.h
-  namespace runtime {
-    namespace internal {
-      struct __trigger__cxa_atexit {
-        ~__trigger__cxa_atexit();
-      } /*S*/;
-      __trigger__cxa_atexit::~__trigger__cxa_atexit() {
-        if (std::getenv("bar") == (char*)-1) {
-          llvm::errs() <<
-            "UNEXPECTED cling::runtime::internal::__trigger__cxa_atexit\n";
-        }
-      }
-    }
-  }
-#endif
-
   Interpreter::PushTransactionRAII::PushTransactionRAII(const Interpreter* i)
     : m_Interpreter(i) {
     CompilationOptions CO;

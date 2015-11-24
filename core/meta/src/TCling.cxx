@@ -70,7 +70,6 @@ clang/LLVM technology.
 #include "TStreamerInfo.h" // This is here to avoid to use the plugin manager
 #include "ThreadLocalStorage.h"
 #include "TFile.h"
-#include "TSysEvtHandler.h"
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Decl.h"

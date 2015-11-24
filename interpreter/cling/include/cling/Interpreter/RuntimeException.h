@@ -10,8 +10,6 @@
 #ifndef CLING_RUNTIME_EXCEPTION_H
 #define CLING_RUNTIME_EXCEPTION_H
 
-#include <exception>
-
 namespace clang {
   class Sema;
   class Expr;
