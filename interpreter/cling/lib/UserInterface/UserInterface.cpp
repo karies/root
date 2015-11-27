@@ -10,7 +10,7 @@
 #include "cling/UserInterface/UserInterface.h"
 
 #include "cling/UserInterface/CompilationException.h"
-#include "cling/Interpreter/RuntimeException.h"
+#include "cling/Interpreter/Exception.h"
 #include "cling/MetaProcessor/MetaProcessor.h"
 #include "textinput/TextInput.h"
 #include "textinput/StreamReader.h"
@@ -120,14 +120,6 @@ namespace cling {
 
     TI.SetPrompt("[cling]$ ");
     std::string line;
-
-    jmp_buf env;
-    int val = setjmp(env);
-    if (!val) {
-      Interpreter::getNullDerefJump() = &env;
-    } else {
-      llvm::errs() << "LongJmp occurred. Recovering...\n";
-    }
     while (true) {
       try {
         m_MetaProcessor->getOuts().flush();
