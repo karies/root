@@ -101,16 +101,21 @@ namespace cling {
       return NodeContext(S);
     }
 
+    void transformCompoundStmt(llvm::SmallVector<Stmt*, 16>& stmts, NodeContext& nc)
+    {
+      if (nc.isSingleStmt())
+          stmts.push_back(nc.getStmt());
+        else
+          stmts.append(nc.getStmts().begin(), nc.getStmts().end());
+    }
+
     NodeContext VisitCompoundStmt(CompoundStmt* CS) {
       ASTContext& C = m_Sema.getASTContext();
       llvm::SmallVector<Stmt*, 16> stmts;
       for (CompoundStmt::body_iterator I = CS->body_begin(), E = CS->body_end();
            I != E; ++I) {
         NodeContext nc = Visit(*I);
-        if (nc.isSingleStmt())
-          stmts.push_back(nc.getStmt());
-        else
-          stmts.append(nc.getStmts().begin(), nc.getStmts().end());
+        transformCompoundStmt(stmts, nc);
       }
 
       llvm::ArrayRef<Stmt*> stmtsRef(stmts.data(), stmts.size());

@@ -570,7 +570,7 @@ namespace cling {
     CO.CodeGeneration = 1;
     CO.CodeGenerationForModule = 1;
     CO.DeclarationExtraction = 0;
-    CO.ValuePrinting = 0;
+    CO.ValuePrinting = 0; 
     CO.ResultEvaluation = 0;
     CO.DynamicScoping = isDynamicLookupEnabled();
     CO.Debug = isPrintingDebug();
