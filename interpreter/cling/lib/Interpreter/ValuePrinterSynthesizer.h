@@ -40,6 +40,10 @@ namespace cling {
     ///
     std::unique_ptr<llvm::raw_ostream> m_ValuePrinterStream;
 
+    ///\brief cling runtime "Cannot find cling_PrintValue(...)" cache.
+    ///
+    clang::Expr* m_UnresolvedLookup;
+
 public:
     ///\ brief Constructs the value printer synthesizer.
     ///
@@ -65,6 +69,9 @@ public:
     bool tryAttachVP(clang::FunctionDecl* FD);
     clang::Expr* SynthesizeVP(clang::Expr* E);
     unsigned ClearNullStmts(clang::CompoundStmt* CS);
+
+    // Find and cache cling::runtime on first request.
+    void FindAndCacheRuntimeDecls(clang::SourceLocation SourceLoc);
   };
 
 } // namespace cling
