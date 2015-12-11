@@ -134,18 +134,8 @@ namespace cling {
       return 0;
 
     // Find cling_PrintValue
-    SourceLocation NoSLoc = SourceLocation();
-    DeclarationName PVName = &m_Context->Idents.get("cling_PrintValue");
-    LookupResult R(*m_Sema, PVName, E->getLocStart(), Sema::LookupOrdinaryName,
-                   Sema::ForRedeclaration);
-
-    Scope* S = m_Sema->getScopeForContext(m_Sema->CurContext);
-    m_Sema->LookupName(R, S);
-    assert(!R.empty() && "Cannot find cling_PrintValue(...)");
-
-    CXXScopeSpec CSS;
-    Expr* UnresolvedLookup
-      = m_Sema->BuildDeclarationNameExpr(CSS, R, /*ADL*/ false).get();
+    if (!m_UnresolvedLookup)
+      FindAndCacheRuntimeDecls(E->getLocStart());
 
 
     Expr* VoidEArg = utils::Synthesize::CStyleCastPtrExpr(m_Sema,
@@ -155,6 +145,8 @@ namespace cling {
                                                           m_Context->VoidPtrTy,
                                                           (uint64_t)m_Context);
 
+    SourceLocation NoSLoc = SourceLocation();
+    Scope* S = m_Sema->getScopeForContext(m_Sema->CurContext);
     if (!QT->isPointerType()) {
       while(ImplicitCastExpr* ICE = dyn_cast<ImplicitCastExpr>(E))
         E = ICE->getSubExpr();
@@ -166,7 +158,7 @@ namespace cling {
     CallArgs.push_back(VoidCArg);
     CallArgs.push_back(E);
 
-    Expr* Result = m_Sema->ActOnCallExpr(S, UnresolvedLookup, E->getLocStart(),
+    Expr* Result = m_Sema->ActOnCallExpr(S, m_UnresolvedLookup, E->getLocStart(),
                                          CallArgs, E->getLocEnd()).get();
     assert(Result && "Cannot create value printer!");
 
@@ -182,6 +174,22 @@ namespace cling {
 
     CS->setStmts(*m_Context, FBody.data(), FBody.size());
     return FBody.size();
+  }
+
+  void ValuePrinterSynthesizer::FindAndCacheRuntimeDecls(SourceLocation sourceLoc) {
+    assert(!m_UnresolvedLookup && "Called multiple times!?");
+
+    DeclarationName PVName = &m_Context->Idents.get("cling_PrintValue");
+    LookupResult R(*m_Sema, PVName, sourceLoc, Sema::LookupOrdinaryName,
+                   Sema::ForRedeclaration);
+
+    Scope* S = m_Sema->getScopeForContext(m_Sema->CurContext);
+    m_Sema->LookupName(R, S);
+    assert(!R.empty() && "Cannot find cling_PrintValue(...)");
+
+    CXXScopeSpec CSS;
+    m_UnresolvedLookup
+      = m_Sema->BuildDeclarationNameExpr(CSS, R, /*ADL*/ false).get();
   }
 
 } // namespace cling
