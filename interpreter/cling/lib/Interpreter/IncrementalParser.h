@@ -105,7 +105,8 @@ namespace cling {
                       const char* llvmdir);
     ~IncrementalParser();
 
-    void Initialize(llvm::SmallVectorImpl<ParseResultTransaction>& result);
+    void Initialize(llvm::SmallVectorImpl<ParseResultTransaction>& result,
+                    bool slaveInterp = false);
     clang::CompilerInstance* getCI() const { return m_CI.get(); }
     clang::Parser* getParser() const { return m_Parser.get(); }
     clang::CodeGenerator* getCodeGenerator() const { return m_CodeGen.get(); }

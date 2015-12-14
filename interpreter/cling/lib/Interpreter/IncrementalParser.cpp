@@ -202,7 +202,7 @@ namespace cling {
 
   void
   IncrementalParser::Initialize(llvm::SmallVectorImpl<ParseResultTransaction>&
-                                result) {
+                                result, bool slaveInterp) {
     m_TransactionPool.reset(new TransactionPool(getCI()->getSema()));
     if (hasCodeGenerator()) {
       getCodeGenerator()->Initialize(getCI()->getASTContext());
@@ -247,14 +247,16 @@ namespace cling {
     if (External)
       External->StartTranslationUnit(m_Consumer);
 
-    if (m_CI->getLangOpts().CPlusPlus) {
-      // <new> is needed by the ValuePrinter so it's a good thing to include it.
-      // We need to include it to determine the version number of the standard
-      // library implementation.
-      ParseInternal("#include <new>");
-      // That's really C++ ABI compatibility. C has other problems ;-)
-      CheckABICompatibility(m_CI.get());
-    }
+    // If I am the master Interpreter, only then do the #include <new>
+    if (!slaveInterp)
+      if (m_CI->getLangOpts().CPlusPlus) {
+        // <new> is needed by the ValuePrinter so it's a good thing to include it.
+        // We need to include it to determine the version number of the standard
+        // library implementation.
+        ParseInternal("#include <new>");
+        // That's really C++ ABI compatibility. C has other problems ;-)
+        CheckABICompatibility(m_CI.get());
+      }
 
     // DO NOT commit the transactions here: static initialization in these
     // transactions requires gCling through local_cxa_atexit(), but that has not

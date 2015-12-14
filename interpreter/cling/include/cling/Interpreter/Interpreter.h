@@ -282,6 +282,17 @@ namespace cling {
     ///\param[in] llvmdir - ???
     ///\param[in] noRuntime - flag to control the presence of runtime universe
     Interpreter(int argc, const char* const *argv, const char* llvmdir = 0, bool noRuntime = false);
+
+    ///\brief Constructor for Interpreter.
+    ///
+    ///\param[in] argc - no. of args.
+    ///\param[in] argv - arguments passed when driver is invoked.
+    ///\param[in] llvmdir - ???
+    ///\param[in] noRuntime - flag to control the presence of runtime universe
+    ///\param[in] originalInterpreter - the master interpreter of this interpreter
+    Interpreter(Interpreter *originalInterpreter,int argc, const char* const *argv,
+                const char* llvmdir = 0, bool noRuntime = false);
+
     virtual ~Interpreter();
 
     const InvocationOptions& getOptions() const { return m_Opts; }
@@ -292,6 +303,10 @@ namespace cling {
     }
 
     llvm::LLVMContext* getLLVMContext() { return m_LLVMContext.get(); }
+
+    IncrementalExecutor* getIncrementalExecutor() { return m_Executor.get(); }
+
+    void setExternalIncrementalExecutor(IncrementalExecutor* extIncr);
 
     const LookupHelper& getLookupHelper() const { return *m_LookupHelper; }
 

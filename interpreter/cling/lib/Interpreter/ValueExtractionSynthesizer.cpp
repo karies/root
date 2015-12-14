@@ -277,7 +277,7 @@ namespace {
     else if (desugaredTy->isRecordType() || desugaredTy->isConstantArrayType()
              || desugaredTy->isMemberPointerType()) {
       // 2) object types :
-      // check existance of copy constructor before call
+      // check existence of copy constructor before call
       if (!desugaredTy->isMemberPointerType()
           && !availableCopyConstructor(desugaredTy, m_Sema))
         return E;
@@ -420,7 +420,7 @@ namespace {
     R.clear();
     R.setLookupName(&m_Context->Idents.get("copyArray"));
     m_Sema->LookupQualifiedName(R, NSD);
-    assert(!R.empty() && "Cannot find cling::runtime::internal::copyArray");
+    //assert(!R.empty() && "Cannot find cling::runtime::internal::copyArray");
     m_UnresolvedCopyArray
       = m_Sema->BuildDeclarationNameExpr(CSS, R, /*ADL*/ false).get();
   }
