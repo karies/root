@@ -24,10 +24,11 @@
 using namespace clang;
 
 namespace cling {
-  ValueExtractionSynthesizer::ValueExtractionSynthesizer(clang::Sema* S)
+  ValueExtractionSynthesizer::ValueExtractionSynthesizer(clang::Sema* S,
+                                                         bool isChildInterpreter)
     : WrapperTransformer(S), m_Context(&S->getASTContext()), m_gClingVD(0),
       m_UnresolvedNoAlloc(0), m_UnresolvedWithAlloc(0),
-      m_UnresolvedCopyArray(0) { }
+      m_UnresolvedCopyArray(0), m_isChildInterpreter(isChildInterpreter) { }
 
   // pin the vtable here.
   ValueExtractionSynthesizer::~ValueExtractionSynthesizer() { }
@@ -420,7 +421,10 @@ namespace {
     R.clear();
     R.setLookupName(&m_Context->Idents.get("copyArray"));
     m_Sema->LookupQualifiedName(R, NSD);
-    //assert(!R.empty() && "Cannot find cling::runtime::internal::copyArray");
+    /* If I am not being called from a child Interpreter, only then do
+     * the assert. */
+    if (!m_isChildInterpreter)
+     assert(!R.empty() && "Cannot find cling::runtime::internal::copyArray");
     m_UnresolvedCopyArray
       = m_Sema->BuildDeclarationNameExpr(CSS, R, /*ADL*/ false).get();
   }

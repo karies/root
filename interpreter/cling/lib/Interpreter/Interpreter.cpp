@@ -163,7 +163,7 @@ namespace cling {
   }
 
   Interpreter::Interpreter(int argc, const char* const *argv,
-                           const char* llvmdir /*= 0*/, bool noRuntime) :
+                           const char* llvmdir /*= 0*/, bool noRuntime, bool isChildInterpreter) :
     m_UniqueCounter(0), m_PrintDebug(false), m_DynamicLookupDeclared(false),
     m_DynamicLookupEnabled(false), m_RawInputEnabled(false) {
 
@@ -180,7 +180,7 @@ namespace cling {
 
     m_IncrParser.reset(new IncrementalParser(this, LeftoverArgs.size(),
                                              &LeftoverArgs[0],
-                                             llvmdir));
+                                             llvmdir, isChildInterpreter));
 
     Sema& SemaRef = getSema();
     Preprocessor& PP = SemaRef.getPreprocessor();
@@ -224,70 +224,15 @@ namespace cling {
     setCallbacks(std::move(AutoLoadCB));
   }
 
-  //Overloading the Interpreter constructor by passing one more argument, the pointer
-  //to the "master" Interpreter.
-  Interpreter::Interpreter(Interpreter *originalInterpreter, int argc, const char* const *argv,
-                           const char* llvmdir /*= 0*/, bool noRuntime) :
-    m_UniqueCounter(0), m_PrintDebug(false), m_DynamicLookupDeclared(false),
-    m_DynamicLookupEnabled(false), m_RawInputEnabled(false) {
-
-    m_LLVMContext.reset(new llvm::LLVMContext);
-    std::vector<unsigned> LeftoverArgsIdx;
-    m_Opts = InvocationOptions::CreateFromArgs(argc, argv, LeftoverArgsIdx);
-    std::vector<const char*> LeftoverArgs;
-
-    for (size_t I = 0, N = LeftoverArgsIdx.size(); I < N; ++I) {
-      LeftoverArgs.push_back(argv[LeftoverArgsIdx[I]]);
-    }
-
-    m_DyLibManager.reset(new DynamicLibraryManager(getOptions()));
-
-    m_IncrParser.reset(new IncrementalParser(this, LeftoverArgs.size(),
-                                             &LeftoverArgs[0],
-                                             llvmdir));
-
-    Sema& SemaRef = getSema();
-    Preprocessor& PP = SemaRef.getPreprocessor();
-    // Enable incremental processing, which prevents the preprocessor destroying
-    // the lexer on EOF token.
-    PP.enableIncrementalProcessing();
-
-    m_LookupHelper.reset(new LookupHelper(new Parser(PP, SemaRef,
-      /*SkipFunctionBodies*/false,
-      /*isTemp*/true), this));
-
-    if (!isInSyntaxOnlyMode())
-      m_Executor.reset(new IncrementalExecutor(SemaRef.Diags, argc, argv));
-
-    // Tell the diagnostic client that we are entering file parsing mode.
-    DiagnosticConsumer& DClient = getCI()->getDiagnosticClient();
-    DClient.BeginSourceFile(getCI()->getLangOpts(), &PP);
-
-    llvm::SmallVector<IncrementalParser::ParseResultTransaction, 2>
-      IncrParserTransactions;
-    m_IncrParser->Initialize(IncrParserTransactions, true);
-
-    handleFrontendOptions();
-
-    AddRuntimeIncludePaths(argv[0]);
-
-    //The "slave" Interpreter doesn't set the runtime environment.
-    /*if (!noRuntime) {
-      if (getCI()->getLangOpts().CPlusPlus)
-        IncludeCXXRuntime();
-      else
-        IncludeCRuntime();
-    }*/
-
-    // Commit the transactions, now that gCling is set up. It is needed for
-    // static initialization in these transactions through local_cxa_atexit().
-    for (auto&& I: IncrParserTransactions)
-      m_IncrParser->commitTransaction(I);
-    // Disable suggestions for ROOT
-    bool showSuggestions = !llvm::StringRef(ClingStringify(CLING_VERSION)).startswith("ROOT");
-    std::unique_ptr<InterpreterCallbacks>
-      AutoLoadCB(new AutoloadCallback(this, showSuggestions));
-    setCallbacks(std::move(AutoLoadCB));
+  ///\brief Constructor for the child Interpreter.
+  /// Passing the parent Interpreter as an argument.
+  ///
+  Interpreter::Interpreter(Interpreter &parentInterpreter, int argc, const char* const *argv,
+                           const char* llvmdir /*= 0*/, bool noRuntime, bool isChildInterpreter) :
+    Interpreter::Interpreter(argc, argv, llvmdir /*= 0*/, noRuntime, isChildInterpreter) {
+    /* Give my IncrementalExecutor a pointer to the Incremental executor
+     * of the parent Interpreter. */
+    m_Executor->setExternalIncrementalExecutor(parentInterpreter.m_Executor.get());
   }
 
   Interpreter::~Interpreter() {
@@ -301,11 +246,6 @@ namespace cling {
     // explicitly, before the implicit destruction (through the unique_ptr) of
     // the callbacks.
     m_IncrParser.reset(0);
-  }
-
-  // Set the pointer to the IncrementalExecutor of my master Interpreter.
-  void Interpreter::setExternalIncrementalExecutor(IncrementalExecutor *extIncr) {
-   m_Executor->setExternalIncrementalExecutor(extIncr);
   }
 
   const char* Interpreter::getVersion() const {

@@ -1,3 +1,11 @@
+//--------------------------------------------------------------------*- C++ -*-
+// CLING - the C++ LLVM-based InterpreterG :)
+// author:  Elisavet Sakellari <elisavet.sakellari@cern.ch>
+//
+// This file is dual-licensed: you can choose to license it under the University
+// of Illinois Open Source License or the GNU Lesser General Public License. See
+// LICENSE.TXT for details.
+//------------------------------------------------------------------------------
 #ifndef CLING_ASTIMPORTSOURCE_H
 #define CLING_ASTIMPORTSOURCE_H
 
@@ -13,22 +21,11 @@
 
 namespace clang {
   class ASTContext;
-  class Expr;
   class Decl;
   class DeclContext;
   class DeclarationName;
-  class GlobalDecl;
-  class FunctionDecl;
-  class IntegerLiteral;
   class NamedDecl;
-  class NamespaceDecl;
-  class NestedNameSpecifier;
-  class QualType;
   class Sema;
-  class TagDecl;
-  class TemplateDecl;
-  class Type;
-  class TypedefNameDecl;
 }
 
 namespace cling {
@@ -37,51 +34,58 @@ namespace cling {
     class ASTImportSource : public clang::ExternalASTSource {
 
       private:
-        cling::Interpreter *m_first_Interp;
-        cling::Interpreter *m_second_Interp;
-        const clang::TranslationUnitDecl *m_translationUnitI1;
-        const clang::TranslationUnitDecl *m_translationUnitI2;
+        cling::Interpreter *m_parent_Interp;
+        cling::Interpreter *m_child_Interp;
 
         clang::Sema *m_Sema;
-        /* A map for the DeclContext-to-DeclContext correspondence
-         * with DeclContexts pointers. */
+
+        ///\brief We keep a mapping between the imported DeclContexts
+        /// and the original ones from of the first Interpreter.
+        /// Key: imported DeclContext
+        /// Value: original DeclContext
+        ///
         std::map<const clang::DeclContext *, clang::DeclContext *> m_DeclContexts_map;
-        /* A map for all the imported Decls (Contexts). */
+
+        ///\brief A map for all the imported Decls (Contexts)
+        /// according to their names.
+        /// Key: Name of the Decl(Context) as a string.
+        /// Value: The DeclarationName of this Decl(Context) is the one
+        /// that comes from the first Interpreter.
+        ///
         std::map <std::string, clang::DeclarationName> m_DeclName_map;
 
       public:
-        ASTImportSource(cling::Interpreter *interpreter_first,
-                        cling::Interpreter *interpreter_second);
+        ASTImportSource(cling::Interpreter *parent_interpreter,
+                        cling::Interpreter *child_interpreter);
 
         ~ASTImportSource() { };
 
         bool
-          FindExternalVisibleDeclsByName(const clang::DeclContext *DC, clang::DeclarationName Name);
+          FindExternalVisibleDeclsByName(const clang::DeclContext *childCurrentDeclContext,
+                                         clang::DeclarationName childDeclName) override;
 
-        void InitializeSema(clang::Sema &S);
+        void InitializeSema(clang::Sema &S) { m_Sema = &S; }
 
-        void ForgetSema();
+        void ForgetSema() { m_Sema = nullptr; }
 
         bool Import(clang::DeclContext::lookup_result lookup_result,
                     clang::ASTContext &from_ASTContext,
                     clang::ASTContext &to_ASTContext,
-                    const clang::DeclContext *DC,
-                    clang::DeclarationName &Name,
-                    clang::DeclarationName &declNameI1);
+                    const clang::DeclContext *childCurrentDeclContext,
+                    clang::DeclarationName &childDeclName,
+                    clang::DeclarationName &parentDeclName);
 
-        void ImportDeclContext(clang::DeclContext *declContextFrom,
+        void ImportDeclContext(clang::DeclContext *declContextToImport,
                                clang::ASTImporter &importer,
-                               clang::DeclarationName &Name,
-                               clang::DeclarationName &declNameI1,
-                               const clang::DeclContext *DC);
+                               clang::DeclarationName &childDeclName,
+                               clang::DeclarationName &parentDeclName,
+                               const clang::DeclContext *childCurrentDeclContext);
 
-        void ImportDecl(clang::Decl *declFrom,
+        void ImportDecl(clang::Decl *declToImport,
                         clang::ASTImporter &importer,
-                        clang::DeclarationName &Name,
-                        clang::DeclarationName &declNameI1,
-                        const clang::DeclContext *DC);
-
-        cling::Interpreter *getInterpreter() { return m_first_Interp; }
+                        clang::DeclarationName &childDeclName,
+                        clang::DeclarationName &parentDeclName,
+                        const clang::DeclContext *childCurrentDeclContext);
     };
   } // end namespace utils
 } // end namespace cling

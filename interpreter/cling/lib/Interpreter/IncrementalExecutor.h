@@ -48,7 +48,8 @@ namespace cling {
     ///
     std::unique_ptr<IncrementalJIT> m_JIT;
 
-    // A pointer to the IncrementalExecutor of the "master" interpreter.
+    ///\brier A pointer to the IncrementalExecutor of the parent Interpreter.
+    ///
     IncrementalExecutor* m_externalIncrementalExecutor;
 
     ///\brief Helper that manages when the destructor of an object to be called.

@@ -102,7 +102,7 @@ namespace cling {
     typedef llvm::PointerIntPair<Transaction*, 2, EParseResult>
       ParseResultTransaction;
     IncrementalParser(Interpreter* interp, int argc, const char* const *argv,
-                      const char* llvmdir);
+                      const char* llvmdir, bool isChildInterpreter = false);
     ~IncrementalParser();
 
     void Initialize(llvm::SmallVectorImpl<ParseResultTransaction>& result,

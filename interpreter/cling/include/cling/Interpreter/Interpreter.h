@@ -281,17 +281,21 @@ namespace cling {
     ///\param[in] argv - arguments passed when driver is invoked.
     ///\param[in] llvmdir - ???
     ///\param[in] noRuntime - flag to control the presence of runtime universe
-    Interpreter(int argc, const char* const *argv, const char* llvmdir = 0, bool noRuntime = false);
-
-    ///\brief Constructor for Interpreter.
+    ///\param[in] isChildInterp - flag to control if this is a child interpreter or not.
     ///
+    Interpreter(int argc, const char* const *argv,
+                const char* llvmdir = 0, bool noRuntime = false, bool isChildInterpreter = false);
+
+    ///\brief Constructor for child Interpreter.
+    ///\param[in] parentInterpreter - the  parent interpreter of this interpreter
     ///\param[in] argc - no. of args.
     ///\param[in] argv - arguments passed when driver is invoked.
     ///\param[in] llvmdir - ???
     ///\param[in] noRuntime - flag to control the presence of runtime universe
-    ///\param[in] originalInterpreter - the master interpreter of this interpreter
-    Interpreter(Interpreter *originalInterpreter,int argc, const char* const *argv,
-                const char* llvmdir = 0, bool noRuntime = false);
+    ///\param[in] isChildInterp - flag to control if this is a child interpreter or not.
+    ///
+    Interpreter(Interpreter &parentInterpreter,int argc, const char* const *argv,
+                const char* llvmdir = 0, bool noRuntime = true, bool isChildInterpreter = true);
 
     virtual ~Interpreter();
 
@@ -303,10 +307,6 @@ namespace cling {
     }
 
     llvm::LLVMContext* getLLVMContext() { return m_LLVMContext.get(); }
-
-    IncrementalExecutor* getIncrementalExecutor() { return m_Executor.get(); }
-
-    void setExternalIncrementalExecutor(IncrementalExecutor* extIncr);
 
     const LookupHelper& getLookupHelper() const { return *m_LookupHelper; }
 

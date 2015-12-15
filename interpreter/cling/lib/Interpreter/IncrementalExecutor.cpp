@@ -125,7 +125,8 @@ std::unique_ptr<TargetMachine>
 
 void IncrementalExecutor::setExternalIncrementalExecutor(IncrementalExecutor *extIncr) {
   m_externalIncrementalExecutor = nullptr;
-  m_externalIncrementalExecutor = extIncr;
+  if (extIncr != nullptr)
+    m_externalIncrementalExecutor = extIncr;
 }
 
 void IncrementalExecutor::shuttingDown() {
