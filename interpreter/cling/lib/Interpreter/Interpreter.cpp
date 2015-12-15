@@ -163,7 +163,7 @@ namespace cling {
   }
 
   Interpreter::Interpreter(int argc, const char* const *argv,
-                           const char* llvmdir /*= 0*/, bool noRuntime) :
+                           const char* llvmdir /*= 0*/, bool noRuntime, bool isChildInterpreter) :
     m_UniqueCounter(0), m_PrintDebug(false), m_DynamicLookupDeclared(false),
     m_DynamicLookupEnabled(false), m_RawInputEnabled(false) {
 
@@ -180,7 +180,7 @@ namespace cling {
 
     m_IncrParser.reset(new IncrementalParser(this, LeftoverArgs.size(),
                                              &LeftoverArgs[0],
-                                             llvmdir));
+                                             llvmdir, isChildInterpreter));
 
     Sema& SemaRef = getSema();
     Preprocessor& PP = SemaRef.getPreprocessor();
@@ -222,6 +222,17 @@ namespace cling {
     std::unique_ptr<InterpreterCallbacks>
        AutoLoadCB(new AutoloadCallback(this, showSuggestions));
     setCallbacks(std::move(AutoLoadCB));
+  }
+
+  ///\brief Constructor for the child Interpreter.
+  /// Passing the parent Interpreter as an argument.
+  ///
+  Interpreter::Interpreter(Interpreter &parentInterpreter, int argc, const char* const *argv,
+                           const char* llvmdir /*= 0*/, bool noRuntime, bool isChildInterpreter) :
+    Interpreter::Interpreter(argc, argv, llvmdir /*= 0*/, noRuntime, isChildInterpreter) {
+    /* Give my IncrementalExecutor a pointer to the Incremental executor
+     * of the parent Interpreter. */
+    m_Executor->setExternalIncrementalExecutor(parentInterpreter.m_Executor.get());
   }
 
   Interpreter::~Interpreter() {

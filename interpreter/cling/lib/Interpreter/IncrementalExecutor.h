@@ -48,6 +48,10 @@ namespace cling {
     ///
     std::unique_ptr<IncrementalJIT> m_JIT;
 
+    ///\brier A pointer to the IncrementalExecutor of the parent Interpreter.
+    ///
+    IncrementalExecutor* m_externalIncrementalExecutor;
+
     ///\brief Helper that manages when the destructor of an object to be called.
     ///
     /// The object is registered first as an CXAAtExitElement and then cling
@@ -140,6 +144,8 @@ namespace cling {
     IncrementalExecutor(clang::DiagnosticsEngine& diags, const int& argc, const char* const *argv);
 
     ~IncrementalExecutor();
+
+    void setExternalIncrementalExecutor(IncrementalExecutor* extIncr);
 
     void installLazyFunctionCreator(LazyFunctionCreatorFunc_t fp);
 
