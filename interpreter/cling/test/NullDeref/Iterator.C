@@ -17,7 +17,7 @@ public:
 };
 
 std::vector<MyClass*> vect(3);
-for (auto&& el: vect) void* ptr = el;
-
+for (auto el: vect) MyClass* ptr = el;
+//expected-no-diagnostics
 .q
 
