@@ -753,7 +753,9 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = . \
+INPUT                  = ../../io/io/
+
+OLDINPUT                  = . \
                          ../../bindings/pyroot/ \
                          ../../bindings/r/ \
                          ../../bindings/ruby/ \
@@ -934,7 +936,7 @@ EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       =  */G__* \
                           */src/unuran-* \
                           */libAfterImage/* \
-                          */doc/v6* */doc/v5* v7 \
+                          */doc/v6* */doc/v5* \
                           */win32gdk/gdk/* \
                           makeimage.C filter.cxx
 
