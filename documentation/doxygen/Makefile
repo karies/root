@@ -22,7 +22,7 @@ folders:
 	if [ ! -d $(DOXYGEN_IMAGE_PATH) ]; then mkdir $(DOXYGEN_IMAGE_PATH); fi
 
 mathjax:
-	tar xfz mathjax.tar.gz -C $(DOXYGEN_OUTPUT_DIRECTORY)/html
+	#tar xfz mathjax.tar.gz -C $(DOXYGEN_OUTPUT_DIRECTORY)/html
 
 images:
 	cp images/* $(DOXYGEN_IMAGE_PATH)

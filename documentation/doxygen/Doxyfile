@@ -917,7 +917,60 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                =
+EXCLUDE                = ../../io/io/inc/LinkDef.h \
+../../io/io/inc/TArchiveFile.h \
+../../io/io/inc/TBufferFile.h \
+../../io/io/inc/TCollectionProxyFactory.h \
+../../io/io/inc/TContainerConverters.h \
+../../io/io/inc/TDirectoryFile.h \
+../../io/io/inc/TEmulatedCollectionProxy.h \
+../../io/io/inc/TEmulatedMapProxy.h \
+../../io/io/inc/TFPBlock.h \
+../../io/io/inc/TFileCacheRead.h \
+../../io/io/inc/TFileCacheWrite.h \
+../../io/io/inc/TFileMerger.h \
+../../io/io/inc/TFilePrefetch.h \
+../../io/io/inc/TFree.h \
+../../io/io/inc/TGenCollectionProxy.h \
+../../io/io/inc/TGenCollectionStreamer.h \
+../../io/io/inc/TKey.h \
+../../io/io/inc/TKeyMapFile.h \
+../../io/io/inc/TLockFile.h \
+../../io/io/inc/TMakeProject.h \
+../../io/io/inc/TMapFile.h \
+../../io/io/inc/TMemFile.h \
+../../io/io/inc/TStreamerInfo.h \
+../../io/io/inc/TStreamerInfoActions.h \
+../../io/io/inc/TVirtualArray.h \
+../../io/io/inc/TVirtualCollectionIterators.h \
+../../io/io/inc/TVirtualObject.h \
+../../io/io/inc/TZIPFile.h \
+../../io/io/src/TArchiveFile.cxx \
+../../io/io/src/TBufferFile.cxx \
+../../io/io/src/TCollectionProxyFactory.cxx \
+../../io/io/src/TContainerConverters.cxx \
+../../io/io/src/TDirectoryEntry.cxx \
+../../io/io/src/TDirectoryFile.cxx \
+../../io/io/src/TEmulatedCollectionProxy.cxx \
+../../io/io/src/TEmulatedMapProxy.cxx \
+../../io/io/src/TFPBlock.cxx \
+../../io/io/src/TFileCacheRead.cxx \
+../../io/io/src/TFileCacheWrite.cxx \
+../../io/io/src/TFileMerger.cxx \
+../../io/io/src/TFilePrefetch.cxx \
+../../io/io/src/TFree.cxx \
+../../io/io/src/TGenCollectionProxy.cxx \
+../../io/io/src/TGenCollectionStreamer.cxx \
+../../io/io/src/TKeyMapFile.cxx \
+../../io/io/src/TLockFile.cxx \
+../../io/io/src/TMakeProject.cxx \
+../../io/io/src/TMapFile.cxx \
+../../io/io/src/TMemFile.cxx \
+../../io/io/src/TStreamerInfo.cxx \
+../../io/io/src/TStreamerInfoActions.cxx \
+../../io/io/src/TStreamerInfoReadBuffer.cxx \
+../../io/io/src/TStreamerInfoWriteBuffer.cxx \
+../../io/io/src/TZIPFile.cxx 
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -975,7 +1028,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = $(DOXYGEN_OUTPUT_DIRECTORY)/html
+XXXIMAGE_PATH             = $(DOXYGEN_OUTPUT_DIRECTORY)/html
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
