@@ -67,7 +67,7 @@ namespace clang {
     // FIXME: DependentDecltypeType
     QualType VisitRecordType(const RecordType *T);
     QualType VisitEnumType(const EnumType *T);
-    // FIXME: TemplateTypeParmType
+    QualType VisitTemplateTypeParmType(const TemplateTypeParmType *T);
     // FIXME: SubstTemplateTypeParmType
     QualType VisitTemplateSpecializationType(const TemplateSpecializationType *T);
     QualType VisitElaboratedType(const ElaboratedType *T);
@@ -1723,6 +1723,18 @@ QualType ASTNodeImporter::VisitEnumType(const EnumType *T) {
     return QualType();
 
   return Importer.getToContext().getTagDeclType(ToDecl);
+}
+
+QualType ASTNodeImporter::VisitTemplateTypeParmType(const TemplateTypeParmType *T) {
+  TemplateTypeParmDecl *ToDecl
+    = dyn_cast_or_null<TemplateTypeParmDecl>(Importer.Import(T->getDecl()));
+  if (!ToDecl)
+    return QualType();
+
+  return Importer.getToContext().getTemplateTypeParmType(T->getDepth(),
+                                                         T->getIndex(),
+                                                         T->isParameterPack(),
+                                                         ToDecl);
 }
 
 QualType ASTNodeImporter::VisitTemplateSpecializationType(
@@ -4099,7 +4111,7 @@ Decl *ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
 
   if (DTemplated->isCompleteDefinition() &&
       !D2Templated->isCompleteDefinition()) {
-    // FIXME: Import definition!
+    ImportDefinition(DTemplated, D2Templated);
   }
   
   return D2;
