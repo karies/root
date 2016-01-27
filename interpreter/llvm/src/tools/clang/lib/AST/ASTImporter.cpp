@@ -71,6 +71,7 @@ namespace clang {
     // FIXME: SubstTemplateTypeParmType
     QualType VisitTemplateSpecializationType(const TemplateSpecializationType *T);
     QualType VisitElaboratedType(const ElaboratedType *T);
+    QualType VisitInjectedClassNameType(const InjectedClassNameType *T);
     // FIXME: DependentNameType
     // FIXME: DependentTemplateSpecializationType
     QualType VisitObjCInterfaceType(const ObjCInterfaceType *T);
@@ -1763,6 +1764,15 @@ QualType ASTNodeImporter::VisitElaboratedType(const ElaboratedType *T) {
 
   return Importer.getToContext().getElaboratedType(T->getKeyword(),
                                                    ToQualifier, ToNamedType);
+}
+
+QualType ASTNodeImporter::VisitInjectedClassNameType(const InjectedClassNameType *T) {
+  CXXRecordDecl *ToDecl
+    = dyn_cast_or_null<CXXRecordDecl>(Importer.Import(T->getDecl()));
+  if (!ToDecl)
+    return  QualType();
+
+  return Importer.getToContext().getTagDeclType(ToDecl);
 }
 
 QualType ASTNodeImporter::VisitObjCInterfaceType(const ObjCInterfaceType *T) {
@@ -4073,7 +4083,7 @@ Decl *ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
 
   if (DTemplated->isCompleteDefinition() &&
       !D2Templated->isCompleteDefinition()) {
-    // FIXME: Import definition!
+    ImportDefinition(DTemplated, D2Templated);
   }
   
   return D2;
