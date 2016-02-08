@@ -67,10 +67,11 @@ namespace clang {
     // FIXME: DependentDecltypeType
     QualType VisitRecordType(const RecordType *T);
     QualType VisitEnumType(const EnumType *T);
-    // FIXME: TemplateTypeParmType
+    QualType VisitTemplateTypeParmType(const TemplateTypeParmType *T);
     // FIXME: SubstTemplateTypeParmType
     QualType VisitTemplateSpecializationType(const TemplateSpecializationType *T);
     QualType VisitElaboratedType(const ElaboratedType *T);
+    QualType VisitInjectedClassNameType(const InjectedClassNameType *T);
     // FIXME: DependentNameType
     // FIXME: DependentTemplateSpecializationType
     QualType VisitObjCInterfaceType(const ObjCInterfaceType *T);
@@ -144,6 +145,7 @@ namespace clang {
     Decl *VisitCXXConversionDecl(CXXConversionDecl *D);
     Decl *VisitFieldDecl(FieldDecl *D);
     Decl *VisitIndirectFieldDecl(IndirectFieldDecl *D);
+    Decl *VisitAccessSpecDecl(AccessSpecDecl *D);
     Decl *VisitObjCIvarDecl(ObjCIvarDecl *D);
     Decl *VisitVarDecl(VarDecl *D);
     Decl *VisitImplicitParamDecl(ImplicitParamDecl *D);
@@ -1724,6 +1726,18 @@ QualType ASTNodeImporter::VisitEnumType(const EnumType *T) {
   return Importer.getToContext().getTagDeclType(ToDecl);
 }
 
+QualType ASTNodeImporter::VisitTemplateTypeParmType(const TemplateTypeParmType *T) {
+  TemplateTypeParmDecl *ToDecl
+    = dyn_cast_or_null<TemplateTypeParmDecl>(Importer.Import(T->getDecl()));
+  if (!ToDecl)
+    return QualType();
+
+  return Importer.getToContext().getTemplateTypeParmType(T->getDepth(),
+                                                         T->getIndex(),
+                                                         T->isParameterPack(),
+                                                         ToDecl);
+}
+
 QualType ASTNodeImporter::VisitTemplateSpecializationType(
                                        const TemplateSpecializationType *T) {
   TemplateName ToTemplate = Importer.Import(T->getTemplateName());
@@ -1763,6 +1777,15 @@ QualType ASTNodeImporter::VisitElaboratedType(const ElaboratedType *T) {
 
   return Importer.getToContext().getElaboratedType(T->getKeyword(),
                                                    ToQualifier, ToNamedType);
+}
+
+QualType ASTNodeImporter::VisitInjectedClassNameType(const InjectedClassNameType *T) {
+  CXXRecordDecl *ToDecl
+    = dyn_cast_or_null<CXXRecordDecl>(Importer.Import(T->getDecl()));
+  if (!ToDecl)
+    return  QualType();
+
+  return Importer.getToContext().getTagDeclType(ToDecl);
 }
 
 QualType ASTNodeImporter::VisitObjCInterfaceType(const ObjCInterfaceType *T) {
@@ -2848,6 +2871,31 @@ static unsigned getFieldIndex(Decl *F) {
   }
 
   return Index;
+}
+
+Decl *ASTNodeImporter::VisitAccessSpecDecl(AccessSpecDecl *D) {
+
+  SourceLocation Loc = Importer.Import(D->getLocation());
+  SourceLocation ColonLoc = Importer.Import(D->getColonLoc());
+
+  // Import the context of this declaration.
+  DeclContext *DC = Importer.ImportContext(D->getDeclContext());
+  if (!DC)
+    return nullptr;
+
+  AccessSpecDecl *accessSpecDecl
+    = AccessSpecDecl::Create(Importer.getToContext(), D->getAccess(),
+                             DC, Loc, ColonLoc);
+
+  if (!accessSpecDecl)
+    return nullptr;
+
+  // Lexical DeclContext and Semantic DeclContext
+  // is always the same for the accessSpec.
+  accessSpecDecl->setLexicalDeclContext(DC);
+  DC->addDeclInternal(accessSpecDecl);
+
+  return accessSpecDecl;
 }
 
 Decl *ASTNodeImporter::VisitFieldDecl(FieldDecl *D) {
@@ -4073,7 +4121,7 @@ Decl *ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
 
   if (DTemplated->isCompleteDefinition() &&
       !D2Templated->isCompleteDefinition()) {
-    // FIXME: Import definition!
+    ImportDefinition(DTemplated, D2Templated);
   }
   
   return D2;
