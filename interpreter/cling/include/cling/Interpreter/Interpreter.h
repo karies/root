@@ -293,14 +293,14 @@ namespace cling {
                 bool noRuntime = false) :
       Interpreter(argc, argv, llvmdir, noRuntime, false) { }
 
+    ///\brief Multiple Interpreters.
+    ///
     ///\brief Constructor for child Interpreter.
     ///\param[in] parentInterpreter - the parent interpreter of this interpreter
     ///\param[in] argc - no. of args.
     ///\param[in] argv - arguments passed when driver is invoked.
     ///\param[in] llvmdir - ???
     ///\param[in] noRuntime - flag to control the presence of runtime universe
-    ///
-    ///\brief First commit for the Multiple Interpreters.
     ///
     ///\class ASTImportSource
     ///\brief The class that implements the importing functionalities for the
@@ -355,6 +355,7 @@ namespace cling {
     ///
     /// If it is a child Interpreter, it avoids to include <new>, and in turn it
     /// reduces the memory consumption for the creation of the second Interpreter.
+    ///
     Interpreter(Interpreter &parentInterpreter,int argc, const char* const *argv,
                 const char* llvmdir = 0, bool noRuntime = true);
 
