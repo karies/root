@@ -45,15 +45,15 @@ namespace cling {
         /// Key: imported DeclContext
         /// Value: original DeclContext
         ///
-        std::map<const clang::DeclContext *, clang::DeclContext *> m_DeclContexts_map;
+        std::map<const clang::DeclContext *, clang::DeclContext *> m_childToParentDC_map;
 
         ///\brief A map for all the imported Decls (Contexts)
         /// according to their names.
-        /// Key: Name of the Decl(Context) as a string.
-        /// Value: The DeclarationName of this Decl(Context) is the one
-        /// that comes from the first Interpreter.
+        /// Key    Name of the Decl(Context) as a string in the child.
+        /// Value: The DeclarationName of this Decl(Context) comes
+        ///        from the parent Interpreter.
         ///
-        std::map <clang::DeclarationName, clang::DeclarationName > m_DeclName_map;
+        std::map<clang::DeclarationName, clang::DeclarationName > m_childToParentName_map;
 
       public:
         ASTImportSource(cling::Interpreter *parent_interpreter,

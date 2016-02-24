@@ -18,79 +18,75 @@ namespace cling {
           m_child_Interp->getCI()->getASTContext().getTranslationUnitDecl());
 
       // Also keep in the map of Decl Contexts the Translation Unit Decl Context
-      m_DeclContexts_map[childTUDeclContext] = parentTUDeclContext;
+      m_childToParentDC_map[childTUDeclContext] = parentTUDeclContext;
     }
 
-    void ASTImportSource::ImportDecl(Decl *declToImport,
+    void ASTImportSource::ImportDecl(Decl *parentDecl,
                                      ASTImporter &importer,
                                      DeclarationName &childDeclName,
                                      DeclarationName &parentDeclName,
-                                     const DeclContext *childCurrentDeclContext) {
+                                     const DeclContext *childCurrentDC) {
 
       // Don't do the import if we have a Function Template.
       // Not supported by clang.
       // FIXME: This is also a temporary check. Will be de-activated
       // once clang supports the import of function templates.
-      if (declToImport->isFunctionOrFunctionTemplate() && declToImport->isTemplateDecl())
+      if (parentDecl->isFunctionOrFunctionTemplate() && parentDecl->isTemplateDecl())
         return;
 
-      if (Decl *importedDecl = importer.Import(declToImport)) {
-        if (NamedDecl *importedNamedDecl = llvm::dyn_cast<NamedDecl>(importedDecl)) {
-          std::vector < NamedDecl * > declVector{importedNamedDecl};
+      if (Decl *childDecl = importer.Import(parentDecl)) {
+        if (NamedDecl *childNamedDecl = llvm::dyn_cast<NamedDecl>(childDecl)) {
+          std::vector < NamedDecl * > declVector{childNamedDecl};
           llvm::ArrayRef < NamedDecl * > FoundDecls(declVector);
-          SetExternalVisibleDeclsForName(childCurrentDeclContext,
-                                         importedNamedDecl->getDeclName(),
+          SetExternalVisibleDeclsForName(childCurrentDC,
+                                         childNamedDecl->getDeclName(),
                                          FoundDecls);
         }
         // Put the name of the Decl imported with the
         // DeclarationName coming from the parent, in  my map.
-        m_DeclName_map[childDeclName] = parentDeclName;
+        m_childToParentName_map[childDeclName] = parentDeclName;
       }
     }
 
-    void ASTImportSource::ImportDeclContext(DeclContext *declContextToImport,
+    void ASTImportSource::ImportDeclContext(DeclContext *parentDC,
                                             ASTImporter &importer,
                                             DeclarationName &childDeclName,
                                             DeclarationName &parentDeclName,
-                                            const DeclContext *childCurrentDeclContext) {
-
-      if (m_DeclContexts_map.find(declContextToImport) != m_DeclContexts_map.end())
-        return;
+                                            const DeclContext *childCurrentDC) {
 
       // If this declContext is a namespace, import only its original declaration.
       if (NamespaceDecl *namespaceDecl
-            = llvm::dyn_cast<NamespaceDecl>(declContextToImport)) {
-        declContextToImport = namespaceDecl->getOriginalNamespace();
+            = llvm::dyn_cast<NamespaceDecl>(parentDC)) {
+        parentDC = namespaceDecl->getOriginalNamespace();
       }
 
-      if (DeclContext *importedDeclContext = importer.ImportContext(declContextToImport)) {
+      if (DeclContext *childDC = importer.ImportContext(parentDC)) {
 
-        importedDeclContext->setHasExternalVisibleStorage(true);
+        childDC->setHasExternalVisibleStorage(true);
 
-        if (NamedDecl *importedNamedDecl = llvm::dyn_cast<NamedDecl>(importedDeclContext)) {
-          std::vector < NamedDecl * > declVector{importedNamedDecl};
+        if (NamedDecl *childNamedDecl = llvm::dyn_cast<NamedDecl>(childDC)) {
+          std::vector < NamedDecl * > declVector{childNamedDecl};
           llvm::ArrayRef < NamedDecl * > FoundDecls(declVector);
-          SetExternalVisibleDeclsForName(childCurrentDeclContext,
-                                         importedNamedDecl->getDeclName(),
+          SetExternalVisibleDeclsForName(childCurrentDC,
+                                         childNamedDecl->getDeclName(),
                                          FoundDecls);
         }
         // Put the name of the DeclContext imported with the
         // DeclarationName coming from the parent, in  my map.
-        m_DeclName_map[childDeclName] = parentDeclName;
+        m_childToParentName_map[childDeclName] = parentDeclName;
 
         // And also put the declaration context I found from the parent Interpreter
         // in the map of the child Interpreter to have it for the future.
-        m_DeclContexts_map[importedDeclContext] = declContextToImport;
+        m_childToParentDC_map[childDC] = parentDC;
       }
     }
 
     bool ASTImportSource::Import(DeclContext::lookup_result lookup_result,
                                  ASTContext &from_ASTContext,
                                  ASTContext &to_ASTContext,
-                                 const DeclContext *childCurrentDeclContext,
+                                 const DeclContext *childCurrentDC,
                                  DeclarationName &childDeclName,
                                  DeclarationName &parentDeclName) {
-
       // Prepare to import the Decl(Context)  we found in the
       // child interpreter by getting the file managers from
       // each interpreter.
@@ -107,16 +103,16 @@ namespace cling {
              I != E; ++I) {
         // Check if this Name we are looking for is
         // a DeclContext (for example a Namespace, function etc.).
-        if (DeclContext *declContextToImport = llvm::dyn_cast<DeclContext>(*I)) {
+        if (DeclContext *parentDC = llvm::dyn_cast<DeclContext>(*I)) {
 
-          ImportDeclContext(declContextToImport, importer, childDeclName,
-                            parentDeclName, childCurrentDeclContext);
+          ImportDeclContext(parentDC, importer, childDeclName,
+                            parentDeclName, childCurrentDC);
 
-        } else if (Decl *declToImport = llvm::dyn_cast<Decl>(*I)) {
+        } else if (Decl *parentDecl = llvm::dyn_cast<Decl>(*I)) {
 
           // else it is a Decl
-          ImportDecl(declToImport, importer, childDeclName,
-                     parentDeclName, childCurrentDeclContext);
+          ImportDecl(parentDecl, importer, childDeclName,
+                     parentDeclName, childCurrentDC);
         }
       }
       return true;
@@ -135,8 +131,8 @@ namespace cling {
       //Check if we have already found this declaration Name before
       DeclarationName parentDeclName;
       std::map<clang::DeclarationName,
-        clang::DeclarationName>::iterator II = m_DeclName_map.find(childDeclName);
-      if (II != m_DeclName_map.end()) {
+        clang::DeclarationName>::iterator II =  m_childToParentName_map.find(childDeclName);
+      if (II !=  m_childToParentName_map.end()) {
         parentDeclName = II->second;
       } else {
         // Get the identifier info from the parent interpreter
@@ -152,24 +148,22 @@ namespace cling {
       // Search in the map of the stored Decl Contexts for this
       // Decl Context.
       std::map<const clang::DeclContext *, clang::DeclContext *>::iterator I;
-      if ((I = m_DeclContexts_map.find(childCurrentDeclContext))
-           != m_DeclContexts_map.end()) {
+      if ((I = m_childToParentDC_map.find(childCurrentDeclContext))
+           != m_childToParentDC_map.end()) {
         // If childCurrentDeclContext was found before and is already in the map,
         // then do the lookup using the stored pointer.
-        DeclContext *parentDeclContext = I->second;
-
-        Decl *fromDeclContext = Decl::castFromDeclContext(parentDeclContext);
-        ASTContext &from_ASTContext = fromDeclContext->getASTContext();
-
-        Decl *toDeclContext = Decl::castFromDeclContext(childCurrentDeclContext);
-        ASTContext &to_ASTContext = toDeclContext->getASTContext();
-
         DeclContext::lookup_result lookup_result =
-          parentDeclContext->lookup(parentDeclName);
+          I->second->lookup(parentDeclName);
 
         // Check if we found this Name in the parent interpreter
         if (!lookup_result.empty()) {
           // Do the import
+          Decl *fromDeclContext = Decl::castFromDeclContext(I->second);
+          ASTContext &from_ASTContext = fromDeclContext->getASTContext();
+
+          Decl *toDeclContext = Decl::castFromDeclContext(childCurrentDeclContext);
+          ASTContext &to_ASTContext = toDeclContext->getASTContext();
+
           if (Import(lookup_result, from_ASTContext, to_ASTContext,
                      childCurrentDeclContext, childDeclName, parentDeclName))
             return true;
