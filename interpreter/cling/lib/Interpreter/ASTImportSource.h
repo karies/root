@@ -32,6 +32,14 @@ namespace cling {
 
 namespace cling {
 
+  ///\brief This class implements the importing functionality between two
+  /// interpreters.
+  ///
+  /// It creates a clang::ASTImporter object which does the import of the Decls
+  /// and DeclContexts from the parent to the child interpreter.
+  /// This class is created when setting up the child Interpreter and
+  /// “passed” to its Translation Unit as an external AST source.
+  ///
   class ASTImportSource : public clang::ExternalASTSource {
     private:
       cling::Interpreter *m_parent_Interp;
@@ -45,7 +53,7 @@ namespace cling {
       /// Value: parent DeclContext
       ///
       std::map<const clang::DeclContext *, clang::DeclContext *>
-                                                         m_childToParentDC_map;
+                                                         m_childToParentDC;
 
       ///\brief A map for all the imported Decls (Contexts)
       /// according to their names.
@@ -54,7 +62,7 @@ namespace cling {
       ///        from the parent Interpreter.
       ///
       std::map<clang::DeclarationName, clang::DeclarationName >
-                                                       m_childToParentName_map;
+                                                       m_childToParentName;
 
     public:
       ASTImportSource(cling::Interpreter *parent_interpreter,

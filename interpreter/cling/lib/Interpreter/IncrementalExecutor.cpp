@@ -162,6 +162,8 @@ void* IncrementalExecutor::NotifyLazyFunctionCreators(const std::string& mangled
   }
   llvm::StringRef name(mangled_name);
   void *address = nullptr;
+  // This in the case we are in a "child" interpeter. Search in the parent
+  // interpreter.
   if (m_externalIncrementalExecutor)
    address = m_externalIncrementalExecutor->getAddressOfGlobal(name);
 

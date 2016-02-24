@@ -231,9 +231,6 @@ namespace cling {
     }
   }
 
-  ///\brief Constructor for the child Interpreter.
-  /// Passing the parent Interpreter as an argument.
-  ///
   Interpreter::Interpreter(Interpreter &parentInterpreter, int argc,
                            const char* const *argv,
                            const char* llvmdir /*= 0*/, bool noRuntime) :
@@ -242,21 +239,23 @@ namespace cling {
     // its parent interpreter.
 
     // The "bridge" between the interpreters.
-    ASTImportSource *myExternalSource =
-      new ASTImportSource(&parentInterpreter, this);
+    ASTImportSource *astImportSource
+      = new ASTImportSource(&parentInterpreter, this);
 
     llvm::IntrusiveRefCntPtr <ExternalASTSource>
-      astContextExternalSource(myExternalSource);
+      externalASTSource(astImportSource);
 
-    getCI()->getASTContext().setExternalSource(astContextExternalSource);
+    getCI()->getASTContext().setExternalSource(externalASTSource);
 
-    // Inform the Translation Unit Decl of I2 that it has to search somewhere
-    // else to find the declarations.
-    getCI()->getASTContext().getTranslationUnitDecl()->setHasExternalVisibleStorage();
+    // Inform the Translation Unit that it has to search somewhere else
+    // to find the declarations.
+    getCI()->getASTContext().getTranslationUnitDecl()
+      ->setHasExternalVisibleStorage();
 
-    // Give my IncrementalExecutor a pointer to the Incremental executor of the
+    // Give my IncrementalExecutor access to the Incremental executor of the
     // parent Interpreter.
-    m_Executor->setExternalIncrementalExecutor(parentInterpreter.m_Executor.get());
+    m_Executor->setExternalIncrementalExecutor(
+      parentInterpreter.m_Executor.get());
   }
 
   Interpreter::~Interpreter() {

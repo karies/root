@@ -274,8 +274,12 @@ namespace cling {
     ///
     void IncludeCRuntime();
 
-    ///\brier The target constructor to be called from both the
+    ///\brief The target constructor to be called from both the
     /// delegating constructors.
+    ///
+    ///\param[in] isChildInterp - flags whether this is a child or parent
+    ///           interpreter. This information is needed for the creation and
+    ///           initialization of the IncrementalParser.
     ///
     Interpreter(int argc, const char* const *argv,
                 const char* llvmdir /*= 0*/, bool noRuntime,
@@ -293,68 +297,41 @@ namespace cling {
                 bool noRuntime = false) :
       Interpreter(argc, argv, llvmdir, noRuntime, false) { }
 
-    ///\brief Multiple Interpreters.
+    ///\brief Constructor for child Interpreter in the case of the multiple
+    /// interpreters.
     ///
-    ///\brief Constructor for child Interpreter.
-    ///\param[in] parentInterpreter - the parent interpreter of this interpreter
+    ///\param[in] parentInterpreter - This is used for the creation and set
+    //            up of the ASTImportSource and IncrementalExecutor.
     ///\param[in] argc - no. of args.
     ///\param[in] argv - arguments passed when driver is invoked.
     ///\param[in] llvmdir - ???
     ///\param[in] noRuntime - flag to control the presence of runtime universe
     ///
-    ///\class ASTImportSource
-    ///\brief The class that implements the importing functionalities for the
-    /// multiple Interpreters.
+    ///# ASTImportSource class.
     ///
-    /// It derives from the clang class ExternalASTSource, and overrides the
-    /// function  FindExternalVisibleDeclsByname which does the search and
-    /// importing of the ASTNodes by  calling the clang::ASTImporter.This class
-    /// must be created when setting up the second Interpreter and “passed” to
-    /// its Translation Unit with the function setExternalSource.
+    /// This class implements the importing functionalities between the parent
+    /// and the child interpreter.
     ///
-    ///\brief Symbol Resolution from the execution engine of the second
-    // interpreter.
+    /// It derives from the class clang::ExternalASTSource, and implements
+    /// the virtual function FindExternalVisibleDeclsByname which does the search
+    /// and importing of the ASTNodes by calling the clang::ASTImporter import
+    /// functions.
+    /// This class is created when setting up the child Interpreter and
+    /// “passed” to its Translation Unit using the function setExternalSource.
     ///
-    /// In order for the second Interpreter to find and execute the correct
-    /// functions that are defined in the first Interpreter, but are called
-    /// from the second, the following changes have been made in the classes
-    /// of IncrementalExecutor and Interpreter.
+    ///# Symbol Resolution from the execution engine of the child interpreter.
     ///
-    ///\brief Changes in the files IncrementalExecutor.cpp,
-    /// IncrementalExecutor.h, Interpreter.cpp, Interpreter.h
+    /// In order for the child Interpreter to find and execute the correct
+    /// functions that are defined in the first Interpreter, it holds a pointer
+    /// to the IncrementalExecutor of its parent. This 'external' IncrementalExecutor
+    /// has been set during the child interpreter construction.
     ///
-    /// -Added a pointer to an 'external' IncrementalExecutor in
-    /// IncrementalExecutor class, and a corresponding function to set
-    /// the pointer ( IncrementalExecutor::setExternalIncrementalExecutor).
-    ///
-    /// -Added in Interpreter a getIncrementalExecutor() function to get a
-    /// pointer to its IncrementalExecutor.
-    ///
-    /// -Added in Interpreter a function setExternalIncrementalExecutor
-    /// which calls IncrementalExecutor's setExternalIncrementalExecutor
-    /// function.
-    ///
-    /// -Edited IncrementalExecutor::NotifyLazyFunctionCreators to search for
+    /// When in the child interpreter, the
+    /// IncrementalExecutor::NotifyLazyFunctionCreators function searches for
     /// the address of a missing symbol in the external IncrementalExecutor that
-    /// has been set. If it doesn't exist in the external IncrementalExecutor
-    /// either, it goes to HandleMissingFunction.
-    ///
-    ///\brief Interpreter constructor overloading
-    ///
-    /// The overloading constructor of the Interpreter takes as argument the
-    /// pointer to the parent Interpreter. This is used for the initialization
-    /// of the IncrementalParser  and to avoid the set up or the runtime
-    /// environment in the constructor. This is done to reduce the memory
-    /// consumption during the creation and set up of the second Interpreter.
-    ///
-    ///\brief Changes in IncrementalParser class
-    ///
-    /// The function Initialize() of the IncrementalParser takes a bool argument
-    /// to know whether it is called from a “parent” Interpreter or from a "child”
-    /// Interpreter.
-    ///
-    /// If it is a child Interpreter, it avoids to include <new>, and in turn it
-    /// reduces the memory consumption for the creation of the second Interpreter.
+    /// has been set during the creation of the interpreter. If it doesn't exist
+    /// in the external IncrementalExecutor either, it goes to
+    /// HandleMissingFunction.
     ///
     Interpreter(Interpreter &parentInterpreter,int argc, const char* const *argv,
                 const char* llvmdir = 0, bool noRuntime = true);

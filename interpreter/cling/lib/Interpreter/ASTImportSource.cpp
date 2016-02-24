@@ -18,7 +18,7 @@ namespace cling {
         m_child_Interp->getCI()->getASTContext().getTranslationUnitDecl());
 
     // Also keep in the map of Decl Contexts the Translation Unit Decl Context
-    m_childToParentDC_map[childTUDeclContext] = parentTUDeclContext;
+    m_childToParentDC[childTUDeclContext] = parentTUDeclContext;
   }
 
   void ASTImportSource::ImportDecl(Decl *parentDecl,
@@ -45,7 +45,7 @@ namespace cling {
       }
       // Put the name of the Decl imported with the
       // DeclarationName coming from the parent, in  my map.
-      m_childToParentName_map[childDeclName] = parentDeclName;
+      m_childToParentName[childDeclName] = parentDeclName;
     }
   }
 
@@ -73,11 +73,11 @@ namespace cling {
       }
       // Put the name of the DeclContext imported with the
       // DeclarationName coming from the parent, in  my map.
-      m_childToParentName_map[childDeclName] = parentDeclName;
+      m_childToParentName[childDeclName] = parentDeclName;
 
       // And also put the declaration context I found from the parent Interpreter
       // in the map of the child Interpreter to have it for the future.
-      m_childToParentDC_map[childDC] = parentDC;
+      m_childToParentDC[childDC] = parentDC;
     }
   }
 
@@ -131,8 +131,8 @@ namespace cling {
     DeclarationName parentDeclName;
     std::map<clang::DeclarationName,
       clang::DeclarationName>::iterator II
-                                 = m_childToParentName_map.find(childDeclName);
-    if (II !=  m_childToParentName_map.end()) {
+                                 = m_childToParentName.find(childDeclName);
+    if (II !=  m_childToParentName.end()) {
       parentDeclName = II->second;
     } else {
       // Get the identifier info from the parent interpreter
@@ -148,8 +148,8 @@ namespace cling {
     // Search in the map of the stored Decl Contexts for this
     // Decl Context.
     std::map<const clang::DeclContext *, clang::DeclContext *>::iterator I;
-    if ((I = m_childToParentDC_map.find(childCurrentDeclContext))
-        != m_childToParentDC_map.end()) {
+    if ((I = m_childToParentDC.find(childCurrentDeclContext))
+        != m_childToParentDC.end()) {
       // If childCurrentDeclContext was found before and is already in the map,
       // then do the lookup using the stored pointer.
       DeclContext::lookup_result lookup_result =
