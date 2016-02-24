@@ -53,6 +53,22 @@ namespace cling {
                                             DeclarationName &childDeclName,
                                             DeclarationName &parentDeclName,
                                             const DeclContext *childCurrentDeclContext) {
+      
+      if (m_DeclContexts_map.find(childCurrentDeclContext) != m_DeclContexts_map.end())
+        return;
+
+      // If this declContext is a namespace, import only its original declaration.
+      if (NamespaceDecl *namespaceDecl
+            = llvm::dyn_cast<NamespaceDecl>(declContextToImport)) {
+
+        NamespaceDecl *originalNamespace
+          = namespaceDecl->getOriginalNamespace();
+
+        ImportDeclContext(originalNamespace, importer, childDeclName,
+                          parentDeclName,
+                          childCurrentDeclContext);
+        return;
+      }
 
       if (DeclContext *importedDeclContext = importer.ImportContext(declContextToImport)) {
 
