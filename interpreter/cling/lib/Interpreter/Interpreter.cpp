@@ -239,13 +239,10 @@ namespace cling {
     // its parent interpreter.
 
     // The "bridge" between the interpreters.
-    ASTImportSource *astImportSource
-      = new ASTImportSource(&parentInterpreter, this);
+    llvm::IntrusiveRefCntPtr <ASTImportSource>
+      astImportSource(new ASTImportSource(&parentInterpreter, this));
 
-    llvm::IntrusiveRefCntPtr <ExternalASTSource>
-      externalASTSource(astImportSource);
-
-    getCI()->getASTContext().setExternalSource(externalASTSource);
+    getCI()->getASTContext().setExternalSource(astImportSource);
 
     // Inform the Translation Unit that it has to search somewhere else
     // to find the declarations.
