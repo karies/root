@@ -307,18 +307,6 @@ namespace cling {
     ///\param[in] llvmdir - ???
     ///\param[in] noRuntime - flag to control the presence of runtime universe
     ///
-    ///# ASTImportSource class.
-    ///
-    /// This class implements the importing functionalities between the parent
-    /// and the child interpreter.
-    ///
-    /// It derives from the class clang::ExternalASTSource, and implements
-    /// the virtual function FindExternalVisibleDeclsByname which does the search
-    /// and importing of the ASTNodes by calling the clang::ASTImporter import
-    /// functions.
-    /// This class is created when setting up the child Interpreter and
-    /// “passed” to its Translation Unit using the function setExternalSource.
-    ///
     ///# Symbol Resolution from the execution engine of the child interpreter.
     ///
     /// In order for the child Interpreter to find and execute the correct
