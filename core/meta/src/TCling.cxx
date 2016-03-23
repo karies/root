@@ -1855,6 +1855,17 @@ static int HandleInterpreterException(cling::MetaProcessor* metaProcessor,
    return 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void TCling::DiagnoseIfInterpreterException(std::exception &e) const
+{
+   if(cling::InterpreterException* ie =
+                              dynamic_cast<cling::InterpreterException*>(&e))
+      ie->diagnose();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Long_t TCling::ProcessLine(const char* line, EErrorCode* error/*=0*/)
 {
    // Copy the passed line, it comes from a static buffer in TApplication
