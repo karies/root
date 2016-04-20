@@ -50,6 +50,10 @@ namespace cling {
     PointerCheckInjector(Sema& S) : m_Sema(S), m_Context(S.getASTContext()),
     m_clingthrowIfInvalidPointerCache(0) {}
 
+    ~PointerCheckInjector() {
+      delete m_clingthrowIfInvalidPointerCache;
+    }
+
     bool VisitUnaryOperator(UnaryOperator* UnOp) {
       Expr* SubExpr = UnOp->getSubExpr();
       VisitStmt(SubExpr);
