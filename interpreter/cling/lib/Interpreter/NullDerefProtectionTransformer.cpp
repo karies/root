@@ -59,6 +59,10 @@ namespace cling {
       delete m_clingthrowIfInvalidPointerCache;
     }
 
+    ~PointerCheckInjector() {
+      delete m_clingthrowIfInvalidPointerCache;
+    }
+
     bool VisitUnaryOperator(UnaryOperator* UnOp) {
       Expr* SubExpr = UnOp->getSubExpr();
       VisitStmt(SubExpr);
