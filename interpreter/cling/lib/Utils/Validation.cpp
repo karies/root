@@ -36,6 +36,10 @@ namespace cling {
       bool contains(const void* P) {
         return std::find(lines.begin(), lines.end(), P) != lines.end();
       }
+
+      // Concurent writes to the same cache element will result
+      // in a pointer address not being available in the cache
+      // thus in time slowdown. The cache will not be corrupted.
       void push(const void* P) {
         unsigned acquiredVal = mostRecent;
         while(!mostRecent.compare_exchange_weak(acquiredVal, (acquiredVal+1)%lines.size())) {
@@ -45,8 +49,7 @@ namespace cling {
       }
     };
 
-    // Trying to be thread-safe.
-    // Each thread creates a new cache when needed.
+    // One cache is used for all thread because of time constraints.
     static Cache& getCache() {
       static Cache threadCache;
       return threadCache;
