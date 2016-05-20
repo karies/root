@@ -43,6 +43,7 @@
 #include "clang/Lex/Preprocessor.h"
 
 #include "clang/Sema/Sema.h"
+#include "clang/Sema/SemaDiagnostic.h"
 
 #include "cling/Interpreter/LookupHelper.h"
 #include "cling/Interpreter/Transaction.h"
@@ -735,7 +736,7 @@ bool ROOT::TMetaUtils::RequireCompleteType(const cling::Interpreter &interp, cla
    // Here we might not have an active transaction to handle
    // the caused instantiation decl.
    cling::Interpreter::PushTransactionRAII RAII(const_cast<cling::Interpreter*>(&interp));
-   return S.RequireCompleteType( Loc, Type , 0);
+   return S.RequireCompleteType(Loc, Type, clang::diag::err_incomplete_type);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
