@@ -287,7 +287,27 @@ size_t IncrementalJIT::addModules(std::vector<llvm::Module*>&& modules) {
 void IncrementalJIT::removeModules(size_t handle) {
   if (handle == (size_t)-1)
     return;
-  m_LazyEmitLayer.removeModuleSet(m_UnloadPoints[handle]);
+  auto objSetHandle = m_UnloadPoints[handle];
+
+  class AccessLinkedObjSet: public llvm::orc::ObjectLinkingLayerBase {
+  public:
+    class AccessSymTableInObjSet: public llvm::orc::ObjectLinkingLayerBase::LinkedObjectSet {
+    public:
+      const StringMap<RuntimeDyld::SymbolInfo>& getSymTable() const { return SymbolTable; }
+    };
+  };
+  AccessLinkedObjSet::AccessSymTableInObjSet* ASTIOS
+      = static_cast<AccessLinkedObjSet::AccessSymTableInObjSet*>((*objSetHandle).get());
+  for (auto&& NameSym: ASTIOS->getSymTable()) {
+    auto iterSymMap = m_SymbolMap.find(NameSym.first)
+    if (iterSymMap == m_SymbolMap.end())
+      continue;
+    // Is this this symbol (address)?
+    if (iterSymMap->second == NameSym.second.getAddress())
+      m_SymbolMap.erase(iterSymMap);
+  }
+
+  m_LazyEmitLayer.removeModuleSet(objSetHandle);
 }
 
 }// end namespace cling
