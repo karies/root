@@ -11,6 +11,8 @@
 
 #include "cling/Utils/AST.h"
 
+#include "llvm/IR/Constants.h"
+
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/DeclContextInternals.h"
 #include "clang/AST/GlobalDecl.h"
@@ -20,8 +22,6 @@
 #include "clang/Lex/MacroInfo.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Sema/Sema.h"
-
-#include "llvm/IR/Constants.h"
 
 // FIXME: rename back to cling when gcc fix the
 // namespace cling { using cling::DeclUnloader DeclUnloader} bug
@@ -733,7 +733,7 @@ bool DeclUnloader::VisitRedeclarable(clang::Redeclarable<T>* R, DeclContext* DC)
   }
 
   void DeclUnloader::MaybeRemoveDeclFromModule(GlobalDecl& GD) const {
-    if (!m_CurTransaction
+    if (!m_RemoveFromModule || !m_CurTransaction
         || !m_CurTransaction->getModule()) // syntax-only mode exit
       return;
 

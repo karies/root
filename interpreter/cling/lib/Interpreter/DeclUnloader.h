@@ -40,6 +40,12 @@ namespace clang {
     ///
     const Transaction* m_CurTransaction;
 
+    ///\brief Whether to unload Decls from the Transaction's llvm::Module; for
+    /// instance the TransactionUnloader instead removes all symbols that
+    /// appear in the Transaction's llvm::Module instead of relying on the AST
+    /// to identify the symbols.
+    bool m_RemoveFromModule = false;
+
     ///\brief Unloaded declaration contains a SourceLocation, representing a
     /// place in the file where it was seen. Clang caches that file and even if
     /// a declaration is removed and the file is edited we hit the cached entry.
@@ -49,8 +55,14 @@ namespace clang {
     FileIDs m_FilesToUncache;
 
   public:
-    DeclUnloader(Sema* S, clang::CodeGenerator* CG, const Transaction* T)
-      : m_Sema(S), m_CodeGen(CG), m_CurTransaction(T) { }
+    DeclUnloader(Sema* S, clang::CodeGenerator* CG)
+      : m_Sema(S), m_CodeGen(CG), m_CurTransaction(nullptr) { }
+
+    DeclUnloader(Sema* S, clang::CodeGenerator* CG, const Transaction* T,
+                 bool RemoveFromModule)
+      : m_Sema(S), m_CodeGen(CG), m_CurTransaction(T),
+        m_RemoveFromModule(RemoveFromModule) { }
+
     ~DeclUnloader();
 
     ///\brief Interface with nice name, forwarding to Visit.
@@ -278,13 +290,13 @@ namespace cling {
 
   /// \brief Unload a Decl from the AST, but not from CodeGen or Module.
   inline bool UnloadDecl(clang::Sema* S, clang::Decl* D) {
-    DeclUnloader Unloader(S, nullptr, nullptr);
+    DeclUnloader Unloader(S, nullptr);
     return Unloader.UnloadDecl(D);
   }
 
   /// \brief Unload a Decl from the AST and CodeGen, but not from the Module.
   inline bool UnloadDecl(clang::Sema* S, clang::CodeGenerator* CG, clang::Decl* D) {
-    DeclUnloader Unloader(S, CG, nullptr);
+    DeclUnloader Unloader(S, CG);
     return Unloader.UnloadDecl(D);
   }
 } // namespace cling
