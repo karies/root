@@ -362,7 +362,7 @@ public:
                                   Address This) = 0;
 
   /// Emits the VTable definitions required for the given record type.
-  virtual void emitVTableDefinitions(CodeGenVTables &CGVT,
+  virtual llvm::GlobalValue* emitVTableDefinitions(CodeGenVTables &CGVT,
                                      const CXXRecordDecl *RD) = 0;
 
   /// Checks if ABI requires extra virtual offset for vtable field.

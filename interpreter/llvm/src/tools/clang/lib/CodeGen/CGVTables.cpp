@@ -816,7 +816,7 @@ void CodeGenModule::EmitVTable(CXXRecordDecl *theClass) {
   VTables.GenerateClassData(theClass);
 }
 
-void 
+llvm::GlobalValue*
 CodeGenVTables::GenerateClassData(const CXXRecordDecl *RD) {
   if (CGDebugInfo *DI = CGM.getModuleDebugInfo())
     DI->completeClassData(RD);
@@ -824,7 +824,7 @@ CodeGenVTables::GenerateClassData(const CXXRecordDecl *RD) {
   if (RD->getNumVBases())
     CGM.getCXXABI().emitVirtualInheritanceTables(RD);
 
-  CGM.getCXXABI().emitVTableDefinitions(*this, RD);
+  return CGM.getCXXABI().emitVTableDefinitions(*this, RD);
 }
 
 /// At this point in the translation unit, does it appear that can we
@@ -893,7 +893,9 @@ void CodeGenModule::EmitDeferredVTables() {
 
   for (const CXXRecordDecl *RD : DeferredVTables)
     if (shouldEmitVTableAtEndOfTranslationUnit(*this, RD))
-      VTables.GenerateClassData(RD);
+      if (llvm::GlobalValue* KeySym = VTables.GenerateClassData(RD)) {
+        EmittedDeferredVTables[KeySym] = RD;
+      }
 
   assert(savedSize == DeferredVTables.size() &&
          "deferred extra vtables during vtable emission?");

@@ -109,7 +109,7 @@ public:
   /// generated upon definition of a KeyFunction.  This includes the
   /// vtable, the RTTI data structure (if RTTI is enabled) and the VTT
   /// (if the class has virtual bases).
-  void GenerateClassData(const CXXRecordDecl *RD);
+  llvm::GlobalValue* GenerateClassData(const CXXRecordDecl *RD);
 
   bool isVTableExternal(const CXXRecordDecl *RD);
 };

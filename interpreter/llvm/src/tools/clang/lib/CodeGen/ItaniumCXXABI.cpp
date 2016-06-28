@@ -232,7 +232,7 @@ public:
                           CXXDtorType Type, bool ForVirtualBase,
                           bool Delegating, Address This) override;
 
-  void emitVTableDefinitions(CodeGenVTables &CGVT,
+  llvm::GlobalValue* emitVTableDefinitions(CodeGenVTables &CGVT,
                              const CXXRecordDecl *RD) override;
 
   bool isVirtualOffsetNeededForVTableField(CodeGenFunction &CGF,
@@ -1445,11 +1445,11 @@ void ItaniumCXXABI::EmitDestructorCall(CodeGenFunction &CGF,
                                   This.getPointer(), VTT, VTTTy, nullptr);
 }
 
-void ItaniumCXXABI::emitVTableDefinitions(CodeGenVTables &CGVT,
+llvm::GlobalValue* ItaniumCXXABI::emitVTableDefinitions(CodeGenVTables &CGVT,
                                           const CXXRecordDecl *RD) {
   llvm::GlobalVariable *VTable = getAddrOfVTable(RD, CharUnits());
   if (VTable->hasInitializer())
-    return;
+    return nullptr;
 
   ItaniumVTableContext &VTContext = CGM.getItaniumVTableContext();
   const VTableLayout &VTLayout = VTContext.getVTableLayout(RD);
@@ -1491,6 +1491,7 @@ void ItaniumCXXABI::emitVTableDefinitions(CodeGenVTables &CGVT,
 
   if (!VTable->isDeclarationForLinker())
     CGM.EmitVTableBitSetEntries(VTable, VTLayout);
+  return VTable;
 }
 
 bool ItaniumCXXABI::isVirtualOffsetNeededForVTableField(

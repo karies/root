@@ -257,7 +257,7 @@ public:
   void emitVTableBitSetEntries(VPtrInfo *Info, const CXXRecordDecl *RD,
                                llvm::GlobalVariable *VTable);
 
-  void emitVTableDefinitions(CodeGenVTables &CGVT,
+  llvm::GlobalValue* emitVTableDefinitions(CodeGenVTables &CGVT,
                              const CXXRecordDecl *RD) override;
 
   bool isVirtualOffsetNeededForVTableField(CodeGenFunction &CGF,
@@ -1553,10 +1553,12 @@ void MicrosoftCXXABI::emitVTableBitSetEntries(VPtrInfo *Info,
     CGM.CreateVTableBitSetEntry(BitsetsMD, VTable, AddressPoint, RD);
 }
 
-void MicrosoftCXXABI::emitVTableDefinitions(CodeGenVTables &CGVT,
+llvm::GlobalValue* MicrosoftCXXABI::emitVTableDefinitions(CodeGenVTables &CGVT,
                                             const CXXRecordDecl *RD) {
   MicrosoftVTableContext &VFTContext = CGM.getMicrosoftVTableContext();
   const VPtrInfoVector &VFPtrs = VFTContext.getVFPtrOffsets(RD);
+
+  llvm::GlobalValue* keysym = nullptr;
 
   for (VPtrInfo *Info : VFPtrs) {
     llvm::GlobalVariable *VTable = getAddrOfVTable(RD, Info->FullOffsetInMDC);
@@ -1579,7 +1581,9 @@ void MicrosoftCXXABI::emitVTableDefinitions(CodeGenVTables &CGVT,
     VTable->setInitializer(Init);
 
     emitVTableBitSetEntries(Info, RD, VTable);
+    keysym = VTable;
   }
+  return keysym;
 }
 
 bool MicrosoftCXXABI::isVirtualOffsetNeededForVTableField(
