@@ -30,9 +30,11 @@ namespace clang {
   class Token;
   class FileEntry;
   class Module;
+  class CodeCompleteConsumer;
 }
 
 namespace cling {
+  class ClingTabCompletion;
   class Interpreter;
   class InterpreterCallbacks;
   class InterpreterDeserializationListener;
@@ -44,6 +46,11 @@ namespace cling {
   /// interpreter as it does its thing.  Clients can define their hooks here to
   /// implement interpreter level tools.
   class InterpreterCallbacks {
+  private:
+    ///\brief Cling Code Completion object.
+    ///
+    ClingTabCompletion* m_Completer;
+
   protected:
 
     ///\brief Our interpreter instance.
@@ -160,6 +167,17 @@ namespace cling {
     ///\brief Cling calls this is printing a stack trace can be beneficial,
     /// for instance when throwing interpreter exceptions.
     virtual void PrintStackTrace() {}
+
+    ///\brief Cling creates the code complete consumer for its child interp.
+    virtual void CreateCodeCompleteConsumer(Interpreter* child) const;
+
+    ///\brief Get the results of the code completion.
+    virtual void GetCompletionResults(Interpreter* child,
+                                      std::vector<std::string>&) const;
+
+    ///\brief Get the results of the code completion.
+    virtual void CodeComplete(const std::string&, size_t&,
+                             std::vector<std::string>&) const;
 
     ///\brief DynamicScopes only! Set to true if it is currently evaluating a
     /// dynamic expr.

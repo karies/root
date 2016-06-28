@@ -10,6 +10,7 @@
 #include "cling/UserInterface/UserInterface.h"
 
 #include "cling/UserInterface/CompilationException.h"
+#include "cling/UserInterface/TabCompletion.h"
 #include "cling/Interpreter/Exception.h"
 #include "cling/MetaProcessor/MetaProcessor.h"
 #include "textinput/TextInput.h"
@@ -117,6 +118,11 @@ namespace cling {
     std::unique_ptr<StreamReader> R(StreamReader::Create());
     std::unique_ptr<TerminalDisplay> D(TerminalDisplay::Create());
     TextInput TI(*R, *D, histfilePath.empty() ? 0 : histfilePath.c_str());
+
+    // Inform text input about the code complete consumer
+    cling::TabCompletion* Completion = new cling::TabCompletion(m_MetaProcessor->getInterpreter());
+    TI.SetCompletion(Completion);
+
 
     TI.SetPrompt("[cling]$ ");
     std::string line;
