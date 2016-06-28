@@ -320,6 +320,10 @@ private:
     DeferredDeclsToEmit.emplace_back(GV, GD);
   }
 
+  /// cling: Keep track of when a GlobalValue was emitted, so unloading can put
+  /// it back as deferred.
+  llvm::DenseMap<llvm::GlobalValue*, GlobalDecl> EmittedDeferredDecls;
+
   /// List of alias we have emitted. Used to make sure that what they point to
   /// is defined once we get to the end of the of the translation unit.
   std::vector<GlobalDecl> Aliases;
@@ -340,6 +344,11 @@ private:
 
   /// A queue of (optional) vtables to consider emitting.
   std::vector<const CXXRecordDecl*> DeferredVTables;
+
+  /// cling: Keep track of when a VTable was emitted, so unloading can put
+  /// it back as deferred.
+  llvm::DenseMap<llvm::GlobalValue*, const CXXRecordDecl*>
+    EmittedDeferredVTables;
 
   /// List of global values which are required to be present in the object file;
   /// bitcast to i8*. This is used for forcing visibility of symbols which may

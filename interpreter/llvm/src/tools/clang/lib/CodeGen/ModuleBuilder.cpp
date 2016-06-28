@@ -270,7 +270,7 @@ namespace clang {
     }
 
     void forgetGlobal(llvm::GlobalValue* GV) {
-      for(auto I = Builder->ConstantStringMap.begin(),
+      for (auto I = Builder->ConstantStringMap.begin(),
             E = Builder->ConstantStringMap.end(); I != E; ++I) {
         if (I->second == GV) {
           Builder->ConstantStringMap.erase(I);
@@ -278,11 +278,28 @@ namespace clang {
         }
       }
 
-      for(auto I = Builder->DeferredDeclsToEmit.begin(),
+      // If this value is about to be emitted from the deferred dels, stop that.
+      // Instead, push it back into the DeferredDecls.
+      for (auto I = Builder->DeferredDeclsToEmit.begin(),
              E = Builder->DeferredDeclsToEmit.end(); I != E; ++I) {
-         if (I->GV == GV) {
+        if (I->GV == GV) {
+          Builder->DeferredDecls[GV->getName()] = I->GD;
           Builder->DeferredDeclsToEmit.erase(I);
           break;
+        }
+      }
+
+      // If this symbol has been emitted and was a deferred decl, it needs to
+      // become a deferred decl again.
+      auto IEDD = Builder->EmittedDeferredDecls.find(GV);
+      if (IEDD != Builder->EmittedDeferredDecls.end()) {
+        Builder->DeferredDecls[GV->getName()] = IEDD->second;
+        Builder->EmittedDeferredDecls.erase(IEDD);
+      } else {
+        auto IEDV = Builder->EmittedDeferredVTables.find(GV);
+        if (IEDV != Builder->EmittedDeferredVTables.end()) {
+          Builder->DeferredVTables.push_back(IEDV->second);
+          Builder->EmittedDeferredVTables.erase(IEDV);
         }
       }
     }
