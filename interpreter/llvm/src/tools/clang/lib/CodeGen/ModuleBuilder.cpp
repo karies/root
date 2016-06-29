@@ -137,9 +137,18 @@ namespace clang {
              && "Newly created module should not have deferred decls");
       Builder->DeferredDecls.swap(OldBuilder->DeferredDecls);
 
+      assert(Builder->EmittedDeferredDecls.empty()
+             && "Newly created module should not have emitted deferred");
+      Builder->EmittedDeferredDecls.swap(OldBuilder->EmittedDeferredDecls);
+
       assert(Builder->DeferredVTables.empty()
              && "Newly created module should not have deferred vtables");
       Builder->DeferredVTables.swap(OldBuilder->DeferredVTables);
+
+      assert(Builder->EmittedDeferredVTables.empty()
+             &&"Newly created module should not have emitted deferred vtables");
+      Builder->EmittedDeferredVTables.swap(OldBuilder->EmittedDeferredVTables);
+
 
       assert(Builder->Manglings.empty()
              && "Newly created module should not have manglings");
@@ -293,7 +302,7 @@ namespace clang {
       // become a deferred decl again.
       auto IEDD = Builder->EmittedDeferredDecls.find(GV);
       if (IEDD != Builder->EmittedDeferredDecls.end()) {
-        Builder->DeferredDecls[GV->getName()] = IEDD->second;
+        Builder->DeferredDecls[Builder->getMangledName(IEDD->second)] = IEDD->second;
         Builder->EmittedDeferredDecls.erase(IEDD);
       } else {
         auto IEDV = Builder->EmittedDeferredVTables.find(GV);
