@@ -17,6 +17,7 @@
 
 #include "clang/AST/Decl.h"
 #include "clang/AST/DependentDiagnostic.h"
+#include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Sema/Sema.h"
 
 using namespace clang;
@@ -95,8 +96,21 @@ namespace cling {
     return Successful;
   }
 
+  bool TransactionUnloader::unloadModule(llvm::Module* M) {
+    if (!M || !m_CodeGen)
+      return true;
+
+    for (auto& V: M->globals()) {
+      m_CodeGen->forgetGlobal(&V);
+    }
+    for (auto& F: M->functions()) {
+      m_CodeGen->forgetGlobal(&F);
+    }
+    return true;
+  }
+
   bool TransactionUnloader::RevertTransaction(Transaction* T) {
-    DeclUnloader DeclU(m_Sema, m_CodeGen, T);
+    DeclUnloader DeclU(m_Sema, m_CodeGen, T, /*RemoveFromModule*/ false);
 
     bool Successful = unloadDeclarations(T, DeclU);
     Successful = unloadFromPreprocessor(T, DeclU) && Successful;
@@ -119,6 +133,8 @@ namespace cling {
     //   llvm::ModulePass* globalDCE = llvm::createGlobalDCEPass();
     //   globalDCE->runOnModule(*T->getModule());
     // }
+
+    Successful = unloadModule(T->getModule()) && Successful;
 
     if (getExecutor() && T->getModule())
       Successful = getExecutor()->unloadFromJIT(T->getModule(),

@@ -17,6 +17,10 @@ namespace clang {
   class Sema;
 }
 
+namespace llvm {
+  class Module;
+}
+
 namespace cling {
 
   class IncrementalExecutor;
@@ -36,6 +40,7 @@ namespace cling {
     bool unloadDeserializedDeclarations(Transaction* T,
                                         clang::DeclUnloader& DeclU);
     bool unloadFromPreprocessor(Transaction* T, clang::DeclUnloader& DeclU);
+    bool unloadModule(llvm::Module* M);
 
   public:
     TransactionUnloader(cling::Interpreter* I, clang::Sema* Sema,
