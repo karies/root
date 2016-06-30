@@ -100,6 +100,12 @@ namespace cling {
     if (!M || !m_CodeGen)
       return true;
 
+    // Cleanup the module from unused global values.
+    // if (T->getModule()) {
+    //   llvm::ModulePass* globalDCE = llvm::createGlobalDCEPass();
+    //   globalDCE->runOnModule(*T->getModule());
+    // }
+
     for (auto& V: M->globals()) {
       m_CodeGen->forgetGlobal(&V);
     }
@@ -112,9 +118,23 @@ namespace cling {
   bool TransactionUnloader::RevertTransaction(Transaction* T) {
     DeclUnloader DeclU(m_Sema, m_CodeGen, T, /*RemoveFromModule*/ false);
 
-    bool Successful = unloadDeclarations(T, DeclU);
-    Successful = unloadFromPreprocessor(T, DeclU) && Successful;
+    bool Successful = true;
+
+    if (getExecutor() && T->getModule()) {
+      Successful = getExecutor()->unloadFromJIT(T->getModule(),
+                                                T->getExeUnloadHandle())
+                   && Successful;
+    }
+
+    Successful = unloadModule(T->getModule()) && Successful;
+
+    // Clean up the pending instantiations
+    m_Sema->PendingInstantiations.clear();
+    m_Sema->PendingLocalImplicitInstantiations.clear();
+
+    Successful = unloadDeclarations(T, DeclU) && Successful;
     Successful = unloadDeserializedDeclarations(T, DeclU) && Successful;
+    Successful = unloadFromPreprocessor(T, DeclU) && Successful;
 
 #ifndef NDEBUG
     //FIXME: Move the nested transaction marker out of the decl lists and
@@ -123,23 +143,6 @@ namespace cling {
     //if (T->getCompilationOpts().CodeGenerationForModule)
     //  assert (!DeclSize && "No parsed decls must happen in parse for module");
 #endif
-
-    // Clean up the pending instantiations
-    m_Sema->PendingInstantiations.clear();
-    m_Sema->PendingLocalImplicitInstantiations.clear();
-
-    // Cleanup the module from unused global values.
-    // if (T->getModule()) {
-    //   llvm::ModulePass* globalDCE = llvm::createGlobalDCEPass();
-    //   globalDCE->runOnModule(*T->getModule());
-    // }
-
-    Successful = unloadModule(T->getModule()) && Successful;
-
-    if (getExecutor() && T->getModule())
-      Successful = getExecutor()->unloadFromJIT(T->getModule(),
-                                                T->getExeUnloadHandle())
-        && Successful;
 
     if (Successful)
       T->setState(Transaction::kRolledBack);
