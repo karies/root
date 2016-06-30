@@ -6360,7 +6360,7 @@ TInterpreterValue *TCling::CreateTemporary()
 void TCling::CodeComplete(const std::string& line, size_t& cursor,
                           std::vector<std::string>& displayCompletions)
 {
-   fInterpreter->getCallbacks()->CodeComplete(line, cursor, displayCompletions);
+   fInterpreter->CodeComplete(line, cursor, displayCompletions);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
