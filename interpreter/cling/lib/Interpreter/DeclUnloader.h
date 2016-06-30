@@ -191,6 +191,14 @@ namespace clang {
     ///
     bool VisitRecordDecl(RecordDecl* RD);
 
+    ///\brief Removes a CXXRecordDecl. Base class action, plus removed it from
+    /// CodeGenModule's EmittedDeferredVtables.
+    ///\param[in] CXXRD - The declaration to be removed.
+    ///
+    ///\returns true on success.
+    ///
+    bool VisitCXXRecordDecl(CXXRecordDecl* CXXRD);
+
     ///\brief Remove the macro from the Preprocessor.
     /// @param[in] MD - The MacroDirectiveInfo containing the IdentifierInfo and
     ///                MacroDirective to forward.

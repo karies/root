@@ -732,7 +732,17 @@ bool DeclUnloader::VisitRedeclarable(clang::Redeclarable<T>* R, DeclContext* DC)
     return Successful;
   }
 
+  bool DeclUnloader::VisitCXXRecordDecl(CXXRecordDecl* CXXRD) {
+    DeclVisitor<DeclUnloader, bool>::VisitCXXRecordDecl(CXXRD);
+    if (m_CodeGen)
+      m_CodeGen->forgetVTable(CXXRD);
+    return true;
+  }
+
   void DeclUnloader::MaybeRemoveDeclFromModule(GlobalDecl& GD) const {
+    if (m_CodeGen)
+      m_CodeGen->forgetDecl(GD);
+
     if (!m_RemoveFromModule || !m_CurTransaction
         || !m_CurTransaction->getModule()) // syntax-only mode exit
       return;
