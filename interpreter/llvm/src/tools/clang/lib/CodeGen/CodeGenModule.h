@@ -324,6 +324,10 @@ private:
   /// it back as deferred.
   llvm::DenseMap<llvm::GlobalValue*, GlobalDecl> EmittedDeferredDecls;
 
+  /// cling: Keep track of Decls added to EmittedDeferredDecls, to remove
+  /// entries from EmittedDeferredDecls when they are unloaded.
+  llvm::DenseMap<GlobalDecl, llvm::GlobalValue*> EmittedDeferredDeclsVals;
+
   /// List of alias we have emitted. Used to make sure that what they point to
   /// is defined once we get to the end of the of the translation unit.
   std::vector<GlobalDecl> Aliases;
