@@ -141,6 +141,10 @@ namespace clang {
              && "Newly created module should not have emitted deferred");
       Builder->EmittedDeferredDecls.swap(OldBuilder->EmittedDeferredDecls);
 
+      assert(Builder->EmittedDeferredDeclsVals.empty()
+             && "Newly created module should not have emitted deferred");
+      Builder->EmittedDeferredDeclsVals.swap(OldBuilder->EmittedDeferredDeclsVals);
+
       assert(Builder->DeferredVTables.empty()
              && "Newly created module should not have deferred vtables");
       Builder->DeferredVTables.swap(OldBuilder->DeferredVTables);
@@ -292,6 +296,8 @@ namespace clang {
       for (auto I = Builder->DeferredDeclsToEmit.begin(),
              E = Builder->DeferredDeclsToEmit.end(); I != E; ++I) {
         if (I->GV == GV) {
+          if (GV->getName() == "_ZNSt3__116__to_raw_pointerIiEEPT_S2_")
+            printf("AXEL DEBUG _ZNSt3__116__to_raw_pointerIiEEPT_S2_ moved to Deferred\n");
           Builder->DeferredDecls[GV->getName()] = I->GD;
           Builder->DeferredDeclsToEmit.erase(I);
           break;
@@ -302,13 +308,48 @@ namespace clang {
       // become a deferred decl again.
       auto IEDD = Builder->EmittedDeferredDecls.find(GV);
       if (IEDD != Builder->EmittedDeferredDecls.end()) {
+        if (Builder->getMangledName(IEDD->second) == "_ZNSt3__116__to_raw_pointerIiEEPT_S2_")
+          printf("AXEL DEBUG _ZNSt3__116__to_raw_pointerIiEEPT_S2_ back into Deferred\n");
         Builder->DeferredDecls[Builder->getMangledName(IEDD->second)] = IEDD->second;
         Builder->EmittedDeferredDecls.erase(IEDD);
+        Builder->EmittedDeferredDeclsVals.erase(IEDD->second);
       } else {
         auto IEDV = Builder->EmittedDeferredVTables.find(GV);
         if (IEDV != Builder->EmittedDeferredVTables.end()) {
           Builder->DeferredVTables.push_back(IEDV->second);
           Builder->EmittedDeferredVTables.erase(IEDV);
+        }
+      }
+    }
+
+    void forgetDecl(GlobalDecl GD) {
+      auto DDI = Builder->DeferredDecls.find(Builder->getMangledName(GD));
+      if (DDI != Builder->DeferredDecls.end()
+          && DDI->second.getDecl() == GD.getDecl()) {
+        if (Builder->getMangledName(GD) == "_ZNSt3__116__to_raw_pointerIiEEPT_S2_")
+          printf("AXEL DEBUG _ZNSt3__116__to_raw_pointerIiEEPT_S2_ erased from Deferred\n");
+        Builder->DeferredDecls.erase(DDI);
+      } else {
+        auto EDDVI = Builder->EmittedDeferredDeclsVals.find(GD);
+        if (EDDVI != Builder->EmittedDeferredDeclsVals.end()) {
+          Builder->EmittedDeferredDecls.erase(EDDVI->second);
+          Builder->EmittedDeferredDeclsVals.erase(EDDVI);
+        }
+      }
+    }
+
+    void forgetVTable(CXXRecordDecl* CXXRD) {
+      auto I = std::find(Builder->DeferredVTables.begin(),
+                         Builder->DeferredVTables.end(), CXXRD);
+      if (I != Builder->DeferredVTables.end()) {
+        Builder->DeferredVTables.erase(I);
+      } else {
+        for (auto DI = Builder->EmittedDeferredVTables.begin(),
+               DE = Builder->EmittedDeferredVTables.end(); DI != DE; ++DI) {
+          if (DI->second == CXXRD) {
+            Builder->EmittedDeferredVTables.erase(DI);
+            break;
+          }
         }
       }
     }
@@ -515,6 +556,13 @@ void CodeGenerator::forgetGlobal(llvm::GlobalValue* GV) {
   static_cast<CodeGeneratorImpl*>(this)->forgetGlobal(GV);
 }
 
+void CodeGenerator::forgetDecl(GlobalDecl GD) {
+  static_cast<CodeGeneratorImpl*>(this)->forgetDecl(GD);
+}
+
+void CodeGenerator::forgetVTable(CXXRecordDecl* CXXRD) {
+  static_cast<CodeGeneratorImpl*>(this)->forgetVTable(CXXRD);
+}
 
 llvm::Module *CodeGenerator::StartModule(const std::string& ModuleName,
                                          llvm::LLVMContext& C,
