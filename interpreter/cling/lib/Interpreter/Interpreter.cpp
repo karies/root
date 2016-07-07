@@ -818,6 +818,9 @@ namespace cling {
 
   void Interpreter::WrapInput(std::string& input, std::string& fname) {
     fname = createUniqueWrapper();
+    std::string wrapperHeader = "void " + fname + "(void* vpClingValue) {\n";
+    const CompilationOptions& CO = m_IncrParser->getCurrentTransaction()->getCompilationOpts();
+    CO.CodeCompletionOffset += wrapperHeader.length(); 
     input.insert(0, "void " + fname + "(void* vpClingValue) {\n ");
     input.append("\n;\n}");
   }
