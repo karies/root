@@ -13,6 +13,7 @@
 #include "cling-compiledata.h"
 #include "ASTImportSource.h"
 #include "DynamicLookup.h"
+#include "ExternalInterpreterSource.h"
 #include "ForwardDeclPrinter.h"
 #include "IncrementalExecutor.h"
 #include "IncrementalParser.h"
@@ -245,8 +246,8 @@ namespace cling {
     // its parent interpreter.
 
     // The "bridge" between the interpreters.
-    ASTImportSource *myExternalSource =
-      new ASTImportSource(&parentInterpreter, this);
+    ExternalInterpreterSource *myExternalSource =
+      new ExternalInterpreterSource(&parentInterpreter, this);
 
     llvm::IntrusiveRefCntPtr <ExternalASTSource>
       astContextExternalSource(myExternalSource);
@@ -1440,8 +1441,8 @@ namespace cling {
     T.setState(Transaction::kCommitted);
   }
 
-  void Interpreter::CodeComplete(const std::string& Line, size_t& Cursor,
-                      std::vector<std::string>& DisplayCompletions) const {
+  void Interpreter::CodeComplete(const std::string& line, size_t& cursor,
+                      std::vector<std::string>& displayCompletions) const {
     //Get the results
     const char * const argV = "cling";
     std::string llvmdir = this->getCI()->getHeaderSearchOpts().ResourceDir;
@@ -1450,36 +1451,44 @@ namespace cling {
     if (i != std::string::npos)
       llvmdir.erase(i, extra_part.length());
 
-    cling::Interpreter CodeCompletionInterp(*this, 1, &argV, llvmdir.c_str());
+    cling::Interpreter childInterpreter(*this, 1, &argV, llvmdir.c_str());
 
     // Create the CodeCompleteConsumer with InterpreterCallbacks
     // from the parent interpreter and set the consumer for the child
-    // interpreter
-    // Yuck! But I need the const/non-const to be fixed somehow.
+    // interpreter.
+    auto callbacks = this->getCallbacks();
+    callbacks->CreateCodeCompleteConsumer(&childInterpreter);
+
+    auto codeCompletionCI = childInterpreter.getCI();
+    clang::Sema &childSemaRef = codeCompletionCI->getSema();
+
+    // Ignore diagnostics when we tab complete.
+    // This is because we get redefinition errors due to the import of the decls.
+    clang::IgnoringDiagConsumer* ignoringDiagConsumer =
+                                            new clang::IgnoringDiagConsumer();
+    childSemaRef.getDiagnostics().setClient(ignoringDiagConsumer, true);
+
+    auto ownerDiagConsumer =
+                        this->getCI()->getSema().getDiagnostics().takeClient();
+    auto clientDiagConsumer =
+                        this->getCI()->getSema().getDiagnostics().getClient();
+    this->getCI()->getSema().getDiagnostics().setClient(
+                                                  ignoringDiagConsumer, false);
     
-    const InterpreterCallbacks* callbacks = this->getCallbacks();
-    callbacks->CreateCodeCompleteConsumer(&CodeCompletionInterp); 
-
-    clang::CompilerInstance* codeCompletionCI = CodeCompletionInterp.getCI();
-    clang::Sema& codeCompletionSemaRef = codeCompletionCI->getSema();
-    // Ignore diagnostics when we tab complete
-    clang::IgnoringDiagConsumer* ignoringDiagConsumer = new clang::IgnoringDiagConsumer();
-    codeCompletionSemaRef.getDiagnostics().setClient(ignoringDiagConsumer, true);
-
-    auto Owner = this->getCI()->getSema().getDiagnostics().takeClient();
-    auto Client = this->getCI()->getSema().getDiagnostics().getClient();
-    this->getCI()->getSema().getDiagnostics().setClient(ignoringDiagConsumer, false);
-    // The child will desirialize decls from *this, we need a transaction
+    // The child will desirialize decls from *this. We need a transaction RAII.
     PushTransactionRAII RAII(this);
-    CodeCompletionInterp.codeComplete(Line, Cursor);
-  
-    callbacks->GetCompletionResults(&CodeCompletionInterp, DisplayCompletions);
-    // Restore the original diag client for parent interpreter
-    this->getCI()->getSema().getDiagnostics().setClient(Client, Owner.release() != nullptr);
+
+    // Triger the code completion.
+    childInterpreter.codeComplete(line, cursor);
+    callbacks->GetCompletionResults(&childInterpreter, displayCompletions);
+
+    // Restore the original diagnostics client for parent interpreter.
+    this->getCI()->getSema().getDiagnostics().setClient(
+                    clientDiagConsumer, ownerDiagConsumer.release() != nullptr);
+
     // FIX-ME : Change it in the Incremental Parser
-    // It does not work even if I call unload in IncrementalParser, I think
-    // it would be to early.
-    CodeCompletionInterp.unload(1);
+    // It does not work by call unload in IncrementalParser, might be to early.
+    childInterpreter.unload(1);
   }
 
 } //end namespace cling

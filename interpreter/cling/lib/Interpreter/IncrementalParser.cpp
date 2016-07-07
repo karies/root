@@ -714,7 +714,7 @@ namespace cling {
 
     llvm::MemoryBuffer* MBNonOwn = MB.get();
 
-    // Create FileEntry and FileID for the current buffer
+    // Create FileEntry and FileID for the current buffer.
     const clang::FileEntry* FE
        = SM.getFileManager().getVirtualFile("vfile for " + source_name.str(),
                                             InputSize, 0 /* mod time*/);
@@ -724,7 +724,10 @@ namespace cling {
     // Set the code completion point if completion is enabled.
     if (CO.CodeCompletionOffset != -1) {
       printf("Is it really the completion point?\n");
-      PP.SetCodeCompletionPoint(FE, 1, 45 + CO.CodeCompletionOffset);
+      size_t wrapperNameOffset = 45;
+      PP.SetCodeCompletionPoint(FE, 1/* start point*/,
+                                wrapperNameOffset + CO.CodeCompletionOffset);
+      // Does not help. Too late?
       m_Interpreter->unload(1);
     }
 

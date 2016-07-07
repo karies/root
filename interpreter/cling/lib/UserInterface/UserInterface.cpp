@@ -123,7 +123,6 @@ namespace cling {
     cling::TabCompletion* Completion = new cling::TabCompletion(m_MetaProcessor->getInterpreter());
     TI.SetCompletion(Completion);
 
-
     TI.SetPrompt("[cling]$ ");
     std::string line;
     while (true) {

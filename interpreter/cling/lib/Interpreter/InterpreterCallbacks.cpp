@@ -9,7 +9,6 @@
 
 #include "cling/Interpreter/InterpreterCallbacks.h"
 
-#include "cling/Interpreter/ClingTabCompletion.h"
 #include "cling/Interpreter/ClingCodeCompleteConsumer.h"
 #include "cling/Interpreter/Interpreter.h"
 
@@ -261,11 +260,6 @@ namespace cling {
                                   child->getCI()->getSema().CodeCompleter);
     if (consumer)                              
       consumer->getCompletions(completions);
-  }
-
-  void InterpreterCallbacks::CodeComplete(const std::string& line, size_t& cursor,
-                             std::vector<std::string>& displayCompletions) const {
-    m_Interpreter->CodeComplete(line, cursor, displayCompletions);
   }
 
   void InterpreterCallbacks::UpdateWithNewDecls(const DeclContext *DC,

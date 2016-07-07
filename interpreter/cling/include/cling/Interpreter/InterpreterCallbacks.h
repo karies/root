@@ -34,7 +34,6 @@ namespace clang {
 }
 
 namespace cling {
-  class ClingTabCompletion;
   class Interpreter;
   class InterpreterCallbacks;
   class InterpreterDeserializationListener;
@@ -46,7 +45,6 @@ namespace cling {
   /// interpreter as it does its thing.  Clients can define their hooks here to
   /// implement interpreter level tools.
   class InterpreterCallbacks {
-
   protected:
 
     ///\brief Our interpreter instance.
@@ -72,8 +70,6 @@ namespace cling {
     ///\brief DynamicScopes only! Set to true only when evaluating dynamic expr.
     ///
     bool m_IsRuntime;
-
-
 
   protected:
     void UpdateWithNewDecls(const clang::DeclContext *DC,
@@ -172,10 +168,6 @@ namespace cling {
     ///\brief Get the results of the code completion.
     virtual void GetCompletionResults(Interpreter* child,
                                       std::vector<std::string>&) const;
-
-    ///\brief Get the results of the code completion.
-    virtual void CodeComplete(const std::string&, size_t&,
-                             std::vector<std::string>&) const;
 
     ///\brief DynamicScopes only! Set to true if it is currently evaluating a
     /// dynamic expr.
