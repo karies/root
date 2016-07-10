@@ -278,8 +278,12 @@ namespace cling {
     ///
     void IncludeCRuntime();
 
-    ///\brier The target constructor to be called from both the
+    ///\brief The target constructor to be called from both the
     /// delegating constructors.
+    ///
+    ///\param[in] isChildInterp - flags whether this is a child or parent
+    ///           interpreter. This information is needed for the creation and
+    ///           initialization of the IncrementalParser.
     ///
     Interpreter(int argc, const char* const *argv,
                 const char* llvmdir /*= 0*/, bool noRuntime,
@@ -297,12 +301,29 @@ namespace cling {
                 bool noRuntime = false) :
       Interpreter(argc, argv, llvmdir, noRuntime, false) { }
 
-    ///\brief Constructor for child Interpreter.
-    ///\param[in] parentInterpreter - the  parent interpreter of this interpreter
+    ///\brief Constructor for child Interpreter in the case of the multiple
+    /// interpreters.
+    ///
+    ///\param[in] parentInterpreter - This is used for the creation and set
+    //            up of the ASTImportSource and IncrementalExecutor.
     ///\param[in] argc - no. of args.
     ///\param[in] argv - arguments passed when driver is invoked.
     ///\param[in] llvmdir - ???
     ///\param[in] noRuntime - flag to control the presence of runtime universe
+    ///
+    ///# Symbol Resolution from the execution engine of the child interpreter.
+    ///
+    /// In order for the child Interpreter to find and execute the correct
+    /// functions that are defined in the first Interpreter, it holds a pointer
+    /// to the IncrementalExecutor of its parent. This 'external' IncrementalExecutor
+    /// has been set during the child interpreter construction.
+    ///
+    /// When in the child interpreter, the
+    /// IncrementalExecutor::NotifyLazyFunctionCreators function searches for
+    /// the address of a missing symbol in the external IncrementalExecutor that
+    /// has been set during the creation of the interpreter. If it doesn't exist
+    /// in the external IncrementalExecutor either, it goes to
+    /// HandleMissingFunction.
     ///
     Interpreter(Interpreter &parentInterpreter,int argc, const char* const *argv,
                 const char* llvmdir = 0, bool noRuntime = true);
