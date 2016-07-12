@@ -7,8 +7,8 @@
 // LICENSE.TXT for details.
 //------------------------------------------------------------------------------
 
-#ifndef CLING_EXTERNALINTERPRETERSOURCE_H
-#define CLING_EXTERNALINTERPRETERSOURCE_H
+#ifndef CLING_EXTERNAL_INTERPRETER_SOURCE
+#define CLING_EXTERNAL_INTERPRETER_SOURCE
 
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Sema/Sema.h"

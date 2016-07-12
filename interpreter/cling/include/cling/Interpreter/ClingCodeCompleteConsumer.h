@@ -7,8 +7,8 @@
 // LICENSE.TXT for details.
 //------------------------------------------------------------------------------
 
-#ifndef CLINGCODECOMPLETECONSUMER_H
-#define CLINGCODECOMPLETECONSUMER_H
+#ifndef CLING_CODE_COMPLETE_CONSUMER
+#define CLING_CODE_COMPLETE_CONSUMER
 
 #include "clang/Sema/CodeCompleteConsumer.h"
 
@@ -21,23 +21,19 @@ class ClingCodeCompleteConsumer : public CodeCompleteConsumer {
   raw_ostream &m_OS;
   CodeCompletionTUInfo m_CCTUInfo;
   /// \ brief Results of the completer to be printed by the text interface.
-  std::vector<std::string> m_Completions;
+  std::vector<std::string> &m_Completions;
 
 public:
   ClingCodeCompleteConsumer(const CodeCompleteOptions &CodeCompleteOpts,
-                               raw_ostream &OS)
+                        raw_ostream &OS, std::vector<std::string> &completions)
     : CodeCompleteConsumer(CodeCompleteOpts, false), m_OS(OS),
-      m_CCTUInfo(new GlobalCodeCompletionAllocator) {}
+      m_CCTUInfo(new GlobalCodeCompletionAllocator), m_Completions(completions){}
   ~ClingCodeCompleteConsumer() {}   
 
   /// \brief Prints the finalized code-completion results.
   void ProcessCodeCompleteResults(Sema &S, CodeCompletionContext Context,
                                   CodeCompletionResult *Results,
                                   unsigned NumResults) override;
-
-  void ProcessOverloadCandidates(Sema &S, unsigned CurrentArg,
-                                 OverloadCandidate *Candidates,
-                                 unsigned NumCandidates) override {}
 
   CodeCompletionAllocator &getAllocator() override {
     return m_CCTUInfo.getAllocator();

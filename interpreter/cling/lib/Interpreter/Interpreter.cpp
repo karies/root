@@ -22,6 +22,7 @@
 
 #include "cling/Interpreter/CIFactory.h"
 #include "cling/Interpreter/ClangInternalState.h"
+#include "cling/Interpreter/ClingCodeCompleteConsumer.h"
 #include "cling/Interpreter/CompilationOptions.h"
 #include "cling/Interpreter/DynamicLibraryManager.h"
 #include "cling/Interpreter/LookupHelper.h"
@@ -642,7 +643,7 @@ namespace cling {
 
 
   Interpreter::CompilationResult
-  Interpreter::codeComplete(const std::string& input, unsigned offset) {
+  Interpreter::CodeCompleteInternal(const std::string& input, unsigned offset) {
 
     CompilationOptions CO;
     CO.DeclarationExtraction = 0;
@@ -657,7 +658,7 @@ namespace cling {
     std::string wrappedInput = input;
     std::string wrapperName;
     if (ShouldWrapInput(input))
-      WrapInput(wrappedInput, wrapperName);
+      WrapInput(wrappedInput, wrapperName, CO);
 
     StateDebuggerRAII stateDebugger(this);
 
@@ -693,6 +694,65 @@ namespace cling {
     CO.ResultEvaluation = 1;
 
     return EvaluateInternal(input, CO, &V);
+  }
+
+  Interpreter::CompilationResult
+  Interpreter::codeComplete(const std::string& line, size_t& cursor,
+                            std::vector<std::string>& completions) const {
+
+    const char * const argV = "cling";
+    std::string llvmdir = this->getCI()->getHeaderSearchOpts().ResourceDir;
+    StringRef Dir = llvm::sys::path::parent_path(
+                    llvm::sys::path::parent_path(
+                    llvm::sys::path::parent_path(llvmdir)));
+     
+    /*std::string extra_part = "/lib/clang/3.9.0";
+    std::string::size_type i = llvmdir.find(extra_part);
+    if (i != std::string::npos)
+      llvmdir.erase(i, extra_part.length());*/
+
+    cling::Interpreter childInterpreter(*this, 1, &argV, llvmdir.c_str());
+
+    auto childCI = childInterpreter.getCI();
+    clang::Sema &childSemaRef = childCI->getSema();
+
+    // Create the CodeCompleteConsumer with InterpreterCallbacks
+    // from the parent interpreter and set the consumer for the child
+    // interpreter.
+    ClingCodeCompleteConsumer* consumer = new ClingCodeCompleteConsumer(
+              this->getCI()->getFrontendOpts().CodeCompleteOpts, llvm::errs(),
+              completions);
+    // Child interpreter CI will own consumer!
+    childCI->setCodeCompletionConsumer(consumer);
+    childSemaRef.CodeCompleter = consumer;
+
+    // Ignore diagnostics when we tab complete.
+    // This is because we get redefinition errors due to the import of the decls.
+    clang::IgnoringDiagConsumer* ignoringDiagConsumer =
+                                            new clang::IgnoringDiagConsumer();                      
+    childSemaRef.getDiagnostics().setClient(ignoringDiagConsumer, true);
+    DiagnosticsEngine& parentDiagnostics = this->getCI()->getSema().getDiagnostics();
+
+    std::unique_ptr<DiagnosticConsumer> ownerDiagConsumer = 
+                                                parentDiagnostics.takeClient();
+    auto clientDiagConsumer = parentDiagnostics.getClient();
+    parentDiagnostics.setClient(ignoringDiagConsumer, /*owns*/ false);
+
+    // The child will desirialize decls from *this. We need a transaction RAII.
+    PushTransactionRAII RAII(this);
+
+    // Triger the code completion.
+    childInterpreter.CodeCompleteInternal(line, cursor);
+
+    // Restore the original diagnostics client for parent interpreter.
+    parentDiagnostics.setClient(clientDiagConsumer,
+                                ownerDiagConsumer.release() != nullptr);
+
+    // FIX-ME : Change it in the Incremental Parser
+    // It does not work by call unload in IncrementalParser, might be to early.
+    childInterpreter.unload(1);
+
+    return kSuccess;
   }
 
   Interpreter::CompilationResult
@@ -816,12 +876,14 @@ namespace cling {
     return true;
   }
 
-  void Interpreter::WrapInput(std::string& input, std::string& fname) {
+  void Interpreter::WrapInput(std::string& input, std::string& fname,
+                              CompilationOptions &CO) {
     fname = createUniqueWrapper();
-    std::string wrapperHeader = "void " + fname + "(void* vpClingValue) {\n";
-    const CompilationOptions& CO = m_IncrParser->getCurrentTransaction()->getCompilationOpts();
-    CO.CodeCompletionOffset += wrapperHeader.length(); 
-    input.insert(0, "void " + fname + "(void* vpClingValue) {\n ");
+    std::string wrapperHeader = "void " + fname + "(void* vpClingValue) {\n ";
+    if (CO.CodeCompletionOffset != -1) {
+      CO.CodeCompletionOffset += wrapperHeader.size();
+    }
+    input.insert(0, wrapperHeader);
     input.append("\n;\n}");
   }
 
@@ -1073,7 +1135,7 @@ namespace cling {
     // Wrap the expression
     std::string WrapperName;
     std::string Wrapper = input;
-    WrapInput(Wrapper, WrapperName);
+    WrapInput(Wrapper, WrapperName, CO);
 
     // We have wrapped and need to disable warnings that are caused by
     // non-default C++ at the prompt:
@@ -1444,54 +1506,6 @@ namespace cling {
     T.setState(Transaction::kCommitted);
   }
 
-  void Interpreter::CodeComplete(const std::string& line, size_t& cursor,
-                      std::vector<std::string>& displayCompletions) const {
-    //Get the results
-    const char * const argV = "cling";
-    std::string llvmdir = this->getCI()->getHeaderSearchOpts().ResourceDir;
-    std::string extra_part = "/lib/clang/3.9.0";
-    std::string::size_type i = llvmdir.find(extra_part);
-    if (i != std::string::npos)
-      llvmdir.erase(i, extra_part.length());
 
-    cling::Interpreter childInterpreter(*this, 1, &argV, llvmdir.c_str());
-
-    // Create the CodeCompleteConsumer with InterpreterCallbacks
-    // from the parent interpreter and set the consumer for the child
-    // interpreter.
-    auto callbacks = this->getCallbacks();
-    callbacks->CreateCodeCompleteConsumer(&childInterpreter);
-
-    auto codeCompletionCI = childInterpreter.getCI();
-    clang::Sema &childSemaRef = codeCompletionCI->getSema();
-
-    // Ignore diagnostics when we tab complete.
-    // This is because we get redefinition errors due to the import of the decls.
-    clang::IgnoringDiagConsumer* ignoringDiagConsumer =
-                                            new clang::IgnoringDiagConsumer();
-    childSemaRef.getDiagnostics().setClient(ignoringDiagConsumer, true);
-
-    auto ownerDiagConsumer =
-                        this->getCI()->getSema().getDiagnostics().takeClient();
-    auto clientDiagConsumer =
-                        this->getCI()->getSema().getDiagnostics().getClient();
-    this->getCI()->getSema().getDiagnostics().setClient(
-                                                  ignoringDiagConsumer, false);
-    
-    // The child will desirialize decls from *this. We need a transaction RAII.
-    PushTransactionRAII RAII(this);
-
-    // Triger the code completion.
-    childInterpreter.codeComplete(line, cursor);
-    callbacks->GetCompletionResults(&childInterpreter, displayCompletions);
-
-    // Restore the original diagnostics client for parent interpreter.
-    this->getCI()->getSema().getDiagnostics().setClient(
-                    clientDiagConsumer, ownerDiagConsumer.release() != nullptr);
-
-    // FIX-ME : Change it in the Incremental Parser
-    // It does not work by call unload in IncrementalParser, might be to early.
-    childInterpreter.unload(1);
-  }
 
 } //end namespace cling

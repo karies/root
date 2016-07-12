@@ -209,42 +209,39 @@ namespace cling {
       // Get the identifier info from the parent interpreter
       // for this Name.
       std::string name = childDeclName.getAsString();
-      if (!name.empty()) {
-        llvm::StringRef nameRef(name);
-        IdentifierTable &parentIdentifierTable =
+      IdentifierTable &parentIdentifierTable =
                             m_ParentInterpreter->getCI()->getASTContext().Idents;
-        IdentifierInfo &parentIdentifierInfo = 
-                            parentIdentifierTable.get(nameRef);
-        parentDeclName = DeclarationName(&parentIdentifierInfo);
-      }
+      IdentifierInfo &parentIdentifierInfo =
+                            parentIdentifierTable.get(name);
+      parentDeclName = DeclarationName(&parentIdentifierInfo);
     }
 
     // Search in the map of the stored Decl Contexts for this
     // Decl Context.
-    std::map<const clang::DeclContext *,
-             clang::DeclContext *>::iterator IDeclContext;
+    std::map<const clang::DeclContext *, clang::DeclContext *>::iterator
+          IDeclContext = m_ImportedDeclContexts.find(childCurrentDeclContext);
     // If childCurrentDeclContext was found before and is already in the map,
     // then do the lookup using the stored pointer.
-    if ((IDeclContext = m_ImportedDeclContexts.find(childCurrentDeclContext))
-         != m_ImportedDeclContexts.end()) {
-      DeclContext *parentDeclContext = IDeclContext->second;
+    if (IDeclContext == m_ImportedDeclContexts.end()) return false;
 
-      ASTContext &fromASTContext = 
-            Decl::castFromDeclContext(parentDeclContext)->getASTContext();
-      ASTContext &toASTContext = 
-            Decl::castFromDeclContext(childCurrentDeclContext)->getASTContext();
+    DeclContext *parentDeclContext = IDeclContext->second;
 
-      DeclContext::lookup_result lookup_result =
-                                      parentDeclContext->lookup(parentDeclName);
+    ASTContext &fromASTContext =
+          Decl::castFromDeclContext(parentDeclContext)->getASTContext();
+    ASTContext &toASTContext =
+          Decl::castFromDeclContext(childCurrentDeclContext)->getASTContext();
 
-      // Check if we found this Name in the parent interpreter
-      if (!lookup_result.empty()) {
-        // Do the import
-        if (Import(lookup_result, fromASTContext, toASTContext,
-                   childCurrentDeclContext, childDeclName, parentDeclName))
-          return true;
-      }
+    DeclContext::lookup_result lookup_result =
+                                    parentDeclContext->lookup(parentDeclName);
+
+    // Check if we found this Name in the parent interpreter
+    if (!lookup_result.empty()) {
+      // Do the import
+      if (Import(lookup_result, fromASTContext, toASTContext,
+                 childCurrentDeclContext, childDeclName, parentDeclName))
+        return true;
     }
+
     return false;
   }
 
@@ -259,49 +256,47 @@ namespace cling {
 
     // Search in the map of the stored Decl Contexts for this
     // Decl Context.
-    std::map<const clang::DeclContext *,
-             clang::DeclContext *>::iterator IDeclContext;
+    std::map<const clang::DeclContext *, clang::DeclContext *>::iterator
+                  IDeclContext = m_ImportedDeclContexts.find(childDeclContext);
     // If childCurrentDeclContext was found before and is already in the map,
     // then do the lookup using the stored pointer.
-    if ((IDeclContext = m_ImportedDeclContexts.find(childDeclContext))
-         != m_ImportedDeclContexts.end()) {
+    if (IDeclContext == m_ImportedDeclContexts.end()) return ;
 
-      DeclContext *parentDeclContext = IDeclContext->second;
+    DeclContext *parentDeclContext = IDeclContext->second;
 
-      ASTContext &fromASTContext = 
-            Decl::castFromDeclContext(parentDeclContext)->getASTContext();
-      ASTContext &toASTContext = 
-            Decl::castFromDeclContext(childDeclContext)->getASTContext();
+    ASTContext &fromASTContext =
+          Decl::castFromDeclContext(parentDeclContext)->getASTContext();
+    ASTContext &toASTContext =
+          Decl::castFromDeclContext(childDeclContext)->getASTContext();
 
-      // Cling's ASTImporter
-      ClingASTImporter importer = CreateClingASTImporter(toASTContext,
-                                                         fromASTContext,
-                                                         m_ChildInterpreter,
-                                                         m_ParentInterpreter,
-                                                         *this);
+    // Cling's ASTImporter
+    ClingASTImporter importer = CreateClingASTImporter(toASTContext,
+                                                       fromASTContext,
+                                                       m_ChildInterpreter,
+                                                       m_ParentInterpreter,
+                                                       *this);
 
-      // Filter the decls from the external source using the stem information
-      // stored in Sema.
-      StringRef filter = 
-        m_ChildInterpreter->getCI()->getPreprocessor().getCodeCompletionFilter();
-      for (DeclContext::decl_iterator IDeclContext =
-                                        parentDeclContext->decls_begin(),
-                                      EDeclContext =
-                                        parentDeclContext->decls_end();
-                                IDeclContext != EDeclContext; ++IDeclContext) {
-        if (NamedDecl* parentDecl = llvm::dyn_cast<NamedDecl>(*IDeclContext)) {
-          DeclarationName childDeclName = parentDecl->getDeclName();
-          if (childDeclName.getAsIdentifierInfo()) {
-            StringRef name = childDeclName.getAsIdentifierInfo()->getName();
-            if (!name.empty() && name.startswith(filter))
-            ImportDecl(parentDecl, importer, childDeclName, childDeclName,
-                       childDeclContext);
-          }
+    // Filter the decls from the external source using the stem information
+    // stored in Sema.
+    StringRef filter =
+      m_ChildInterpreter->getCI()->getPreprocessor().getCodeCompletionFilter();
+    for (DeclContext::decl_iterator IDeclContext =
+                                      parentDeclContext->decls_begin(),
+                                    EDeclContext =
+                                      parentDeclContext->decls_end();
+                              IDeclContext != EDeclContext; ++IDeclContext) {
+      if (NamedDecl* parentDecl = llvm::dyn_cast<NamedDecl>(*IDeclContext)) {
+        DeclarationName childDeclName = parentDecl->getDeclName();
+        if (childDeclName.getAsIdentifierInfo()) {
+          StringRef name = childDeclName.getAsIdentifierInfo()->getName();
+          if (!name.empty() && name.startswith(filter))
+          ImportDecl(parentDecl, importer, childDeclName, childDeclName,
+                     childDeclContext);
         }
       }
-
-      const_cast<DeclContext *>(childDeclContext)->
-                                        setHasExternalVisibleStorage(false);
     }
+
+    const_cast<DeclContext *>(childDeclContext)->
+                                      setHasExternalVisibleStorage(false);
   }
 } // end namespace cling

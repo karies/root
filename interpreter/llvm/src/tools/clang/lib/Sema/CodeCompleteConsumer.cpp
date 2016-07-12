@@ -434,16 +434,16 @@ bool PrintingCodeCompleteConsumer::isResultFilteredOut(StringRef Filter,
   switch (Result.Kind) {
   case CodeCompletionResult::RK_Declaration: {
     return !(Result.Declaration->getIdentifier() &&
-            (*Result.Declaration).getIdentifier()->getName().startswith(Filter));
+            Result.Declaration->getIdentifier()->getName().startswith(Filter));
   }
   case CodeCompletionResult::RK_Keyword: {
-    return !((StringRef(Result.Keyword)).startswith(Filter));
+    return !StringRef(Result.Keyword).startswith(Filter);
   }
   case CodeCompletionResult::RK_Macro: {
-    return !(Result.Macro->getName().startswith(Filter));
+    return !Result.Macro->getName().startswith(Filter);
   }
   case CodeCompletionResult::RK_Pattern: {
-    return !(StringRef((Result.Pattern->getAsString())).startswith(Filter));
+    return !StringRef(Result.Pattern->getAsString()).startswith(Filter);
   }
   default: llvm_unreachable("Unknown code completion result Kind.");
   }
@@ -460,7 +460,7 @@ PrintingCodeCompleteConsumer::ProcessCodeCompleteResults(Sema &SemaRef,
 
   // Print the results.
   for (unsigned I = 0; I != NumResults; ++I) {
-    if(!Filter.empty() && isResultFilteredOut(Filter, Results[I]))
+    if (!Filter.empty() && isResultFilteredOut(Filter, Results[I]))
       continue;
     OS << "COMPLETION: ";
     switch (Results[I].Kind) {

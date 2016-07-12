@@ -9,10 +9,9 @@
 
 #include "cling/Interpreter/ClingCodeCompleteConsumer.h"
 
-#include "clang/Sema/Sema.h"
 #include "clang/Basic/Diagnostic.h"
-#include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
+#include "clang/Sema/Sema.h"
 
 void ClingCodeCompleteConsumer::ProcessCodeCompleteResults(Sema &SemaRef,
                                                  CodeCompletionContext Context,
@@ -23,7 +22,7 @@ void ClingCodeCompleteConsumer::ProcessCodeCompleteResults(Sema &SemaRef,
   StringRef Filter = SemaRef.getPreprocessor().getCodeCompletionFilter();
 
   for (unsigned I = 0; I != NumResults; ++I) {
-    if(!Filter.empty() && isResultFilteredOut(Filter, Results[I]))
+    if (!Filter.empty() && isResultFilteredOut(Filter, Results[I]))
       continue;
     switch (Results[I].Kind) {
       case CodeCompletionResult::RK_Declaration:
@@ -63,7 +62,7 @@ bool ClingCodeCompleteConsumer::isResultFilteredOut(StringRef Filter,
   switch (Result.Kind) {
     case CodeCompletionResult::RK_Declaration: {
       return !(Result.Declaration->getIdentifier() &&
-              (*Result.Declaration).getIdentifier()->getName().startswith(Filter));
+              Result.Declaration->getIdentifier()->getName().startswith(Filter));
     }
     case CodeCompletionResult::RK_Keyword: {
       return !((StringRef(Result.Keyword)).startswith(Filter));
