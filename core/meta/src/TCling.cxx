@@ -6356,6 +6356,15 @@ TInterpreterValue *TCling::CreateTemporary()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/// The call to Cling's tab complition.
+
+void TCling::CodeComplete(const std::string& line, size_t& cursor,
+                          std::vector<std::string>& completions)
+{
+   fInterpreter->codeComplete(line, cursor, completions);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 void TCling::RegisterTemporary(const TInterpreterValue& value)
 {
