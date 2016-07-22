@@ -663,7 +663,7 @@ namespace cling {
 
     // This triggers the FileEntry to be created and the completion
     // point to be set in clang.
-    m_IncrParser->Parse(wrappedInput, CO);
+    m_IncrParser->Compile(wrappedInput, CO);
 
     return kSuccess;
   }
@@ -742,10 +742,7 @@ namespace cling {
     // Restore the original diagnostics client for parent interpreter.
     parentDiagnostics.setClient(clientDiagConsumer,
                                 ownerDiagConsumer.release() != nullptr);
-
-    // FIX-ME : Change it in the Incremental Parser
-    // It does not work by call unload in IncrementalParser, might be to early.
-    childInterpreter.unload(1);
+    parentDiagnostics.Reset(/*soft=*/true);
 
     return kSuccess;
   }
@@ -1468,7 +1465,7 @@ namespace cling {
 
     std::string includeFile = std::string("#include \"") + inFile.str() + "\"";
     IncrementalParser::ParseResultTransaction PRT
-      = fwdGen.m_IncrParser->Parse(includeFile, CO);
+      = fwdGen.m_IncrParser->Compile(includeFile, CO);
     cling::Transaction* T = PRT.getPointer();
 
     // If this was already #included we will get a T == 0.
