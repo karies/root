@@ -2187,7 +2187,7 @@ static bool InjectModuleUtilHeader(const char *argv0,
    } else {
       modGen.WriteContentHeader(out);
    }
-   if (interp.declare(out.str()) != cling::Interpreter::kSuccess) {
+   if (interp.declare(out.str(), {}, {}) != cling::Interpreter::kSuccess) {
       const std::string &hdrName
          = umbrella ? modGen.GetUmbrellaName() : modGen.GetContentName();
       ROOT::TMetaUtils::Error(0, "%s: compilation failure (%s)\n", argv0,
@@ -2938,7 +2938,7 @@ int FinalizeStreamerInfoWriting(cling::Interpreter &interp, bool writeEmptyRootP
                            "#include \"TMessageHandler.h\"\n"
                            "#include \"TArray.h\"\n"
                            "#include \"TRefArray.h\"\n"
-                           "#include \"root_std_complex.h\"\n");
+                           "#include \"root_std_complex.h\"\n", {}, {});
    if (!CloseStreamerInfoROOTFile(writeEmptyRootPCM)) {
       return 1;
    }
@@ -4168,29 +4168,29 @@ int RootCling(int argc,
    const bool useROOTINCDIR = false;
 #endif
    if (isGenreflex) {
-      if (interp.declare("namespace std {} using namespace std;") != cling::Interpreter::kSuccess) {
+      if (interp.declare("namespace std {} using namespace std;", {}, {}) != cling::Interpreter::kSuccess) {
          // There was an error.
          ROOT::TMetaUtils::Error(0, "Error loading the default header files.\n");
          return 1;
       }
    } else {
       // rootcling
-      if (interp.declare("namespace std {} using namespace std;") != cling::Interpreter::kSuccess
+      if (interp.declare("namespace std {} using namespace std;", {}, {}) != cling::Interpreter::kSuccess
             // CINT uses to define a few header implicitly, we need to do it explicitly.
             || interp.declare("#include <assert.h>\n"
                               "#include <stdlib.h>\n"
                               "#include <stddef.h>\n"
-                              "#include <string.h>\n"
-                             ) != cling::Interpreter::kSuccess
+                              "#include <string.h>\n",
+                              {}, {}) != cling::Interpreter::kSuccess
             || (!useROOTINCDIR
                 && interp.declare("#include \"Rtypes.h\"\n"
                                   "#include \"TClingRuntime.h\"\n"
-                                  "#include \"TObject.h\"") != cling::Interpreter::kSuccess)
+                                  "#include \"TObject.h\"", {}, {}) != cling::Interpreter::kSuccess)
 #ifdef ROOTINCDIR
             || (useROOTINCDIR
                 && interp.declare("#include \"" ROOTINCDIR "/Rtypes.h\"\n"
                                   "#include \"" ROOTINCDIR "/TClingRuntime.h\"\n"
-                                  "#include \"" ROOTINCDIR "/TObject.h\"") != cling::Interpreter::kSuccess
+                                  "#include \"" ROOTINCDIR "/TObject.h\"", {}, {}}) != cling::Interpreter::kSuccess
                )
 #endif
          ) {
@@ -4201,7 +4201,7 @@ int RootCling(int argc,
    }
 
    // For the list of 'opaque' typedef to also include string, we have to include it now.
-   interp.declare("#include <string>");
+   interp.declare("#include <string>", {}, {});
 
    // We are now ready (enough is loaded) to init the list of opaque typedefs.
    ROOT::TMetaUtils::TNormalizedCtxt normCtxt(interp.getLookupHelper());
@@ -4332,7 +4332,7 @@ int RootCling(int argc,
       std::copy(diagnosticPragmas.begin(),
                 diagnosticPragmas.end(),
                 std::ostream_iterator<std::string>(res, delim));
-      interp.declare(res.str());
+      interp.declare(res.str(), {}, {});
    }
 
    modGen.ParseArgs(pcmArgs);
@@ -4345,7 +4345,7 @@ int RootCling(int argc,
    modGen.WritePPDefines(definesUndefinesStr);
    modGen.WritePPUndefines(definesUndefinesStr);
    if (!definesUndefinesStr.str().empty())
-      interp.declare(definesUndefinesStr.str());
+      interp.declare(definesUndefinesStr.str(), {}, {});
 #endif
 
    class IgnoringPragmaHandler: public clang::PragmaNamespace {
@@ -4368,7 +4368,7 @@ int RootCling(int argc,
    PP.AddPragmaHandler(new IgnoringPragmaHandler("create"));
 
    if (!interpreterDeclarations.empty() &&
-       interp.declare(interpreterDeclarations) != cling::Interpreter::kSuccess) {
+       interp.declare(interpreterDeclarations, {}, {}) != cling::Interpreter::kSuccess) {
       ROOT::TMetaUtils::Error(0, "%s: Linkdef compilation failure\n", argv[0]);
       return 1;
    }

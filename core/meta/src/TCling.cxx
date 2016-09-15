@@ -1137,7 +1137,7 @@ TCling::TCling(const char *name, const char *title)
    if (fromRootCling) {
       fInterpreter->declare("#include \"RtypesCore.h\"\n"
                             "#include <string>\n"
-                            "using std::string;");
+                            "using std::string;", {}, {});
    } else {
       fInterpreter->declare("#include \"Rtypes.h\"\n"
                             + gClassDefInterpMacro + "\n"
@@ -1145,7 +1145,7 @@ TCling::TCling(const char *name, const char *title)
                             + "#undef ClassImp\n"
                             "#define ClassImp(X)\n"
                             "#include <string>\n"
-                            "using namespace std;");
+                            "using namespace std;", {}, {});
    }
 
    // We are now ready (enough is loaded) to init the list of opaque typedefs.
@@ -1540,7 +1540,11 @@ void TCling::RegisterModule(const char* modulename,
    for (auto& fwdDeclArgToSkipPair : fwdDeclsArgToSkip){
       const std::string& fwdDecl = fwdDeclArgToSkipPair.first;
       const int nArgsToSkip = fwdDeclArgToSkipPair.second;
-      auto compRes = fInterpreter->declare(fwdDecl.c_str(), &T);
+      auto compRes = fInterpreter->declare(fwdDecl.c_str(),
+                                           [=](cling::Transaction*){::ROOT::TMetaUtils::Error("TCling::RegisterModule",
+                                                         "Unloading name normalization for %s", modulename);},
+                                           {},
+                                           &T);
       assert(cling::Interpreter::kSuccess == compRes &&
             "A fwd declaration could not be compiled");
       if (compRes!=cling::Interpreter::kSuccess){
@@ -1653,7 +1657,11 @@ void TCling::RegisterModule(const char* modulename,
       }
 
       if (fwdDeclsCodeLessEnums.size() != 0){ // Avoid the overhead if nothing is to be declared
-         auto compRes = fInterpreter->declare(fwdDeclsCodeLessEnums, &T);
+         auto compRes = fInterpreter->declare(fwdDeclsCodeLessEnums,
+                                              [=](cling::Transaction*){::ROOT::TMetaUtils::Error("TCling::RegisterModule",
+                                                                             "Unloading forward decls for %s", modulename); },
+                                              {},
+                                              &T);
          assert(cling::Interpreter::kSuccess == compRes &&
                "The forward declarations could not be compiled");
          if (compRes!=cling::Interpreter::kSuccess){
@@ -1762,7 +1770,10 @@ void TCling::RegisterModule(const char* modulename,
          SuspendAutoParsing autoParseRaii(this);
 
          const cling::Transaction* watermark = fInterpreter->getLastTransaction();
-         cling::Interpreter::CompilationResult compRes = fInterpreter->parseForModule(code.Data());
+         cling::Interpreter::CompilationResult compRes
+           = fInterpreter->parseForModule(code.Data(),
+               [=](cling::Transaction*){::ROOT::TMetaUtils::Error("TCling::RegisterModule",
+                                               "Unloading payload for %s", modulename); }, {});
          if (isACLiC) {
             // Register an unload point.
             fMetaProcessor->registerUnloadPoint(watermark, headers[0]);
@@ -1813,7 +1824,7 @@ void TCling::RegisterModule(const char* modulename,
       fInterpreter->declare("#ifdef __ROOTCLING__\n"
                             "#undef __ROOTCLING__\n"
                             + gInterpreterClassDef +
-                            "#endif");
+                            "#endif", {}, {});
    }
 
    if (dyLibName) {
@@ -4939,13 +4950,21 @@ Int_t TCling::LoadLibraryMap(const char* rootmapfile)
          // convert "-" to " ", since class names may have
          // blanks and TEnv considers a blank a terminator
          cls.ReplaceAll("-", " ");
-         fInterpreter->declare(cls.Data());
+         fInterpreter->declare(cls.Data(),
+         [=](cling::Transaction*) { ROOT::TMetaUtils::Error("TCling::LoadLibraryMap",
+         "Unloading forward declarations from %s for %s", rootmapfile, cls.Data()); }, {});
       }
    }
 
    // Process the forward declarations collected
    cling::Transaction* T = nullptr;
-   auto compRes= fInterpreter->declare(uniqueString.Data(), &T);
+   auto compRes= fInterpreter->declare(uniqueString.Data(),
+                                       [=](cling::Transaction*) {
+                                         ROOT::TMetaUtils::Error(
+                                           "TCling::LoadLibraryMap",
+                                           "Unloading forward declarations from %s",
+                                           rootmapfile);
+                                       }, {}, &T);
    assert(cling::Interpreter::kSuccess == compRes && "A declaration in a rootmap could not be compiled");
 
    if (compRes!=cling::Interpreter::kSuccess){
@@ -5350,7 +5369,9 @@ static cling::Interpreter::CompilationResult ExecAutoParse(const char *what,
       #endif
       #endif
 
-      cr = interpreter->parseForModule(code);
+      cr = interpreter->parseForModule(code,
+                                       [=](cling::Transaction*) {::ROOT::TMetaUtils::Error("ExecAutoParse",
+                                       "Unloading auto-parsed %s", what);}, {});
    }
    return cr;
 }
@@ -6303,7 +6324,7 @@ int TCling::LoadFile(const char* path) const
 
 Bool_t TCling::LoadText(const char* text) const
 {
-   return (fInterpreter->declare(text) == cling::Interpreter::kSuccess);
+   return (fInterpreter->declare(text, {}, {}) == cling::Interpreter::kSuccess);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

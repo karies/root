@@ -130,6 +130,10 @@ namespace cling {
       kNumExeResults
     };
 
+    // From Transaction.h:
+    using UnloadCallback_t = std::function<void(Transaction*)>;
+
+
   private:
 
     ///\brief Interpreter invocation options.
@@ -202,6 +206,8 @@ namespace cling {
     ///
     CompilationResult DeclareInternal(const std::string& input,
                                       const CompilationOptions& CO,
+                                      const UnloadCallback_t& preUnload,
+                                      const UnloadCallback_t& postUnload,
                                       Transaction** T = 0) const;
 
     ///\brief Worker function, building block for interpreter's public
@@ -272,6 +278,8 @@ namespace cling {
     ///\param[in] withAccessControl - whether to enforce access restrictions.
     const clang::FunctionDecl* DeclareCFunction(llvm::StringRef name,
                                                 llvm::StringRef code,
+                                              const UnloadCallback_t& preUnload,
+                                             const UnloadCallback_t& postUnload,
                                                 bool withAccessControl);
 
     ///\brief Include C++ runtime headers and definitions.
@@ -482,7 +490,9 @@ namespace cling {
     ///
     ///\returns Whether the operation was fully successful.
     ///
-    CompilationResult parseForModule(const std::string& input);
+    CompilationResult parseForModule(const std::string& input,
+                                     const UnloadCallback_t& preUnload,
+                                     const UnloadCallback_t& postUnload);
 
     ///\brief Code completes user input.
     ///
@@ -509,7 +519,10 @@ namespace cling {
     ///
     ///\returns Whether the operation was fully successful.
     ///
-    CompilationResult declare(const std::string& input, Transaction** T = 0);
+    CompilationResult declare(const std::string& input,
+                              const UnloadCallback_t& preUnload,
+                              const UnloadCallback_t& postUnload,
+                              Transaction** T = 0);
 
     ///\brief Compiles input line, which contains only expressions.
     ///
@@ -579,6 +592,8 @@ namespace cling {
     ///\returns result of the compilation.
     ///
     CompilationResult loadFile(const std::string& filename,
+                               const UnloadCallback_t& preUnload,
+                               const UnloadCallback_t& postUnload,
                                bool allowSharedLib = true,
                                Transaction** T = 0);
 
@@ -661,6 +676,8 @@ namespace cling {
     ///
     ///\returns the address of the function or 0 if the compilation failed.
     void* compileFunction(llvm::StringRef name, llvm::StringRef code,
+                          const UnloadCallback_t& preUnload,
+                          const UnloadCallback_t& postUnload,
                           bool ifUniq = true, bool withAccessControl = true);
 
     ///\brief Compile (and cache) destructor calls for a record decl. Used by ~Value.

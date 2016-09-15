@@ -114,6 +114,8 @@ namespace cling {
       void print(llvm::raw_ostream& Out, const clang::Preprocessor& PP) const;
     };
 
+    using UnloadCallback_t = std::function<void(Transaction*)>;
+
   private:
     // Intentionally use struct instead of pair because we don't need default
     // init.
@@ -158,6 +160,12 @@ namespace cling {
     ///\brief The Executor to use m_ExeUnload on.
     ///
     IncrementalExecutor* m_Exe;
+
+    ///\brief Whom to notify before unloading the JITed part of the transaction.
+    UnloadCallback_t m_BeforeUnload;
+
+    ///\brief Whom to notify after unloading the JITed part of the transaction.
+    UnloadCallback_t m_AfterUnload;
 
     ///\brief The wrapper function produced by the intepreter if any.
     ///
@@ -472,6 +480,16 @@ namespace cling {
       m_Exe = Exe;
       m_ExeUnload = H;
     }
+
+    void setOnUnload(const UnloadCallback_t& beforeUnload,
+                     const UnloadCallback_t& afterUnload) {
+      m_BeforeUnload = beforeUnload;
+      m_AfterUnload = afterUnload;
+    }
+
+    const UnloadCallback_t getBeforeUnload() const { return m_BeforeUnload; }
+    const UnloadCallback_t getAfterUnload() const { return m_AfterUnload; }
+
 
     clang::FunctionDecl* getWrapperFD() const { return m_WrapperFD; }
 

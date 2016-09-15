@@ -150,6 +150,13 @@ void TClingClassInfo::AddBaseOffsetValue(const clang::Decl* decl, ptrdiff_t offs
    fOffsetCache[decl] = std::make_pair(offset, executableFunc);
 }
 
+/// Remove an entry in the function pointer map, in case cling unloads is.
+void TClingClassInfo::RemoveBaseOffsetFunction(const clang::Decl* decl) {
+   auto I = fOffsetCache.find(decl);
+   if (I != fOffsetCache.end())
+      fOffsetCache.erase(I);
+}
+
 long TClingClassInfo::ClassProperty() const
 {
    if (!IsValid()) {

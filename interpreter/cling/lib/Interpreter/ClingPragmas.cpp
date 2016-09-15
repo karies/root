@@ -109,7 +109,8 @@ namespace {
                                              TU, m_Interp.getSema().TUScope);
       Interpreter::PushTransactionRAII pushedT(&m_Interp);
 
-      m_Interp.loadFile(Result.second, true /*allowSharedLib*/);
+      // No unloading support; this transaction will be nested anyway.
+      m_Interp.loadFile(Result.second, {}, {}, true /*allowSharedLib*/);
     }
   };
 

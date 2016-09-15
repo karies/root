@@ -24,6 +24,7 @@ the Clang C++ compiler, not CINT.
 
 #include "TClingClassInfo.h"
 #include "TDictionary.h"
+#include "TInterpreter.h"
 #include "TMetaUtils.h"
 
 #include "TError.h"
@@ -159,7 +160,7 @@ TClingClassInfo *TClingBaseClassInfo::GetBase() const
 }
 
 OffsetPtrFunc_t
-TClingBaseClassInfo::GenerateBaseOffsetFunction(const TClingClassInfo * fromDerivedClass,
+TClingBaseClassInfo::GenerateBaseOffsetFunction(TClingClassInfo* fromDerivedClass,
                                                 TClingClassInfo* toBaseClass,
                                                 void* address, bool isDerivedObject) const
 {
@@ -227,7 +228,15 @@ TClingBaseClassInfo::GenerateBaseOffsetFunction(const TClingClassInfo * fromDeri
    }
 
    // If we have a GV then compileFunction will use it; empty code is enough.
-   void* f = fInterp->compileFunction(wrapper_name, code, true /*ifUnique*/,
+   void* f = fInterp->compileFunction(wrapper_name, code,
+                                      [fromDerivedClass, toBaseDecl](cling::Transaction*){
+                                        gInterpreterMutex->Lock();
+                                        fromDerivedClass->RemoveBaseOffsetFunction(toBaseDecl);
+                                      },
+                                      [](cling::Transaction*){
+                                        gInterpreterMutex->UnLock();
+                                      },
+                                      true /*ifUnique*/,
                                       false /*withAccessControl*/);
    if (!f) {
       ::Error("TClingBaseClassInfo::GenerateBaseOffsetFunction",

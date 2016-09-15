@@ -81,6 +81,7 @@ public:
    explicit TClingClassInfo(cling::Interpreter *, const char *);
    explicit TClingClassInfo(cling::Interpreter *, const clang::Type &);
    void                 AddBaseOffsetFunction(const clang::Decl* decl, OffsetPtrFunc_t func) { fOffsetCache[decl] = std::make_pair(0L, func); }
+   void                 RemoveBaseOffsetFunction(const clang::Decl* decl);
    void                 AddBaseOffsetValue(const clang::Decl* decl, ptrdiff_t offset);
    long                 ClassProperty() const;
    void                 Delete(void *arena, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt) const;
