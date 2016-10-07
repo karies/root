@@ -57,7 +57,11 @@ namespace cling {
     std::string canFile = m_Interpreter.lookupFileOrLibrary(file);
     if (canFile.empty())
       canFile = file;
-    if (m_Interpreter.loadFile(canFile, true /*allowSharedLib*/, transaction)
+    if (m_Interpreter.loadFile(canFile,
+                               [canFile](Transaction*) -> void {std::cerr<<"AXEL DEBUG Unloading " << canFile << "...\n"; },
+                               [canFile](Transaction*) -> void {std::cerr<<"AXEL DEBUG Unloading " << canFile << "...\n"; },
+                               true /*allowSharedLib*/,
+                               transaction)
         == Interpreter::kSuccess) {
       registerUnloadPoint(unloadPoint, canFile);
       return AR_Success;
@@ -81,7 +85,7 @@ namespace cling {
 
   void MetaSema::actOnComment(llvm::StringRef comment) const {
     // Some of the comments are meaningful for the cling::Interpreter
-    m_Interpreter.declare(comment);
+    m_Interpreter.declare(comment, {}, {});
   }
 
   MetaSema::ActionResult MetaSema::actOnxCommand(llvm::StringRef file,

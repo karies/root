@@ -170,7 +170,7 @@ public: // Public Interface
    Bool_t  IsAutoLoadNamespaceCandidate(const clang::NamespaceDecl* nsDecl);
    void    ClearFileBusy();
    void    ClearStack(); // Delete existing temporary values
-   Bool_t  Declare(const char* code);
+   Bool_t  Declare(const char* code, const UnloadCallback_t& pre, const UnloadCallback_t& post);
    void    EnableAutoLoading();
    void    EndOfLineAction();
    TClass *GetClass(const std::type_info& typeinfo, Bool_t load) const;
@@ -191,16 +191,16 @@ public: // Public Interface
    virtual void Initialize();
    void    InspectMembers(TMemberInspector&, const void* obj, const TClass* cl, Bool_t isTransient);
    Bool_t  IsLoaded(const char* filename) const;
-   Int_t   Load(const char* filenam, Bool_t system = kFALSE);
-   void    LoadMacro(const char* filename, EErrorCode* error = 0);
+   Int_t   Load(const char* filenam, const UnloadCallback_t& pre, const UnloadCallback_t& post, Bool_t system = kFALSE);
+   void    LoadMacro(const char* filename, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode* error = 0);
    Int_t   LoadLibraryMap(const char* rootmapfile = 0);
    Int_t   RescanLibraryMap();
    Int_t   ReloadAllSharedLibraryMaps();
    Int_t   UnloadAllSharedLibraryMaps();
    Int_t   UnloadLibraryMap(const char* library);
-   Long_t  ProcessLine(const char* line, EErrorCode* error = 0);
-   Long_t  ProcessLineAsynch(const char* line, EErrorCode* error = 0);
-   Long_t  ProcessLineSynch(const char* line, EErrorCode* error = 0);
+   Long_t  ProcessLine(const char* line, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode* error = 0);
+   Long_t  ProcessLineAsynch(const char* line, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode* error = 0);
+   Long_t  ProcessLineSynch(const char* line, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode* error = 0);
    void    PrintIntro();
    void    RegisterModule(const char* modulename,
                           const char** headers,
@@ -231,7 +231,8 @@ public: // Public Interface
    void    SetClassInfo(TClass* cl, Bool_t reload = kFALSE);
    Bool_t  CheckClassInfo(const char* name, Bool_t autoload, Bool_t isClassOrNamespaceOnly = kFALSE);
    Bool_t  CheckClassTemplate(const char *name);
-   Long_t  Calc(const char* line, EErrorCode* error = 0);
+   Long_t  Calc(const char* line, const TInterpreter::UnloadCallback_t& pre,
+                const TInterpreter::UnloadCallback_t& post, EErrorCode* error = 0);
    void    CreateListOfBaseClasses(TClass* cl) const;
    void    CreateListOfDataMembers(TClass* cl) const;
    void    CreateListOfMethods(TClass* cl) const;
@@ -289,8 +290,8 @@ public: // Public Interface
    virtual const char* GetTopLevelMacroName() const;
    virtual const char* GetCurrentMacroName() const;
    virtual int    GetSecurityError() const;
-   virtual int    LoadFile(const char* path) const;
-   virtual Bool_t LoadText(const char* text) const;
+   virtual int    LoadFile(const char* path, const UnloadCallback_t& pre, const UnloadCallback_t& post) const;
+   virtual Bool_t LoadText(const char* text, const UnloadCallback_t& pre, const UnloadCallback_t& post) const;
    virtual const char* MapCppName(const char*) const;
    virtual void   SetAlloclockfunc(void (*)()) const;
    virtual void   SetAllocunlockfunc(void (*)()) const;

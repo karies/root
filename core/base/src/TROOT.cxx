@@ -2065,7 +2065,8 @@ void TROOT::ls(Option_t *option) const
 /// Returns 0 on successful loading and -1 in case filename does not
 /// exist or in case of error.
 
-Int_t TROOT::LoadMacro(const char *filename, int *error, Bool_t check)
+Int_t TROOT::LoadMacro(const char *filename, const TInterpreter::UnloadCallback_t& pre,
+                       const TInterpreter::UnloadCallback_t& post, int *error, Bool_t check)
 {
    Int_t err = -1;
    Int_t lerr, *terr;
@@ -2094,7 +2095,7 @@ Int_t TROOT::LoadMacro(const char *filename, int *error, Bool_t check)
             fname = mac;
             fname += aclicMode;
             fname += io;
-            gInterpreter->LoadMacro(fname.Data(), (TInterpreter::EErrorCode*)terr);
+            gInterpreter->LoadMacro(fname.Data(), pre, post, (TInterpreter::EErrorCode*)terr);
             if (*terr)
                err = -1;
          }
@@ -2167,7 +2168,8 @@ void  TROOT::Message(Int_t id, const TObject *obj)
 /// CINT interpreted thread has finished executing the line.
 /// Returns the result of the command, cast to a Long_t.
 
-Long_t TROOT::ProcessLine(const char *line, Int_t *error)
+Long_t TROOT::ProcessLine(const char *line, const TInterpreter::UnloadCallback_t& pre,
+                          const TInterpreter::UnloadCallback_t& post, Int_t *error)
 {
    TString sline = line;
    sline = sline.Strip(TString::kBoth);
@@ -2175,7 +2177,7 @@ Long_t TROOT::ProcessLine(const char *line, Int_t *error)
    if (!fApplication.load())
       TApplication::CreateApplication();
 
-   return (*fApplication).ProcessLine(sline, kFALSE, error);
+   return (*fApplication).ProcessLine(sline, pre, post, kFALSE, error);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2187,7 +2189,8 @@ Long_t TROOT::ProcessLine(const char *line, Int_t *error)
 /// The possible error codes are defined by TInterpreter::EErrorCode.
 /// Returns the result of the command, cast to a Long_t.
 
-Long_t TROOT::ProcessLineSync(const char *line, Int_t *error)
+Long_t TROOT::ProcessLineSync(const char *line, const TInterpreter::UnloadCallback_t& pre,
+                              const TInterpreter::UnloadCallback_t& post, Int_t *error)
 {
    TString sline = line;
    sline = sline.Strip(TString::kBoth);
@@ -2195,7 +2198,7 @@ Long_t TROOT::ProcessLineSync(const char *line, Int_t *error)
    if (!fApplication.load())
       TApplication::CreateApplication();
 
-   return (*fApplication).ProcessLine(sline, kTRUE, error);
+   return (*fApplication).ProcessLine(sline, pre, post, kTRUE, error);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2204,7 +2207,8 @@ Long_t TROOT::ProcessLineSync(const char *line, Int_t *error)
 /// In all other cases use TROOT::ProcessLine().
 /// The possible error codes are defined by TInterpreter::EErrorCode.
 
-Long_t TROOT::ProcessLineFast(const char *line, Int_t *error)
+Long_t TROOT::ProcessLineFast(const char *line, const TInterpreter::UnloadCallback_t& pre,
+                              const TInterpreter::UnloadCallback_t& post, Int_t *error)
 {
    TString sline = line;
    sline = sline.Strip(TString::kBoth);
@@ -2216,7 +2220,7 @@ Long_t TROOT::ProcessLineFast(const char *line, Int_t *error)
 
    if (fInterpreter) {
       TInterpreter::EErrorCode *code = (TInterpreter::EErrorCode*)error;
-      result = gInterpreter->Calc(sline, code);
+      result = gInterpreter->Calc(sline, pre, post, code);
    }
 
    return result;

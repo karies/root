@@ -130,6 +130,10 @@ namespace cling {
       kNumExeResults
     };
 
+    // From Transaction.h:
+    using UnloadCallback_t = std::function<void(Transaction*)>;
+
+
   private:
 
     ///\brief Interpreter invocation options.
@@ -202,6 +206,8 @@ namespace cling {
     ///
     CompilationResult DeclareInternal(const std::string& input,
                                       const CompilationOptions& CO,
+                                      const UnloadCallback_t& preUnload,
+                                      const UnloadCallback_t& postUnload,
                                       Transaction** T = 0) const;
 
     ///\brief Worker function, building block for interpreter's public
@@ -219,6 +225,8 @@ namespace cling {
     ///
     CompilationResult EvaluateInternal(const std::string& input,
                                        CompilationOptions CO,
+                                       const UnloadCallback_t& preUnload,
+                                       const UnloadCallback_t& postUnload,
                                        Value* V = 0,
                                        Transaction** T = 0,
                                        size_t wrapPoint = 0);
@@ -272,6 +280,8 @@ namespace cling {
     ///\param[in] withAccessControl - whether to enforce access restrictions.
     const clang::FunctionDecl* DeclareCFunction(llvm::StringRef name,
                                                 llvm::StringRef code,
+                                              const UnloadCallback_t& preUnload,
+                                             const UnloadCallback_t& postUnload,
                                                 bool withAccessControl);
 
     ///\brief Include C++ runtime headers and definitions.
@@ -444,7 +454,10 @@ namespace cling {
     ///
     ///\returns Whether the operation was fully successful.
     ///
-    CompilationResult process(const std::string& input, Value* V = 0,
+    CompilationResult process(const std::string& input,
+                              const UnloadCallback_t& preUnload,
+                              const UnloadCallback_t& postUnload,
+                              Value* V = 0,
                               Transaction** T = 0);
 
     ///\brief Parses input line, which doesn't contain statements. No code
@@ -459,6 +472,8 @@ namespace cling {
     ///\returns Whether the operation was fully successful.
     ///
     CompilationResult parse(const std::string& input,
+                            const UnloadCallback_t& preUnload,
+                            const UnloadCallback_t& postUnload,
                             Transaction** T = 0) const;
 
     ///\brief Looks for a already generated PCM for the given header file and
@@ -469,7 +484,9 @@ namespace cling {
     ///
     ///\returns Whether the operation was fully successful.
     ///
-    CompilationResult loadModuleForHeader(const std::string& headerFile);
+    CompilationResult loadModuleForHeader(const std::string& headerFile,
+                                          const UnloadCallback_t& preUnload,
+                                          const UnloadCallback_t& postUnload);
 
     ///\brief Parses input line, which doesn't contain statements. Code
     /// generation needed to make the module functional.
@@ -482,7 +499,9 @@ namespace cling {
     ///
     ///\returns Whether the operation was fully successful.
     ///
-    CompilationResult parseForModule(const std::string& input);
+    CompilationResult parseForModule(const std::string& input,
+                                     const UnloadCallback_t& preUnload,
+                                     const UnloadCallback_t& postUnload);
 
     ///\brief Code completes user input.
     ///
@@ -509,7 +528,10 @@ namespace cling {
     ///
     ///\returns Whether the operation was fully successful.
     ///
-    CompilationResult declare(const std::string& input, Transaction** T = 0);
+    CompilationResult declare(const std::string& input,
+                              const UnloadCallback_t& preUnload,
+                              const UnloadCallback_t& postUnload,
+                              Transaction** T = 0);
 
     ///\brief Compiles input line, which contains only expressions.
     ///
@@ -523,7 +545,10 @@ namespace cling {
     ///
     ///\returns Whether the operation was fully successful.
     ///
-    CompilationResult evaluate(const std::string& input, Value& V);
+    CompilationResult evaluate(const std::string& input,
+                               const UnloadCallback_t& preUnload,
+                               const UnloadCallback_t& postUnload,
+                               Value& V);
 
     ///\brief Compiles input line, which contains only expressions and prints
     /// out the result of its execution.
@@ -579,6 +604,8 @@ namespace cling {
     ///\returns result of the compilation.
     ///
     CompilationResult loadFile(const std::string& filename,
+                               const UnloadCallback_t& preUnload,
+                               const UnloadCallback_t& postUnload,
                                bool allowSharedLib = true,
                                Transaction** T = 0);
 
@@ -630,7 +657,10 @@ namespace cling {
     ///
     ///\returns The result of the evaluation if the expression.
     ///
-    Value Evaluate(const char* expr, clang::DeclContext* DC,
+    Value Evaluate(const char* expr,
+                   clang::DeclContext* DC,
+                   const UnloadCallback_t& preUnload,
+                   const UnloadCallback_t& postUnload,
                             bool ValuePrinterReq = false);
 
     ///\brief Interpreter callbacks accessors.
@@ -661,11 +691,15 @@ namespace cling {
     ///
     ///\returns the address of the function or 0 if the compilation failed.
     void* compileFunction(llvm::StringRef name, llvm::StringRef code,
+                          const UnloadCallback_t& preUnload,
+                          const UnloadCallback_t& postUnload,
                           bool ifUniq = true, bool withAccessControl = true);
 
     ///\brief Compile (and cache) destructor calls for a record decl. Used by ~Value.
     /// They are of type extern "C" void()(void* pObj).
-    void* compileDtorCallFor(const clang::RecordDecl* RD);
+    void* compileDtorCallFor(const clang::RecordDecl* RD,
+                             const UnloadCallback_t& preUnload,
+                             const UnloadCallback_t& postUnload);
 
     ///\brief Gets the address of an existing global and whether it was JITted.
     ///

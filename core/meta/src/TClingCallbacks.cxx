@@ -67,7 +67,7 @@ TClingCallbacks::TClingCallbacks(cling::Interpreter* interp)
      fFirstRun(true), fIsAutoloading(false), fIsAutoloadingRecursively(false),
      fPPOldFlag(false), fPPChanged(false) {
    Transaction* T = 0;
-   m_Interpreter->declare("namespace __ROOT_SpecialObjects{}", &T);
+   m_Interpreter->declare("namespace __ROOT_SpecialObjects{}", {}, {}, &T);
    fROOTSpecialNamespace = dyn_cast<NamespaceDecl>(T->getFirstDecl().getSingleDecl());
 }
 
@@ -433,7 +433,11 @@ bool TClingCallbacks::tryAutoParseInternal(llvm::StringRef Name, LookupResult &R
            std::string incl = "#include \"";
            incl += FE->getName();
            incl += '"';
-           m_Interpreter->declare(incl);
+           m_Interpreter->declare(incl,
+                                  [=](Transaction*){ ROOT::TMetaUtils::Error("TClingCallbacks::tryAutoParseInternal",
+                                                "Requested to unload header %s!",
+                                                 FE->getName());
+                                  }, {});
         }
      }
 

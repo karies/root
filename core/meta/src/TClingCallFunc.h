@@ -37,6 +37,7 @@
 #include <llvm/ADT/SmallVector.h>
 
 namespace clang {
+class Decl;
 class Expr;
 class FunctionDecl;
 class CXXMethodDecl;
@@ -71,9 +72,17 @@ private:
    bool fIgnoreExtraArgs : 1;
    bool fReturnIsRecordType : 1;
 
+   enum EWrapperKind {
+     kFunction,
+     kConstructor,
+     kDestructor
+   };
+
 private:
    void* compile_wrapper(const std::string& wrapper_name,
                          const std::string& wrapper,
+                         EWrapperKind kind,
+                         const clang::Decl* D,
                          bool withAccessControl = true);
 
    void collect_type_info(clang::QualType& QT, std::ostringstream& typedefbuf,

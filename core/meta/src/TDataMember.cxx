@@ -410,7 +410,7 @@ void TDataMember::Init(bool afterReading)
                if (obj)
                   l = ((TEnumConstant*)obj)->GetValue();
                else
-                  l = gInterpreter->Calc(Form("%s;",ptr1));
+                  l = gInterpreter->Calc(Form("%s;",ptr1), {}, {});
             } else
                l = atol(ptr1);
 

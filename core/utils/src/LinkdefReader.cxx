@@ -508,7 +508,7 @@ bool LinkdefReader::IsPatternRule(const std::string &rule_token)
 bool LinkdefReader::LoadIncludes(std::string &extraIncludes)
 {
    extraIncludes += fIncludes;
-   return cling::Interpreter::kSuccess == fInterp.declare(fIncludes);
+   return cling::Interpreter::kSuccess == fInterp.declare(fIncludes, {}, {});
 }
 
 bool LinkdefReader::ProcessFunctionPrototype(std::string &proto, bool &name)

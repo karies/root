@@ -143,7 +143,7 @@ bool canParseTypeName(cling::Interpreter& Interp, llvm::StringRef typenam) {
 
   cling::Interpreter::CompilationResult Res
     = Interp.declare("namespace { void* cling_printValue_Failure_Typename_check"
-                     " = (void*)" + typenam.str() + "nullptr; }");
+                     " = (void*)" + typenam.str() + "nullptr; }", {}, {});
   if (Res != cling::Interpreter::kSuccess)
     llvm::errs() << "ERROR in cling::executePrintValue(): "
                       "this typename cannot be spelled.\n";
@@ -196,7 +196,7 @@ static std::string executePrintValue(const Value &V, const T &val) {
     clang::DiagnosticsEngine& Diag = Interp->getCI()->getDiagnostics();
     bool oldSuppDiags = Diag.getSuppressAllDiagnostics();
     Diag.setSuppressAllDiagnostics(true);
-    Interp->evaluate(printValueSS.str(), printValueV);
+    Interp->evaluate(printValueSS.str(), {}, {}, printValueV);
     Diag.setSuppressAllDiagnostics(oldSuppDiags);
   }
 
@@ -622,7 +622,7 @@ namespace cling {
       // Include "RuntimePrintValue.h" only on the first printing.
       // This keeps the interpreter lightweight and reduces the startup time.
       if (!includedRuntimePrintValue) {
-        V.getInterpreter()->declare("#include \"cling/Interpreter/RuntimePrintValue.h\"");
+         V.getInterpreter()->declare("#include \"cling/Interpreter/RuntimePrintValue.h\"", {}, {});
         includedRuntimePrintValue = true;
       }
       return printUnpackedClingValue(V);

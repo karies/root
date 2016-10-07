@@ -293,14 +293,14 @@ namespace cling {
         "cling::Interpreter *gCling=(cling::Interpreter*)"
         << "0x" << std::hex << (uintptr_t)this << " ;} }";
     }
-    declare(initializer.str());
+    declare(initializer.str(), {}, {});
   }
 
   void Interpreter::IncludeCRuntime() {
     // Set up the gCling variable if it can be used
     std::stringstream initializer;
     initializer << "void* gCling=(void*)" << (uintptr_t)this << ';';
-    declare(initializer.str());
+    declare(initializer.str(), {}, {});
     // declare("void setValueNoAlloc(void* vpI, void* vpSVR, void* vpQT);");
     // declare("void setValueNoAlloc(void* vpI, void* vpV, void* vpQT, float value);");
     // declare("void setValueNoAlloc(void* vpI, void* vpV, void* vpQT, double value);");
@@ -309,7 +309,7 @@ namespace cling {
     // declare("void setValueNoAlloc(void* vpI, void* vpV, void* vpQT, const void* value);");
     // declare("void* setValueWithAlloc(void* vpI, void* vpV, void* vpQT);");
 
-    declare("#include \"cling/Interpreter/CValuePrinter.h\"");
+    declare("#include \"cling/Interpreter/CValuePrinter.h\"", {}, {});
   }
 
   void Interpreter::AddIncludePaths(llvm::StringRef PathStr, const char* Delm) {
@@ -395,7 +395,10 @@ namespace cling {
   /// semantics (declarations are global) and compile to produce a module.
   ///
   Interpreter::CompilationResult
-  Interpreter::process(const std::string& input, Value* V /* = 0 */,
+  Interpreter::process(const std::string& input,
+                       const UnloadCallback_t& pre,
+                       const UnloadCallback_t& post,
+                       Value* V /* = 0 */,
                        Transaction** T /* = 0 */) {
     std::string wrapReadySource = input;
     size_t wrapPoint = std::string::npos;
@@ -410,7 +413,7 @@ namespace cling {
       CO.DynamicScoping = isDynamicLookupEnabled();
       CO.Debug = isPrintingDebug();
       CO.CheckPointerValidity = 1;
-      return DeclareInternal(input, CO, T);
+      return DeclareInternal(input, CO, pre, post, T);
     }
 
     CompilationOptions CO;
@@ -420,7 +423,7 @@ namespace cling {
     CO.DynamicScoping = isDynamicLookupEnabled();
     CO.Debug = isPrintingDebug();
     CO.CheckPointerValidity = 1;
-    if (EvaluateInternal(wrapReadySource, CO, V, T, wrapPoint)
+    if (EvaluateInternal(wrapReadySource, CO, pre, post, V, T, wrapPoint)
                                                      == Interpreter::kFailure) {
       return Interpreter::kFailure;
     }
@@ -429,7 +432,10 @@ namespace cling {
   }
 
   Interpreter::CompilationResult
-  Interpreter::parse(const std::string& input, Transaction** T /*=0*/) const {
+  Interpreter::parse(const std::string& input,
+                     const UnloadCallback_t& pre,
+                     const UnloadCallback_t& post,
+                     Transaction** T /*=0*/) const {
     CompilationOptions CO;
     CO.CodeGeneration = 0;
     CO.DeclarationExtraction = 0;
@@ -438,11 +444,13 @@ namespace cling {
     CO.DynamicScoping = isDynamicLookupEnabled();
     CO.Debug = isPrintingDebug();
 
-    return DeclareInternal(input, CO, T);
+    return DeclareInternal(input, CO, pre, post, T);
   }
 
   Interpreter::CompilationResult
-  Interpreter::loadModuleForHeader(const std::string& headerFile) {
+  Interpreter::loadModuleForHeader(const std::string& headerFile,
+                                   const UnloadCallback_t& preUnload,
+                                   const UnloadCallback_t& postUnload) {
     Preprocessor& PP = getCI()->getPreprocessor();
     //Copied from clang's PPDirectives.cpp
     bool isAngled = false;
@@ -487,7 +495,9 @@ namespace cling {
   }
 
   Interpreter::CompilationResult
-  Interpreter::parseForModule(const std::string& input) {
+  Interpreter::parseForModule(const std::string& input,
+                              const UnloadCallback_t& preUnload,
+                              const UnloadCallback_t& postUnload) {
     CompilationOptions CO;
     CO.CodeGeneration = 1;
     CO.CodeGenerationForModule = 1;
@@ -504,7 +514,8 @@ namespace cling {
     DiagnosticsEngine& Diag = getCI()->getDiagnostics();
     Diag.setSeverity(clang::diag::warn_field_is_uninit,
                      clang::diag::Severity::Ignored, SourceLocation());
-    CompilationResult Result = DeclareInternal(input, CO);
+    CompilationResult Result = DeclareInternal(input, CO, preUnload,
+                                               postUnload);
     Diag.setSeverity(clang::diag::warn_field_is_uninit,
                      clang::diag::Severity::Warning, SourceLocation());
     return Result;
@@ -538,7 +549,10 @@ namespace cling {
   }
 
   Interpreter::CompilationResult
-  Interpreter::declare(const std::string& input, Transaction** T/*=0 */) {
+  Interpreter::declare(const std::string& input,
+                       const UnloadCallback_t& preUnload,
+                       const UnloadCallback_t& postUnload,
+                       Transaction** T/*=0 */) {
     CompilationOptions CO;
     CO.DeclarationExtraction = 0;
     CO.ValuePrinting = 0;
@@ -547,11 +561,14 @@ namespace cling {
     CO.Debug = isPrintingDebug();
     CO.CheckPointerValidity = 0;
 
-    return DeclareInternal(input, CO, T);
+    return DeclareInternal(input, CO, preUnload, postUnload, T);
   }
 
   Interpreter::CompilationResult
-  Interpreter::evaluate(const std::string& input, Value& V) {
+  Interpreter::evaluate(const std::string& input,
+                        const UnloadCallback_t& pre,
+                        const UnloadCallback_t& post,
+                        Value& V) {
     // Here we might want to enforce further restrictions like: Only one
     // ExprStmt can be evaluated and etc. Such enforcement cannot happen in the
     // worker, because it is used from various places, where there is no such
@@ -561,7 +578,7 @@ namespace cling {
     CO.ValuePrinting = 0;
     CO.ResultEvaluation = 1;
 
-    return EvaluateInternal(input, CO, &V);
+    return EvaluateInternal(input, CO, pre, post, &V);
   }
 
   Interpreter::CompilationResult
@@ -623,7 +640,7 @@ namespace cling {
     CO.ValuePrinting = CompilationOptions::VPEnabled;
     CO.ResultEvaluation = (bool)V;
 
-    return EvaluateInternal(input, CO, V);
+    return EvaluateInternal(input, CO, {}, {}, V);
   }
 
   Interpreter::CompilationResult
@@ -634,7 +651,7 @@ namespace cling {
     CO.ResultEvaluation = 0;
     CO.DynamicScoping = 0;
     CO.Debug = isPrintingDebug();
-    return EvaluateInternal(input, CO);
+    return EvaluateInternal(input, CO, {}, {});
   }
 
   Interpreter::CompilationResult Interpreter::emitAllDecls(Transaction* T) {
@@ -697,6 +714,8 @@ namespace cling {
 
   const FunctionDecl* Interpreter::DeclareCFunction(StringRef name,
                                                     StringRef code,
+                                              const UnloadCallback_t& preUnload,
+                                             const UnloadCallback_t& postUnload,
                                                     bool withAccessControl) {
     /*
     In CallFunc we currently always (intentionally and somewhat necessarily)
@@ -787,7 +806,8 @@ namespace cling {
     bool savedAccessControl = LO.AccessControl;
     LO.AccessControl = withAccessControl;
     cling::Transaction* T = 0;
-    cling::Interpreter::CompilationResult CR = declare(code, &T);
+    cling::Interpreter::CompilationResult CR
+      = declare(code, preUnload, postUnload, &T);
     LO.AccessControl = savedAccessControl;
 
     Diag.setSeverity(clang::diag::ext_nested_name_member_ref_lookup_ambiguous,
@@ -817,6 +837,8 @@ namespace cling {
 
   void*
   Interpreter::compileFunction(llvm::StringRef name, llvm::StringRef code,
+                               const UnloadCallback_t& preUnload,
+                               const UnloadCallback_t& postUnload,
                                bool ifUnique, bool withAccessControl) {
     //
     //  Compile the wrapper code.
@@ -831,7 +853,8 @@ namespace cling {
       }
     }
 
-    const FunctionDecl* FD = DeclareCFunction(name, code, withAccessControl);
+    const FunctionDecl* FD = DeclareCFunction(name, code, preUnload, postUnload,
+                                              withAccessControl);
     if (!FD)
       return 0;
     //
@@ -846,7 +869,9 @@ namespace cling {
   }
 
   void*
-  Interpreter::compileDtorCallFor(const clang::RecordDecl* RD) {
+  Interpreter::compileDtorCallFor(const clang::RecordDecl* RD,
+                                  const UnloadCallback_t& pre,
+                                  const UnloadCallback_t& post) {
     void* &addr = m_DtorWrappers[RD];
     if (addr)
       return addr;
@@ -866,7 +891,7 @@ namespace cling {
       + dtorName + "();}";
 
     // ifUniq = false: we know it's unique, no need to check.
-    addr = compileFunction(funcname, code, false /*ifUniq*/,
+    addr = compileFunction(funcname, code, pre, post, false /*ifUniq*/,
                            false /*withAccessControl*/);
     return addr;
   }
@@ -893,6 +918,8 @@ namespace cling {
   Interpreter::CompilationResult
   Interpreter::DeclareInternal(const std::string& input,
                                const CompilationOptions& CO,
+                               const Transaction::UnloadCallback_t& preUnload,
+                               const Transaction::UnloadCallback_t& postUnload,
                                Transaction** T /* = 0 */) const {
     assert(CO.DeclarationExtraction == 0
            && CO.ValuePrinting == 0
@@ -906,14 +933,20 @@ namespace cling {
     if (PRT.getInt() == IncrementalParser::kFailed)
       return Interpreter::kFailure;
 
+    if (PRT.getPointer())
+      PRT.getPointer()->setOnUnload(preUnload, postUnload);
+
     if (T)
       *T = PRT.getPointer();
+
     return Interpreter::kSuccess;
   }
 
   Interpreter::CompilationResult
   Interpreter::EvaluateInternal(const std::string& input,
                                 CompilationOptions CO,
+                                const Interpreter::UnloadCallback_t& pre,
+                                const Interpreter::UnloadCallback_t& post,
                                 Value* V, /* = 0 */
                                 Transaction** T /* = 0 */,
                                 size_t wrapPoint /* = 0*/) {
@@ -930,6 +963,8 @@ namespace cling {
     IncrementalParser::ParseResultTransaction PRT
       = m_IncrParser->Compile(Wrapper, CO);
     Transaction* lastT = PRT.getPointer();
+    if (lastT)
+      lastT->setOnUnload(pre, post);
     if (lastT && lastT->getState() != Transaction::kCommitted) {
       assert((lastT->getState() == Transaction::kCommitted
               || lastT->getState() == Transaction::kRolledBack
@@ -1000,6 +1035,8 @@ namespace cling {
 
   Interpreter::CompilationResult
   Interpreter::loadFile(const std::string& filename,
+                        const UnloadCallback_t& preUnload,
+                        const UnloadCallback_t& postUnload,
                         bool allowSharedLib /*=true*/,
                         Transaction** T /*= 0*/) {
     DynamicLibraryManager* DLM = getDynamicLibraryManager();
@@ -1028,7 +1065,7 @@ namespace cling {
     CO.DynamicScoping = isDynamicLookupEnabled();
     CO.Debug = isPrintingDebug();
     CO.CheckPointerValidity = 1;
-    CompilationResult res = DeclareInternal(code, CO, T);
+    CompilationResult res = DeclareInternal(code, CO, preUnload, postUnload, T);
     return res;
   }
 
@@ -1118,6 +1155,8 @@ namespace cling {
   }
 
   Value Interpreter::Evaluate(const char* expr, DeclContext* DC,
+                              const Interpreter::UnloadCallback_t& pre,
+                              const Interpreter::UnloadCallback_t& post,
                                        bool ValuePrinterReq) {
     Sema& TheSema = getCI()->getSema();
     // The evaluation should happen on the global scope, because of the wrapper
@@ -1132,7 +1171,7 @@ namespace cling {
     if (ValuePrinterReq)
       echo(expr, &Result);
     else
-      evaluate(expr, Result);
+      evaluate(expr, pre, post, Result);
     getCallbacks()->SetIsRuntime(false);
 
     return Result;
@@ -1168,9 +1207,9 @@ namespace cling {
     if (!m_DynamicLookupDeclared && value) {
       // No dynlookup for the dynlookup header!
       m_DynamicLookupEnabled = false;
-      if (loadModuleForHeader("cling/Interpreter/DynamicLookupRuntimeUniverse.h")
+      if (loadModuleForHeader("cling/Interpreter/DynamicLookupRuntimeUniverse.h", {}, {})
           != kSuccess)
-      declare("#include \"cling/Interpreter/DynamicLookupRuntimeUniverse.h\"");
+      declare("#include \"cling/Interpreter/DynamicLookupRuntimeUniverse.h\"", {}, {});
     }
     m_DynamicLookupDeclared = true;
 

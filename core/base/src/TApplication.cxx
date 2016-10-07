@@ -204,7 +204,7 @@ TApplication::TApplication(const char *appClassName, Int_t *argc, char **argv,
       Int_t maxcalls   = gEnv->GetValue("Root.TMemStat.maxcalls", 5000000);
       const char *ssystem = gEnv->GetValue("Root.TMemStat.system","gnubuiltin");
       if (maxcalls > 0) {
-         gROOT->ProcessLine(Form("new TMemStat(\"%s\",%d,%d);",ssystem,buffersize,maxcalls));
+         gROOT->ProcessLine(Form("new TMemStat(\"%s\",%d,%d);",ssystem,buffersize,maxcalls), {}, {});
       }
    }
 
@@ -228,7 +228,7 @@ TApplication::~TApplication()
 
    //close TMemStat
    if (fUseMemstat) {
-      ProcessLine("TMemStat::Close()");
+      ProcessLine("TMemStat::Close()", {}, {});
       fUseMemstat = kFALSE;
    }
 
@@ -293,7 +293,7 @@ void TApplication::InitializeGraphics()
          // in principle we should not have linked anything against libGX11TTF
          // but with ACLiC this can happen, initialize TGX11TTF by hand
          // (normally this is done by the static library initializer)
-         ProcessLine("TGX11TTF::Activate();");
+         ProcessLine("TGX11TTF::Activate();", {}, {});
       } else {
          TPluginHandler *h;
          if ((h = gROOT->GetPluginManager()->FindHandler("TVirtualX", "x11ttf")))
@@ -560,7 +560,7 @@ void TApplication::GetOptions(Int_t *argc, char **argv)
 void TApplication::HandleIdleTimer()
 {
    if (!fIdleCommand.IsNull())
-      ProcessLine(GetIdleCommand());
+      ProcessLine(GetIdleCommand(), {}, {});
 
    Emit("HandleIdleTimer()");
 }
@@ -606,7 +606,7 @@ TApplication::EExitOnException TApplication::ExitOnException(TApplication::EExit
 
 void TApplication::Help(const char *line)
 {
-   gInterpreter->ProcessLine(line);
+   gInterpreter->ProcessLine(line, {}, {});
 
    Printf("\nROOT special commands.");
    Printf("===========================================================================");
@@ -850,7 +850,8 @@ namespace {
 /// command starting with a ".".
 /// Return the return value of the command cast to a long.
 
-Long_t TApplication::ProcessLine(const char *line, Bool_t sync, Int_t *err)
+Long_t TApplication::ProcessLine(const char *line, const TInterpreter::UnloadCallback_t& pre,
+                                 const TInterpreter::UnloadCallback_t& post, Bool_t sync, Int_t *err)
 {
    if (!line || !*line) return 0;
 
@@ -865,7 +866,7 @@ Long_t TApplication::ProcessLine(const char *line, Bool_t sync, Int_t *err)
    // Redirect, if requested
    if (fAppRemote && TestBit(kProcessRemotely)) {
       ResetBit(kProcessRemotely);
-      return fAppRemote->ProcessLine(line, err);
+      return fAppRemote->ProcessLine(line, pre, post, err);
    }
 
    if (!strncasecmp(line, ".qqqqqqq", 7)) {
@@ -891,7 +892,7 @@ Long_t TApplication::ProcessLine(const char *line, Bool_t sync, Int_t *err)
 #ifdef ROOTTUTDIR
       ProcessLine(".x " ROOTTUTDIR "/demos.C");
 #else
-      ProcessLine(".x $(ROOTSYS)/tutorials/demos.C");
+      ProcessLine(".x $(ROOTSYS)/tutorials/demos.C", {}, {});
 #endif
       return 0;
    }
@@ -966,11 +967,11 @@ Long_t TApplication::ProcessLine(const char *line, Bool_t sync, Int_t *err)
          TString tempbuf;
          if (sync) {
             tempbuf.Form(".%s %s%s%s", cmd.Data(), mac, aclicMode.Data(),io.Data());
-            retval = gInterpreter->ProcessLineSynch(tempbuf,
+            retval = gInterpreter->ProcessLineSynch(tempbuf, pre, post,
                                                    (TInterpreter::EErrorCode*)err);
          } else {
             tempbuf.Form(".%s %s%s%s", cmd.Data(), mac, aclicMode.Data(),io.Data());
-            retval = gInterpreter->ProcessLine(tempbuf,
+            retval = gInterpreter->ProcessLine(tempbuf, pre, post,
                                               (TInterpreter::EErrorCode*)err);
          }
       }
@@ -983,7 +984,7 @@ Long_t TApplication::ProcessLine(const char *line, Bool_t sync, Int_t *err)
    }
 
    if (!strncmp(line, ".X", 2) || !strncmp(line, ".x", 2)) {
-      return ProcessFile(line+3, err, line[2] == 'k');
+      return ProcessFile(line+3, pre, post, err, line[2] == 'k');
    }
 
    if (!strcmp(line, ".reset")) {
@@ -1000,24 +1001,26 @@ Long_t TApplication::ProcessLine(const char *line, Bool_t sync, Int_t *err)
    }
 
    if (sync)
-      return gInterpreter->ProcessLineSynch(line, (TInterpreter::EErrorCode*)err);
+      return gInterpreter->ProcessLineSynch(line, pre, post, (TInterpreter::EErrorCode*)err);
    else
-      return gInterpreter->ProcessLine(line, (TInterpreter::EErrorCode*)err);
+      return gInterpreter->ProcessLine(line, pre, post, (TInterpreter::EErrorCode*)err);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Process a file containing a C++ macro.
 
-Long_t TApplication::ProcessFile(const char *file, Int_t *error, Bool_t keep)
+Long_t TApplication::ProcessFile(const char *file, const TInterpreter::UnloadCallback_t& pre,
+                                 const TInterpreter::UnloadCallback_t& post, Int_t *error, Bool_t keep)
 {
-   return ExecuteFile(file, error, keep);
+   return ExecuteFile(file, pre, post, error, keep);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Execute a file containing a C++ macro (static method). Can be used
 /// while TApplication is not yet created.
 
-Long_t TApplication::ExecuteFile(const char *file, Int_t *error, Bool_t keep)
+Long_t TApplication::ExecuteFile(const char *file, const TInterpreter::UnloadCallback_t& pre,
+                                 const TInterpreter::UnloadCallback_t& post, Int_t *error, Bool_t keep)
 {
    static const Int_t kBufSize = 1024;
 
@@ -1090,7 +1093,7 @@ Long_t TApplication::ExecuteFile(const char *file, Int_t *error, Bool_t keep)
       if (!*s || *s == '#' || ifndefc || !strncmp(s, "//", 2)) continue;
 
       if (!comment && (!strncmp(s, ".X", 2) || !strncmp(s, ".x", 2))) {
-         retval = ExecuteFile(s+3);
+         retval = ExecuteFile(s+3, pre, post);
          execute = kTRUE;
          continue;
       }
@@ -1134,7 +1137,7 @@ again:
       } else {
          tempbuf.Form(".X%s %s", keep ? "k" : " ", exname.Data());
       }
-      retval = gInterpreter->ProcessLineSynch(tempbuf,(TInterpreter::EErrorCode*)error);
+      retval = gInterpreter->ProcessLineSynch(tempbuf,pre, post,(TInterpreter::EErrorCode*)error);
    }
 
    delete [] exnam;
@@ -1220,7 +1223,7 @@ void TApplication::Terminate(Int_t status)
    else {
       //close TMemStat
       if (fUseMemstat) {
-         ProcessLine("TMemStat::Close()");
+         ProcessLine("TMemStat::Close()", {}, {});
          fUseMemstat = kFALSE;
       }
 

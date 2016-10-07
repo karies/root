@@ -303,7 +303,7 @@ namespace test {
   SymbolResolverCallback::SymbolResolverCallback(Interpreter* interp,
                                                  bool resolve)
     : InterpreterCallbacks(interp), m_Resolve(resolve), m_TesterDecl(0) {
-    m_Interpreter->process("cling::test::Tester = new cling::test::TestProxy();");
+    m_Interpreter->process("cling::test::Tester = new cling::test::TestProxy();", {}, {});
   }
 
   SymbolResolverCallback::~SymbolResolverCallback() { }

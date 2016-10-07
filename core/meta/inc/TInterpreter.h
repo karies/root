@@ -95,6 +95,8 @@ public:
       };
    };
 
+   using UnloadCallback_t = std::function<void(void*)>;
+
    class SuspendAutoParsing {
       TInterpreter *fInterp;
       Bool_t        fPrevious;
@@ -119,7 +121,7 @@ public:
    virtual Int_t    AutoParse(const char* cls) = 0;
    virtual void     ClearFileBusy() = 0;
    virtual void     ClearStack() = 0; // Delete existing temporary values
-   virtual Bool_t   Declare(const char* code) = 0;
+   virtual Bool_t   Declare(const char* code, const UnloadCallback_t& /*pre*/, const UnloadCallback_t& /*post*/) = 0;
    virtual void     EnableAutoLoading() = 0;
    virtual void     EndOfLineAction() = 0;
    virtual TClass  *GetClass(const std::type_info& typeinfo, Bool_t load) const = 0;
@@ -139,15 +141,15 @@ public:
    virtual void     Initialize() = 0;
    virtual void     InspectMembers(TMemberInspector&, const void* obj, const TClass* cl, Bool_t isTransient) = 0;
    virtual Bool_t   IsLoaded(const char *filename) const = 0;
-   virtual Int_t    Load(const char *filenam, Bool_t system = kFALSE) = 0;
-   virtual void     LoadMacro(const char *filename, EErrorCode *error = 0) = 0;
+   virtual Int_t    Load(const char *filenam, const UnloadCallback_t& pre, const UnloadCallback_t& post, Bool_t system = kFALSE) = 0;
+   virtual void     LoadMacro(const char *filename, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode *error = 0) = 0;
    virtual Int_t    LoadLibraryMap(const char *rootmapfile = 0) = 0;
    virtual Int_t    RescanLibraryMap() = 0;
    virtual Int_t    ReloadAllSharedLibraryMaps() = 0;
    virtual Int_t    UnloadAllSharedLibraryMaps() = 0;
    virtual Int_t    UnloadLibraryMap(const char *library) = 0;
-   virtual Long_t   ProcessLine(const char *line, EErrorCode *error = 0) = 0;
-   virtual Long_t   ProcessLineSynch(const char *line, EErrorCode *error = 0) = 0;
+   virtual Long_t   ProcessLine(const char *line, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode *error = 0) = 0;
+   virtual Long_t   ProcessLineSynch(const char *line, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode *error = 0) = 0;
    virtual void     PrintIntro() = 0;
    virtual void     RegisterModule(const char* /*modulename*/,
                                    const char** /*headers*/,
@@ -177,7 +179,7 @@ public:
    virtual void     SetClassInfo(TClass *cl, Bool_t reload = kFALSE) = 0;
    virtual Bool_t   CheckClassInfo(const char *name, Bool_t autoload, Bool_t isClassOrNamespaceOnly = kFALSE) = 0;
    virtual Bool_t   CheckClassTemplate(const char *name) = 0;
-   virtual Long_t   Calc(const char *line, EErrorCode* error = 0) = 0;
+   virtual Long_t   Calc(const char *line, const UnloadCallback_t& pre, const UnloadCallback_t& post, EErrorCode* error = 0) = 0;
    virtual void     CreateListOfBaseClasses(TClass *cl) const = 0;
    virtual void     CreateListOfDataMembers(TClass *cl) const = 0;
    virtual void     CreateListOfMethods(TClass *cl) const = 0;
@@ -212,8 +214,8 @@ public:
    virtual const char *GetTopLevelMacroName() const {return 0;};
    virtual const char *GetCurrentMacroName()  const {return 0;};
    virtual int    GetSecurityError() const{return 0;}
-   virtual int    LoadFile(const char * /* path */) const {return 0;}
-   virtual Bool_t LoadText(const char * /* text */) const {return kFALSE;}
+   virtual int    LoadFile(const char * /* path */, const UnloadCallback_t& /*pre*/, const UnloadCallback_t& /*post*/) const {return 0;}
+   virtual Bool_t LoadText(const char * /* text */, const UnloadCallback_t& /*pre*/, const UnloadCallback_t& /*post*/) const {return kFALSE;}
    virtual const char *MapCppName(const char*) const {return 0;}
    virtual void   SetAlloclockfunc(void (*)()) const {;}
    virtual void   SetAllocunlockfunc(void (*)()) const {;}

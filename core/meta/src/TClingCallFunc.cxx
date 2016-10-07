@@ -126,7 +126,7 @@ EvaluateExpr(cling::Interpreter &interp, const Expr *E, cling::Value &V)
    out << ';'; // no value printing
    out.flush();
    // Evaluate() will set V to invalid if evaluation fails.
-   interp.evaluate(buf, V);
+   interp.evaluate(buf, {}, {}, V);
 }
 
 namespace {
@@ -260,10 +260,42 @@ namespace {
 } // unnamed namespace.
 
 void *TClingCallFunc::compile_wrapper(const string &wrapper_name, const string &wrapper,
+                                      EWrapperKind kind, const clang::Decl* D,
                                       bool withAccessControl/*=true*/)
 {
-   return fInterp->compileFunction(wrapper_name, wrapper, false /*ifUnique*/,
+   void* funcPtr = fInterp->compileFunction(wrapper_name, wrapper,
+                                   [kind, D](cling::Transaction*) {
+                                     gInterpreterMutex->Lock();
+                                     switch (kind) {
+                                        case kFunction:
+                                           gWrapperStore.erase((clang::FunctionDecl*)D); break;
+                                        case kConstructor:
+                                           gCtorWrapperStore.erase(D); break;
+                                        case kDestructor:
+                                           gDtorWrapperStore.erase(D); break;
+                                     }
+                                   },
+                                   [](cling::Transaction*){gInterpreterMutex->UnLock();},
+                                   false /*ifUnique*/,
                                    withAccessControl);
+   if (funcPtr) {
+      switch (kind) {
+         case kFunction:
+            gWrapperStore.insert(make_pair((clang::FunctionDecl *) D, funcPtr));
+          break;
+         case kConstructor:
+            gCtorWrapperStore.insert(make_pair(D, funcPtr));
+          break;
+         case kDestructor:
+            gDtorWrapperStore.insert(make_pair(D, funcPtr));
+          break;
+      }
+   } else {
+      ::Error("TClingCallFunc::compile_wrapper",
+              "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
+              wrapper.c_str());
+   }
+   return funcPtr;
 }
 
 void TClingCallFunc::collect_type_info(QualType &QT, ostringstream &typedefbuf,
@@ -1063,20 +1095,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
    --indent_level;
    buf << "}\n"
       "#pragma clang diagnostic pop";
-   string wrapper(buf.str());
-   //fprintf(stderr, "%s\n", wrapper.c_str());
-   //
-   //  Compile the wrapper code.
-   //
-   void *F = compile_wrapper(wrapper_name, wrapper);
-   if (F) {
-      gWrapperStore.insert(make_pair(FD, F));
-   } else {
-      ::Error("TClingCallFunc::make_wrapper",
-            "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
-            wrapper.c_str());
-   }
-   return (tcling_callfunc_Wrapper_t)F;
+   return (tcling_callfunc_Wrapper_t)compile_wrapper(wrapper_name, buf.str(), kFunction, FD);
 }
 
 tcling_callfunc_ctor_Wrapper_t TClingCallFunc::make_ctor_wrapper(const TClingClassInfo *info)
@@ -1227,21 +1246,13 @@ tcling_callfunc_ctor_Wrapper_t TClingCallFunc::make_ctor_wrapper(const TClingCla
    --indent_level;
    buf << "}\n";
    // Done.
-   string wrapper(buf.str());
-   //fprintf(stderr, "%s\n", wrapper.c_str());
+
    //
    //  Compile the wrapper code.
    //
-   void *F = compile_wrapper(wrapper_name, wrapper,
-                             /*withAccessControl=*/false);
-   if (F) {
-      gCtorWrapperStore.insert(make_pair(info->GetDecl(), F));
-   } else {
-      ::Error("TClingCallFunc::make_ctor_wrapper",
-            "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
-            wrapper.c_str());
-   }
-   return (tcling_callfunc_ctor_Wrapper_t)F;
+   void* funcPtr = compile_wrapper(wrapper_name, buf.str(),
+                                   kConstructor, info->GetDecl(), /*withAccessControl=*/false);
+   return (tcling_callfunc_ctor_Wrapper_t)funcPtr;
 }
 
 tcling_callfunc_dtor_Wrapper_t
@@ -1391,22 +1402,15 @@ TClingCallFunc::make_dtor_wrapper(const TClingClassInfo *info)
    --indent_level;
    buf << "}\n";
    // Done.
-   string wrapper(buf.str());
-   //fprintf(stderr, "%s\n", wrapper.c_str());
+
+
    //
    //  Compile the wrapper code.
    //
-   void *F = compile_wrapper(wrapper_name, wrapper,
-                             /*withAccessControl=*/false);
-   if (F) {
-      gDtorWrapperStore.insert(make_pair(info->GetDecl(), F));
-   } else {
-      ::Error("TClingCallFunc::make_dtor_wrapper",
-            "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
-            wrapper.c_str());
-   }
 
-   return (tcling_callfunc_dtor_Wrapper_t)F;
+   void* funcPtr = compile_wrapper(wrapper_name, buf.str(),
+      kDestructor, info->GetDecl(), /*withAccessControl=*/false);
+   return (tcling_callfunc_dtor_Wrapper_t)funcPtr;
 }
 
 class ValHolder {
