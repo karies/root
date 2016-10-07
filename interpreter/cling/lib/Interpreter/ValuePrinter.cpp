@@ -196,7 +196,7 @@ static std::string executePrintValue(const Value &V, const T &val) {
     clang::DiagnosticsEngine& Diag = Interp->getCI()->getDiagnostics();
     bool oldSuppDiags = Diag.getSuppressAllDiagnostics();
     Diag.setSuppressAllDiagnostics(true);
-    Interp->evaluate(printValueSS.str(), printValueV);
+    Interp->evaluate(printValueSS.str(), {}, {}, printValueV);
     Diag.setSuppressAllDiagnostics(oldSuppDiags);
   }
 

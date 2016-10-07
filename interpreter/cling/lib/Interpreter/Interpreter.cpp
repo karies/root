@@ -395,7 +395,10 @@ namespace cling {
   /// semantics (declarations are global) and compile to produce a module.
   ///
   Interpreter::CompilationResult
-  Interpreter::process(const std::string& input, Value* V /* = 0 */,
+  Interpreter::process(const std::string& input,
+                       const UnloadCallback_t& pre,
+                       const UnloadCallback_t& post,
+                       Value* V /* = 0 */,
                        Transaction** T /* = 0 */) {
     std::string wrapReadySource = input;
     size_t wrapPoint = std::string::npos;
@@ -410,7 +413,7 @@ namespace cling {
       CO.DynamicScoping = isDynamicLookupEnabled();
       CO.Debug = isPrintingDebug();
       CO.CheckPointerValidity = 1;
-      return DeclareInternal(input, CO, {}, {}, T);
+      return DeclareInternal(input, CO, pre, post, T);
     }
 
     CompilationOptions CO;
@@ -420,7 +423,7 @@ namespace cling {
     CO.DynamicScoping = isDynamicLookupEnabled();
     CO.Debug = isPrintingDebug();
     CO.CheckPointerValidity = 1;
-    if (EvaluateInternal(wrapReadySource, CO, V, T, wrapPoint)
+    if (EvaluateInternal(wrapReadySource, CO, pre, post, V, T, wrapPoint)
                                                      == Interpreter::kFailure) {
       return Interpreter::kFailure;
     }
@@ -429,7 +432,10 @@ namespace cling {
   }
 
   Interpreter::CompilationResult
-  Interpreter::parse(const std::string& input, Transaction** T /*=0*/) const {
+  Interpreter::parse(const std::string& input,
+                     const UnloadCallback_t& pre,
+                     const UnloadCallback_t& post,
+                     Transaction** T /*=0*/) const {
     CompilationOptions CO;
     CO.CodeGeneration = 0;
     CO.DeclarationExtraction = 0;
@@ -438,11 +444,13 @@ namespace cling {
     CO.DynamicScoping = isDynamicLookupEnabled();
     CO.Debug = isPrintingDebug();
 
-    return DeclareInternal(input, CO, {}, {}, T);
+    return DeclareInternal(input, CO, pre, post, T);
   }
 
   Interpreter::CompilationResult
-  Interpreter::loadModuleForHeader(const std::string& headerFile) {
+  Interpreter::loadModuleForHeader(const std::string& headerFile,
+                                   const UnloadCallback_t& preUnload,
+                                   const UnloadCallback_t& postUnload) {
     Preprocessor& PP = getCI()->getPreprocessor();
     //Copied from clang's PPDirectives.cpp
     bool isAngled = false;
@@ -557,7 +565,10 @@ namespace cling {
   }
 
   Interpreter::CompilationResult
-  Interpreter::evaluate(const std::string& input, Value& V) {
+  Interpreter::evaluate(const std::string& input,
+                        const UnloadCallback_t& pre,
+                        const UnloadCallback_t& post,
+                        Value& V) {
     // Here we might want to enforce further restrictions like: Only one
     // ExprStmt can be evaluated and etc. Such enforcement cannot happen in the
     // worker, because it is used from various places, where there is no such
@@ -567,7 +578,7 @@ namespace cling {
     CO.ValuePrinting = 0;
     CO.ResultEvaluation = 1;
 
-    return EvaluateInternal(input, CO, &V);
+    return EvaluateInternal(input, CO, pre, post, &V);
   }
 
   Interpreter::CompilationResult
@@ -629,7 +640,7 @@ namespace cling {
     CO.ValuePrinting = CompilationOptions::VPEnabled;
     CO.ResultEvaluation = (bool)V;
 
-    return EvaluateInternal(input, CO, V);
+    return EvaluateInternal(input, CO, {}, {}, V);
   }
 
   Interpreter::CompilationResult
@@ -640,7 +651,7 @@ namespace cling {
     CO.ResultEvaluation = 0;
     CO.DynamicScoping = 0;
     CO.Debug = isPrintingDebug();
-    return EvaluateInternal(input, CO);
+    return EvaluateInternal(input, CO, {}, {});
   }
 
   Interpreter::CompilationResult Interpreter::emitAllDecls(Transaction* T) {
@@ -858,7 +869,9 @@ namespace cling {
   }
 
   void*
-  Interpreter::compileDtorCallFor(const clang::RecordDecl* RD) {
+  Interpreter::compileDtorCallFor(const clang::RecordDecl* RD,
+                                  const UnloadCallback_t& pre,
+                                  const UnloadCallback_t& post) {
     void* &addr = m_DtorWrappers[RD];
     if (addr)
       return addr;
@@ -878,7 +891,7 @@ namespace cling {
       + dtorName + "();}";
 
     // ifUniq = false: we know it's unique, no need to check.
-    addr = compileFunction(funcname, code, false /*ifUniq*/,
+    addr = compileFunction(funcname, code, pre, post, false /*ifUniq*/,
                            false /*withAccessControl*/);
     return addr;
   }
@@ -932,6 +945,8 @@ namespace cling {
   Interpreter::CompilationResult
   Interpreter::EvaluateInternal(const std::string& input,
                                 CompilationOptions CO,
+                                const Interpreter::UnloadCallback_t& pre,
+                                const Interpreter::UnloadCallback_t& post,
                                 Value* V, /* = 0 */
                                 Transaction** T /* = 0 */,
                                 size_t wrapPoint /* = 0*/) {
@@ -948,6 +963,8 @@ namespace cling {
     IncrementalParser::ParseResultTransaction PRT
       = m_IncrParser->Compile(Wrapper, CO);
     Transaction* lastT = PRT.getPointer();
+    if (lastT)
+      lastT->setOnUnload(pre, post);
     if (lastT && lastT->getState() != Transaction::kCommitted) {
       assert((lastT->getState() == Transaction::kCommitted
               || lastT->getState() == Transaction::kRolledBack
@@ -1138,6 +1155,8 @@ namespace cling {
   }
 
   Value Interpreter::Evaluate(const char* expr, DeclContext* DC,
+                              const Interpreter::UnloadCallback_t& pre,
+                              const Interpreter::UnloadCallback_t& post,
                                        bool ValuePrinterReq) {
     Sema& TheSema = getCI()->getSema();
     // The evaluation should happen on the global scope, because of the wrapper
@@ -1152,7 +1171,7 @@ namespace cling {
     if (ValuePrinterReq)
       echo(expr, &Result);
     else
-      evaluate(expr, Result);
+      evaluate(expr, pre, post, Result);
     getCallbacks()->SetIsRuntime(false);
 
     return Result;
@@ -1188,7 +1207,7 @@ namespace cling {
     if (!m_DynamicLookupDeclared && value) {
       // No dynlookup for the dynlookup header!
       m_DynamicLookupEnabled = false;
-      if (loadModuleForHeader("cling/Interpreter/DynamicLookupRuntimeUniverse.h")
+      if (loadModuleForHeader("cling/Interpreter/DynamicLookupRuntimeUniverse.h", {}, {})
           != kSuccess)
       declare("#include \"cling/Interpreter/DynamicLookupRuntimeUniverse.h\"", {}, {});
     }

@@ -129,6 +129,8 @@ namespace cling {
   }
 
   int MetaProcessor::process(const char* input_text,
+                             const Interpreter::UnloadCallback_t& pre,
+                             const Interpreter::UnloadCallback_t& post,
                              Interpreter::CompilationResult& compRes,
                              Value* result) {
     if (result)
@@ -173,7 +175,7 @@ namespace cling {
     // if (m_Options.RawInput)
     //   compResLocal = m_Interp.declare(input);
     // else
-    compRes = m_Interp.process(input, result);
+    compRes = m_Interp.process(input, pre, post, result);
 
     return 0;
   }
@@ -281,7 +283,7 @@ namespace cling {
     Interpreter::CompilationResult ret;
     // We don't want to value print the results of a unnamed macro.
     content = "#line 2 \"" + filename.str() + "\" \n" + content;
-    if (process((content + ";").c_str(), ret, result)) {
+    if (process((content + ";").c_str(), {}, {}, ret, result)) {
       // Input file has to be complete.
        llvm::errs()
           << "Error in cling::MetaProcessor: file "

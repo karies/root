@@ -941,9 +941,9 @@ namespace cling {
       std::string ctor("new ");
       ctor += type;
       ctor += ExprInfo->getExpr();
-      Value res = Interp->Evaluate(ctor.c_str(), DC,
-                                   ExprInfo->isValuePrinterRequested()
-                                   );
+      // FIXME: do we need to react on unload?
+      Value res = Interp->Evaluate(ctor.c_str(), DC, {}, {},
+                                   ExprInfo->isValuePrinterRequested());
       m_Memory = (void*)res.getAs<void*>();
     }
 

@@ -144,6 +144,8 @@ namespace cling {
     ///\returns -1 if quit was requiested.
     ///
     int process(const char* input_line,
+                const Interpreter::UnloadCallback_t& pre,
+                const Interpreter::UnloadCallback_t& post,
                 Interpreter::CompilationResult& compRes,
                 cling::Value* result);
 

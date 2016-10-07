@@ -126,7 +126,7 @@ EvaluateExpr(cling::Interpreter &interp, const Expr *E, cling::Value &V)
    out << ';'; // no value printing
    out.flush();
    // Evaluate() will set V to invalid if evaluation fails.
-   interp.evaluate(buf, V);
+   interp.evaluate(buf, {}, {}, V);
 }
 
 namespace {

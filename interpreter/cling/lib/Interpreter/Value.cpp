@@ -221,8 +221,9 @@ namespace cling {
         = llvm::dyn_cast<clang::ConstantArrayType>(DtorType.getTypePtr())) {
       DtorType = ArrTy->getElementType();
     }
+    // FIXME: should compileDtorCallFor() react on unloading?
     if (const clang::RecordType* RTy = DtorType->getAs<clang::RecordType>())
-      dtorFunc = m_Interpreter->compileDtorCallFor(RTy->getDecl());
+      dtorFunc = m_Interpreter->compileDtorCallFor(RTy->getDecl(), {}, {});
 
     const clang::ASTContext& ctx = getASTContext();
     unsigned payloadSize = ctx.getTypeSizeInChars(getType()).getQuantity();

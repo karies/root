@@ -2422,7 +2422,7 @@ void TClass::Draw(Option_t *option)
    if (!padsav || !opt.Contains("same")) {
       TVirtualPad *padclass = (TVirtualPad*)(gROOT->GetListOfCanvases())->FindObject("R__class");
       if (!padclass) {
-         gROOT->ProcessLine("new TCanvas(\"R__class\",\"class\",20,20,1000,750);");
+         gROOT->ProcessLine("new TCanvas(\"R__class\",\"class\",20,20,1000,750);", {}, {});
       } else {
          padclass->cd();
       }

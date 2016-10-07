@@ -252,7 +252,7 @@ Bool_t TMacro::Load() const
    while ((obj = (TObjString*) next())) {
       ss << obj->GetName() << std::endl;
    }
-   return gInterpreter->LoadText(ss.str().c_str());
+   return gInterpreter->LoadText(ss.str().c_str(), {}, {});
 }
 
 ////////////////////////////////////////////////////////////////////////////////

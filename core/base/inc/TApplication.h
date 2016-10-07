@@ -37,6 +37,8 @@
 #include "TApplicationImp.h"
 #endif
 
+#include "TInterpreter.h"
+
 class TObjArray;
 class TTimer;
 class TSignalHandler;
@@ -116,8 +118,10 @@ public:
    virtual void    HandleIdleTimer();   //*SIGNAL*
    virtual Bool_t  HandleTermInput() { return kFALSE; }
    virtual void    Init() { fAppImp->Init(); }
-   virtual Long_t  ProcessLine(const char *line, Bool_t sync = kFALSE, Int_t *error = 0);
-   virtual Long_t  ProcessFile(const char *file, Int_t *error = 0, Bool_t keep = kFALSE);
+   virtual Long_t  ProcessLine(const char *line, const TInterpreter::UnloadCallback_t& pre,
+                               const TInterpreter::UnloadCallback_t& post, Bool_t sync = kFALSE, Int_t *error = 0);
+   virtual Long_t  ProcessFile(const char *file, const TInterpreter::UnloadCallback_t& pre,
+                               const TInterpreter::UnloadCallback_t& post, Int_t *error = 0, Bool_t keep = kFALSE);
    virtual void    Run(Bool_t retrn = kFALSE);
    virtual void    SetIdleTimer(UInt_t idleTimeInSec, const char *command);
    virtual void    RemoveIdleTimer();
@@ -160,7 +164,8 @@ public:
    virtual void    ReturnPressed(char *text );        //*SIGNAL*
    virtual Int_t   TabCompletionHook(char *buf, int *pLoc, std::ostream& out);
 
-   static Long_t   ExecuteFile(const char *file, Int_t *error = 0, Bool_t keep = kFALSE);
+   static Long_t   ExecuteFile(const char *file, const TInterpreter::UnloadCallback_t& pre,
+                               const TInterpreter::UnloadCallback_t& post, Int_t *error = 0, Bool_t keep = kFALSE);
    static TList   *GetApplications();
    static void     CreateApplication();
    static void     NeedGraphicsLibs();

@@ -1928,7 +1928,7 @@ int TSystem::Load(const char *module, const char *entry, Bool_t system)
          gLibraryVersionMax *= 2;
          gLibraryVersion = TStorage::ReAllocInt(gLibraryVersion, gLibraryVersionMax, gLibraryVersionIdx);
       }
-      ret = gInterpreter->Load(path, system);
+      ret = gInterpreter->Load(path, {}, {}, system);
       if (ret < 0) ret = -1;
       if (gDebug > 0)
          Info("Load", "loaded library %s, status %d", path, ret);
