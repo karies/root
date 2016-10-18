@@ -272,7 +272,8 @@ namespace cling {
     ///\param[in] withAccessControl - whether to enforce access restrictions.
     const clang::FunctionDecl* DeclareCFunction(llvm::StringRef name,
                                                 llvm::StringRef code,
-                                                bool withAccessControl);
+                                                bool withAccessControl,
+                                                Transaction** T = nullptr);
 
     ///\brief Include C++ runtime headers and definitions.
     ///
@@ -661,7 +662,8 @@ namespace cling {
     ///
     ///\returns the address of the function or 0 if the compilation failed.
     void* compileFunction(llvm::StringRef name, llvm::StringRef code,
-                          bool ifUniq = true, bool withAccessControl = true);
+                          bool ifUniq = true, bool withAccessControl = true,
+                          Transaction** T = 0);
 
     ///\brief Compile (and cache) destructor calls for a record decl. Used by ~Value.
     /// They are of type extern "C" void()(void* pObj).

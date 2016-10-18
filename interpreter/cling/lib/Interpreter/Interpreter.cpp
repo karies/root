@@ -697,7 +697,8 @@ namespace cling {
 
   const FunctionDecl* Interpreter::DeclareCFunction(StringRef name,
                                                     StringRef code,
-                                                    bool withAccessControl) {
+                                                    bool withAccessControl,
+                                                Transaction** T /*= nullptr*/) {
     /*
     In CallFunc we currently always (intentionally and somewhat necessarily)
     always fully specify member function template, however this can lead to
@@ -786,8 +787,10 @@ namespace cling {
     LangOptions& LO = const_cast<LangOptions&>(getCI()->getLangOpts());
     bool savedAccessControl = LO.AccessControl;
     LO.AccessControl = withAccessControl;
-    cling::Transaction* T = 0;
-    cling::Interpreter::CompilationResult CR = declare(code, &T);
+    cling::Transaction* MyT = 0;
+    cling::Interpreter::CompilationResult CR = declare(code, &MyT);
+    if (T)
+       *T = MyT;
     LO.AccessControl = savedAccessControl;
 
     Diag.setSeverity(clang::diag::ext_nested_name_member_ref_lookup_ambiguous,
@@ -796,8 +799,8 @@ namespace cling {
     if (CR != cling::Interpreter::kSuccess)
       return 0;
 
-    for (cling::Transaction::const_iterator I = T->decls_begin(),
-           E = T->decls_end(); I != E; ++I) {
+    for (cling::Transaction::const_iterator I = MyT->decls_begin(),
+           E = MyT->decls_end(); I != E; ++I) {
       if (I->m_Call != cling::Transaction::kCCIHandleTopLevelDecl)
         continue;
       if (const LinkageSpecDecl* LSD
@@ -817,7 +820,8 @@ namespace cling {
 
   void*
   Interpreter::compileFunction(llvm::StringRef name, llvm::StringRef code,
-                               bool ifUnique, bool withAccessControl) {
+                               bool ifUnique, bool withAccessControl,
+                               Transaction** T /*= nullptr*/) {
     //
     //  Compile the wrapper code.
     //
@@ -831,15 +835,19 @@ namespace cling {
       }
     }
 
-    const FunctionDecl* FD = DeclareCFunction(name, code, withAccessControl);
+    Transaction* MyT = nullptr;
+    const FunctionDecl* FD
+       = DeclareCFunction(name, code, withAccessControl, &MyT);
+    if (T)
+      *T = MyT;
+
     if (!FD)
       return 0;
+
     //
-    //  Get the wrapper function pointer
-    //  from the ExecutionEngine (the JIT).
+    //  Get the wrapper function pointer from the ExecutionEngine (the JIT).
     //
-    if (const llvm::GlobalValue* GV
-        = getLastTransaction()->getModule()->getNamedValue(name))
+    if (const llvm::GlobalValue* GV = MyT->getModule()->getNamedValue(name))
       return m_Executor->getPointerToGlobalFromJIT(*GV);
 
     return 0;
