@@ -100,9 +100,13 @@ namespace cling {
 
     bool Successful = true;
     if (getExecutor() && T->getModule()) {
+      if (T->getBeforeUnload())
+        T->getBeforeUnload()();
       Successful = getExecutor()->unloadFromJIT(T->getModule(),
                                                 T->getExeUnloadHandle())
         && Successful;
+      if (T->getAfterUnload())
+        T->getAfterUnload()();
 
       // Cleanup the module from unused global values.
       // if (T->getModule()) {
