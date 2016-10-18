@@ -37,6 +37,7 @@
 #include <llvm/ADT/SmallVector.h>
 
 namespace clang {
+class Decl;
 class Expr;
 class FunctionDecl;
 class CXXMethodDecl;
@@ -64,16 +65,24 @@ private:
    /// Current method, we own.
    TClingMethodInfo* fMethod;
    /// Pointer to compiled wrapper, we do *not* own.
-   tcling_callfunc_Wrapper_t fWrapper;
+   std::weak_ptr<tcling_callfunc_Wrapper_t> fWrapper;
    /// Stored function arguments, we own.
    mutable llvm::SmallVector<cling::Value, 8> fArgVals;
    /// If true, do not limit number of function arguments to declared number.
    bool fIgnoreExtraArgs : 1;
    bool fReturnIsRecordType : 1;
 
+   enum EWrapperKind {
+     kFunction,
+     kConstructor,
+     kDestructor
+   };
+
 private:
    void* compile_wrapper(const std::string& wrapper_name,
                          const std::string& wrapper,
+                         EWrapperKind kind,
+                         const clang::Decl* D,
                          bool withAccessControl = true);
 
    void collect_type_info(clang::QualType& QT, std::ostringstream& typedefbuf,
@@ -97,13 +106,11 @@ private:
                                    const std::string& class_name,
                                    std::ostringstream& buf, int indent_level);
 
-   tcling_callfunc_Wrapper_t make_wrapper();
+   void make_wrapper();
 
-   tcling_callfunc_ctor_Wrapper_t
-   make_ctor_wrapper(const TClingClassInfo* info);
+   void make_ctor_wrapper(const TClingClassInfo* info);
 
-   tcling_callfunc_dtor_Wrapper_t
-   make_dtor_wrapper(const TClingClassInfo* info);
+   void make_dtor_wrapper(const TClingClassInfo* info);
 
    // Implemented in source file.
    template <typename T>
@@ -130,13 +137,13 @@ public:
    }
 
    explicit TClingCallFunc(cling::Interpreter *interp, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt)
-      : fInterp(interp), fNormCtxt(normCtxt), fWrapper(0), fIgnoreExtraArgs(false), fReturnIsRecordType(false)
+      : fInterp(interp), fNormCtxt(normCtxt), fIgnoreExtraArgs(false), fReturnIsRecordType(false)
    {
       fMethod = new TClingMethodInfo(interp);
    }
 
    explicit TClingCallFunc(TClingMethodInfo &minfo, const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt)
-   : fInterp(minfo.GetInterpreter()), fNormCtxt(normCtxt), fWrapper(0), fIgnoreExtraArgs(false),
+   : fInterp(minfo.GetInterpreter()), fNormCtxt(normCtxt), fIgnoreExtraArgs(false),
      fReturnIsRecordType(false)
 
    {

@@ -79,9 +79,12 @@ using namespace std;
 static unsigned long long gWrapperSerial = 0LL;
 static const string kIndentString("   ");
 
-static map<const FunctionDecl *, void *> gWrapperStore;
-static map<const Decl *, void *> gCtorWrapperStore;
-static map<const Decl *, void *> gDtorWrapperStore;
+using WrapperStore_t = map<const FunctionDecl *, std::shared_ptr<tcling_callfunc_Wrapper_t>>;
+static WrapperStore_t gWrapperStore;
+using CtorWrapperStore_t = map<const Decl *, tcling_callfunc_ctor_Wrapper_t>;
+static CtorWrapperStore_t gCtorWrapperStore;
+using DtorWrapperStore_t = map<const Decl *, tcling_callfunc_dtor_Wrapper_t>;
+static DtorWrapperStore_t gDtorWrapperStore;
 
 static
 inline
@@ -260,10 +263,47 @@ namespace {
 } // unnamed namespace.
 
 void *TClingCallFunc::compile_wrapper(const string &wrapper_name, const string &wrapper,
+                                      EWrapperKind kind, const clang::Decl* D,
                                       bool withAccessControl/*=true*/)
 {
-   return fInterp->compileFunction(wrapper_name, wrapper, false /*ifUnique*/,
-                                   withAccessControl);
+   cling::Transaction* T = nullptr;
+   void* funcPtr = fInterp->compileFunction(wrapper_name, wrapper, false /*ifUnique*/,
+                                            withAccessControl, &T);
+   if (funcPtr) {
+      if (T && !T->getBeforeUnload() && !T->getAfterUnload()) {
+         auto beforeUnload = [kind, D]() {
+            if (gInterpreterMutex) gInterpreterMutex->Lock();
+            switch (kind) {
+            case kFunction:
+               gWrapperStore.erase((clang::FunctionDecl*)D); break;
+            case kConstructor:
+               gCtorWrapperStore.erase(D); break;
+            case kDestructor:
+               gDtorWrapperStore.erase(D); break;
+            }
+         };
+         T->setOnUnload(beforeUnload,
+                        [](){if (gInterpreterMutex) gInterpreterMutex->UnLock();});
+      }
+
+      switch (kind) {
+         case kFunction:
+            gWrapperStore[(clang::FunctionDecl *) D]
+               = std::make_shared<tcling_callfunc_Wrapper_t>((tcling_callfunc_Wrapper_t)funcPtr);
+          break;
+         case kConstructor:
+            gCtorWrapperStore[D] = (tcling_callfunc_ctor_Wrapper_t)funcPtr;
+          break;
+         case kDestructor:
+            gDtorWrapperStore[D] = (tcling_callfunc_dtor_Wrapper_t)funcPtr;
+          break;
+      }
+   } else {
+      ::Error("TClingCallFunc::compile_wrapper",
+              "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
+              wrapper.c_str());
+   }
+   return funcPtr;
 }
 
 void TClingCallFunc::collect_type_info(QualType &QT, ostringstream &typedefbuf,
@@ -637,7 +677,7 @@ void TClingCallFunc::make_narg_call_with_return(const unsigned N, const string &
    }
 }
 
-tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
+void TClingCallFunc::make_wrapper()
 {
    R__LOCKGUARD(gInterpreterMutex);
 
@@ -677,7 +717,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                //::Error("TClingCallFunc::make_wrapper",
                //      "Cannot make wrapper for a function which is "
                //      "declared but not defined!");
-               //return 0;
+               //return;
             }
             break;
          case FunctionDecl::TK_FunctionTemplate: {
@@ -685,7 +725,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                // not a function at all.
                ::Error("TClingCallFunc::make_wrapper",
                      "Cannot make wrapper for a function template!");
-               return 0;
+               return;
             }
             break;
          case FunctionDecl::TK_MemberSpecialization: {
@@ -705,7 +745,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   //      "Cannot make wrapper for a function template "
                   //      "explicit specialization which is declared "
                   //      "but not defined!");
-                  //return 0;
+                  //return;
                   break;
                }
                const FunctionDecl *Pattern =
@@ -714,7 +754,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a member function "
                         "instantiation with no pattern!");
-                  return 0;
+                  return;
                }
                FunctionDecl::TemplatedKind PTK = Pattern->getTemplatedKind();
                TemplateSpecializationKind PTSK =
@@ -736,7 +776,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a member function "
                         "instantiation with no body!");
-                  return 0;
+                  return;
                }
                if (FD->isImplicitlyInstantiable()) {
                   needInstantiation = true;
@@ -758,7 +798,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   //      "Cannot make wrapper for a function template "
                   //      "explicit specialization which is declared "
                   //      "but not defined!");
-                  //return 0;
+                  //return;
                   break;
                }
                const FunctionDecl *Pattern =
@@ -767,7 +807,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a function template"
                         "instantiation with no pattern!");
-                  return 0;
+                  return;
                }
                FunctionDecl::TemplatedKind PTK = Pattern->getTemplatedKind();
                TemplateSpecializationKind PTSK =
@@ -790,7 +830,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a function template"
                         "instantiation with no body!");
-                  return 0;
+                  return;
                }
                if (FD->isImplicitlyInstantiable()) {
                   needInstantiation = true;
@@ -815,7 +855,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   //      "Cannot make wrapper for a dependent function "
                   //      "template explicit specialization which is declared "
                   //      "but not defined!");
-                  //return 0;
+                  //return;
                   break;
                }
                const FunctionDecl *Pattern =
@@ -824,7 +864,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a dependent function template"
                         "instantiation with no pattern!");
-                  return 0;
+                  return;
                }
                FunctionDecl::TemplatedKind PTK = Pattern->getTemplatedKind();
                TemplateSpecializationKind PTSK =
@@ -847,7 +887,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a dependent function template"
                         "instantiation with no body!");
-                  return 0;
+                  return;
                }
                if (FD->isImplicitlyInstantiable()) {
                   needInstantiation = true;
@@ -859,7 +899,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                // Protect ourselves in case that happens.
                ::Error("TClingCallFunc::make_wrapper",
                      "Unhandled template kind!");
-               return 0;
+               return;
             }
             break;
       }
@@ -892,7 +932,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
       if (!FD->isDefined(Definition)) {
          ::Error("TClingCallFunc::make_wrapper",
                "Failed to force template instantiation!");
-         return 0;
+         return;
       }
    }
    if (Definition) {
@@ -903,12 +943,12 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                if (Definition->isDeleted()) {
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a deleted function!");
-                  return 0;
+                  return;
                } else if (Definition->isLateTemplateParsed()) {
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a late template parsed "
                         "function!");
-                  return 0;
+                  return;
                }
                //else if (Definition->isDefaulted()) {
                //   // Might not have a body, but we can still use it.
@@ -923,7 +963,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                // not a function at all.
                ::Error("TClingCallFunc::make_wrapper",
                      "Cannot make wrapper for a function template!");
-               return 0;
+               return;
             }
             break;
          case FunctionDecl::TK_MemberSpecialization: {
@@ -934,12 +974,12 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a deleted member function "
                         "of a specialization!");
-                  return 0;
+                  return;
                } else if (Definition->isLateTemplateParsed()) {
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a late template parsed "
                         "member function of a specialization!");
-                  return 0;
+                  return;
                }
                //else if (Definition->isDefaulted()) {
                //   // Might not have a body, but we can still use it.
@@ -958,12 +998,12 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a deleted function "
                         "template specialization!");
-                  return 0;
+                  return;
                } else if (Definition->isLateTemplateParsed()) {
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a late template parsed "
                         "function template specialization!");
-                  return 0;
+                  return;
                }
                //else if (Definition->isDefaulted()) {
                //   // Might not have a body, but we can still use it.
@@ -985,12 +1025,12 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a deleted dependent function "
                         "template specialization!");
-                  return 0;
+                  return;
                } else if (Definition->isLateTemplateParsed()) {
                   ::Error("TClingCallFunc::make_wrapper",
                         "Cannot make wrapper for a late template parsed "
                         "dependent function template specialization!");
-                  return 0;
+                  return;
                }
                //else if (Definition->isDefaulted()) {
                //   // Might not have a body, but we can still use it.
@@ -1005,7 +1045,7 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
                // Protect ourselves in case that happens.
                ::Error("TClingCallFunc::make_wrapper",
                      "Unhandled template kind!");
-               return 0;
+               return;
             }
             break;
       }
@@ -1063,23 +1103,10 @@ tcling_callfunc_Wrapper_t TClingCallFunc::make_wrapper()
    --indent_level;
    buf << "}\n"
       "#pragma clang diagnostic pop";
-   string wrapper(buf.str());
-   //fprintf(stderr, "%s\n", wrapper.c_str());
-   //
-   //  Compile the wrapper code.
-   //
-   void *F = compile_wrapper(wrapper_name, wrapper);
-   if (F) {
-      gWrapperStore.insert(make_pair(FD, F));
-   } else {
-      ::Error("TClingCallFunc::make_wrapper",
-            "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
-            wrapper.c_str());
-   }
-   return (tcling_callfunc_Wrapper_t)F;
+   compile_wrapper(wrapper_name, buf.str(), kFunction, FD);
 }
 
-tcling_callfunc_ctor_Wrapper_t TClingCallFunc::make_ctor_wrapper(const TClingClassInfo *info)
+void TClingCallFunc::make_ctor_wrapper(const TClingClassInfo *info)
 {
    // Make a code string that follows this pattern:
    //
@@ -1227,25 +1254,15 @@ tcling_callfunc_ctor_Wrapper_t TClingCallFunc::make_ctor_wrapper(const TClingCla
    --indent_level;
    buf << "}\n";
    // Done.
-   string wrapper(buf.str());
-   //fprintf(stderr, "%s\n", wrapper.c_str());
+
    //
    //  Compile the wrapper code.
    //
-   void *F = compile_wrapper(wrapper_name, wrapper,
-                             /*withAccessControl=*/false);
-   if (F) {
-      gCtorWrapperStore.insert(make_pair(info->GetDecl(), F));
-   } else {
-      ::Error("TClingCallFunc::make_ctor_wrapper",
-            "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
-            wrapper.c_str());
-   }
-   return (tcling_callfunc_ctor_Wrapper_t)F;
+   compile_wrapper(wrapper_name, buf.str(),
+                   kConstructor, info->GetDecl(), /*withAccessControl=*/false);
 }
 
-tcling_callfunc_dtor_Wrapper_t
-TClingCallFunc::make_dtor_wrapper(const TClingClassInfo *info)
+void TClingCallFunc::make_dtor_wrapper(const TClingClassInfo *info)
 {
    // Make a code string that follows this pattern:
    //
@@ -1391,22 +1408,14 @@ TClingCallFunc::make_dtor_wrapper(const TClingClassInfo *info)
    --indent_level;
    buf << "}\n";
    // Done.
-   string wrapper(buf.str());
-   //fprintf(stderr, "%s\n", wrapper.c_str());
+
+
    //
    //  Compile the wrapper code.
    //
-   void *F = compile_wrapper(wrapper_name, wrapper,
-                             /*withAccessControl=*/false);
-   if (F) {
-      gDtorWrapperStore.insert(make_pair(info->GetDecl(), F));
-   } else {
-      ::Error("TClingCallFunc::make_dtor_wrapper",
-            "Failed to compile\n  ==== SOURCE BEGIN ====\n%s\n  ==== SOURCE END ====",
-            wrapper.c_str());
-   }
 
-   return (tcling_callfunc_dtor_Wrapper_t)F;
+   compile_wrapper(wrapper_name, buf.str(),
+      kDestructor, info->GetDecl(), /*withAccessControl=*/false);
 }
 
 class ValHolder {
@@ -1748,7 +1757,8 @@ void TClingCallFunc::exec(void *address, void *ret) const
          }
       }
    } // End of scope holding the lock
-   (*fWrapper)(address, (int)num_args, (void **)vp_ary.data(), ret);
+   if (auto wrapper = fWrapper.lock())
+      (*wrapper)(address, (int)num_args, (void **)vp_ary.data(), ret);
 }
 
 template <typename T>
@@ -2009,7 +2019,7 @@ void TClingCallFunc::EvaluateArgList(const string &ArgList)
 void TClingCallFunc::Exec(void *address, TInterpreterValue *interpVal/*=0*/)
 {
    IFacePtr();
-   if (!fWrapper) {
+   if (!fWrapper.use_count()) {
       ::Error("TClingCallFunc::Exec(address, interpVal)",
             "Called with no wrapper, not implemented!");
       return;
@@ -2026,7 +2036,7 @@ template <typename T>
 T TClingCallFunc::ExecT(void *address)
 {
    IFacePtr();
-   if (!fWrapper) {
+   if (!fWrapper.use_count()) {
       ::Error("TClingCallFunc::ExecT",
             "Called with no wrapper, not implemented!");
       return 0;
@@ -2062,18 +2072,19 @@ void TClingCallFunc::ExecWithArgsAndReturn(void *address, const void *args[] /*=
       int nargs /*= 0*/, void *ret/*= 0*/)
 {
    IFacePtr();
-   if (!fWrapper) {
+   if (!fWrapper.use_count()) {
       ::Error("TClingCallFunc::ExecWithArgsAndReturn(address, args, ret)",
             "Called with no wrapper, not implemented!");
       return;
    }
-   (*fWrapper)(address, nargs, const_cast<void **>(args), ret);
+   if (auto wrapper = fWrapper.lock())
+      (*wrapper)(address, nargs, const_cast<void **>(args), ret);
 }
 
 void TClingCallFunc::ExecWithReturn(void *address, void *ret/*= 0*/)
 {
    IFacePtr();
-   if (!fWrapper) {
+   if (!fWrapper.use_count()) {
       ::Error("TClingCallFunc::ExecWithReturn(address, ret)",
             "Called with no wrapper, not implemented!");
       return;
@@ -2088,32 +2099,30 @@ void *TClingCallFunc::ExecDefaultConstructor(const TClingClassInfo *info, void *
       ::Error("TClingCallFunc::ExecDefaultConstructor", "Invalid class info!");
       return 0;
    }
-   tcling_callfunc_ctor_Wrapper_t wrapper = 0;
-   {
-      R__LOCKGUARD(gInterpreterMutex);
-      const Decl *D = info->GetDecl();
-      //if (!info->HasDefaultConstructor()) {
-      //   // FIXME: We might have a ROOT ioctor, we might
-      //   //        have to check for that here.
-      //   ::Error("TClingCallFunc::ExecDefaultConstructor",
-      //         "Class has no default constructor: %s",
-      //         info->Name());
-      //   return 0;
-      //}
-      map<const Decl *, void *>::iterator I = gCtorWrapperStore.find(D);
-      if (I != gCtorWrapperStore.end()) {
-         wrapper = (tcling_callfunc_ctor_Wrapper_t) I->second;
-      } else {
-         wrapper = make_ctor_wrapper(info);
+
+   R__LOCKGUARD(gInterpreterMutex);
+   const Decl *D = info->GetDecl();
+   //if (!info->HasDefaultConstructor()) {
+   //   // FIXME: We might have a ROOT ioctor, we might
+   //   //        have to check for that here.
+   //   ::Error("TClingCallFunc::ExecDefaultConstructor",
+   //         "Class has no default constructor: %s",
+   //         info->Name());
+   //   return 0;
+   //}
+   auto I = gCtorWrapperStore.find(D);
+   if (I == gCtorWrapperStore.end()) {
+      make_ctor_wrapper(info);
+      I = gCtorWrapperStore.find(D);
+      if (I == gCtorWrapperStore.end()) {
+         ::Error("TClingCallFunc::ExecDefaultConstructor",
+                 "Failed to compile wrapper!");
+         return 0;
       }
    }
-   if (!wrapper) {
-      ::Error("TClingCallFunc::ExecDefaultConstructor",
-            "Called with no wrapper, not implemented!");
-      return 0;
-   }
+
    void *obj = 0;
-   (*wrapper)(&obj, address, nary);
+   (*I->second)(&obj, address, nary);
    return obj;
 }
 
@@ -2125,23 +2134,19 @@ void TClingCallFunc::ExecDestructor(const TClingClassInfo *info, void *address /
       return;
    }
 
-   tcling_callfunc_dtor_Wrapper_t wrapper = 0;
-   {
-      R__LOCKGUARD(gInterpreterMutex);
-      const Decl *D = info->GetDecl();
-      map<const Decl *, void *>::iterator I = gDtorWrapperStore.find(D);
-      if (I != gDtorWrapperStore.end()) {
-         wrapper = (tcling_callfunc_dtor_Wrapper_t) I->second;
-      } else {
-         wrapper = make_dtor_wrapper(info);
+   R__LOCKGUARD(gInterpreterMutex);
+   const Decl *D = info->GetDecl();
+   auto I = gDtorWrapperStore.find(D);
+   if (I == gDtorWrapperStore.end()) {
+      make_dtor_wrapper(info);
+      I = gDtorWrapperStore.find(D);
+      if (I == gDtorWrapperStore.end()) {
+         ::Error("TClingCallFunc::ExecDestructor",
+                 "Failed to compile wrapper!");
+         return;
       }
    }
-   if (!wrapper) {
-      ::Error("TClingCallFunc::ExecDestructor",
-            "Called with no wrapper, not implemented!");
-      return;
-   }
-   (*wrapper)(address, nary, withFree);
+   (*I->second)(address, nary, withFree);
 }
 
 TClingMethodInfo *
@@ -2154,7 +2159,6 @@ void TClingCallFunc::Init()
 {
    delete fMethod;
    fMethod = 0;
-   fWrapper = 0;
    ResetArg();
 }
 
@@ -2162,7 +2166,6 @@ void TClingCallFunc::Init(TClingMethodInfo *minfo)
 {
    delete fMethod;
    fMethod = new TClingMethodInfo(*minfo);
-   fWrapper = 0;
    ResetArg();
 }
 
@@ -2171,18 +2174,25 @@ void *TClingCallFunc::InterfaceMethod()
    if (!IsValid()) {
       return 0;
    }
-   if (!fWrapper) {
+   if (!fWrapper.use_count()) {
       const FunctionDecl *decl = fMethod->GetMethodDecl();
 
       R__LOCKGUARD(gInterpreterMutex);
-      map<const FunctionDecl *, void *>::iterator I = gWrapperStore.find(decl);
-      if (I != gWrapperStore.end()) {
-         fWrapper = (tcling_callfunc_Wrapper_t) I->second;
-      } else {
-         fWrapper = make_wrapper();
+      auto I = gWrapperStore.find(decl);
+      if (I == gWrapperStore.end()) {
+         make_wrapper();
+         I = gWrapperStore.find(decl);
+         if (I == gWrapperStore.end()) {
+            ::Error("InterfaceMethod", "Wrapper compilation failed");
+            return nullptr;
+         }
       }
+      fWrapper = I->second;
    }
-   return (void *)fWrapper;
+   if (auto wrapper = fWrapper.lock())
+      return reinterpret_cast<void*>(*wrapper.get()); // but who knows how long this survives...
+
+   return nullptr;
 }
 
 bool TClingCallFunc::IsValid() const
@@ -2198,22 +2208,17 @@ TInterpreter::CallFuncIFacePtr_t TClingCallFunc::IFacePtr()
    if (!IsValid()) {
       ::Error("TClingCallFunc::IFacePtr(kind)",
             "Attempt to get interface while invalid.");
-      return TInterpreter::CallFuncIFacePtr_t();
+      return {};
    }
-   if (!fWrapper) {
+   if (!fWrapper.use_count()) {
       const FunctionDecl *decl = fMethod->GetMethodDecl();
-
-      R__LOCKGUARD(gInterpreterMutex);
-      map<const FunctionDecl *, void *>::iterator I = gWrapperStore.find(decl);
-      if (I != gWrapperStore.end()) {
-         fWrapper = (tcling_callfunc_Wrapper_t) I->second;
-      } else {
-         fWrapper = make_wrapper();
-      }
-
       fReturnIsRecordType = decl->getReturnType().getCanonicalType()->isRecordType();
+      return TInterpreter::CallFuncIFacePtr_t((tcling_callfunc_Wrapper_t)InterfaceMethod());
    }
-   return TInterpreter::CallFuncIFacePtr_t(fWrapper);
+   if (auto wrapper = fWrapper.lock())
+      return TInterpreter::CallFuncIFacePtr_t(*wrapper.get());
+
+   return {};
 }
 
 
@@ -2287,7 +2292,7 @@ void TClingCallFunc::SetFunc(const TClingClassInfo *info, const char *method, co
 void TClingCallFunc::SetFunc(const TClingClassInfo *info, const char *method, const char *arglist,
                              bool objectIsConst, long *poffset)
 {
-   fWrapper = 0;
+   fWrapper.reset();
    delete fMethod;
    fMethod = new TClingMethodInfo(fInterp);
    if (poffset) {
@@ -2316,7 +2321,7 @@ void TClingCallFunc::SetFunc(const TClingClassInfo *info, const char *method, co
 
 void TClingCallFunc::SetFunc(const TClingMethodInfo *info)
 {
-   fWrapper = 0;
+   fWrapper.reset();
    delete fMethod;
    fMethod = new TClingMethodInfo(*info);
    ResetArg();
@@ -2336,7 +2341,7 @@ void TClingCallFunc::SetFuncProto(const TClingClassInfo *info, const char *metho
                                   const char *proto, bool objectIsConst, long *poffset,
                                   EFunctionMatchMode mode/*=kConversionMatch*/)
 {
-   fWrapper = 0;
+   fWrapper.reset();
    delete fMethod;
    fMethod = new TClingMethodInfo(fInterp);
    if (poffset) {
