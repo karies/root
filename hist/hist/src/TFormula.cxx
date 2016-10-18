@@ -464,7 +464,21 @@ Bool_t TFormula::InitLambdaExpression(const char * formula) {
    //lambdaExpression = TString::Format("[&](double * x, double *){ return %s ;}",formula);
    //TString lambdaName = TString::Format("mylambda_%s",GetName() );
    TString lineExpr = TString::Format("std::function<double(double*,double*)> %s = %s ;",lambdaName.Data(), lambdaExpression.c_str() ); 
-   gInterpreter->ProcessLine(lineExpr);
+   gInterpreter->Declare(lineExpr, [&]() {
+         if (gROOTMutex) gROOTMutex->Lock();
+         auto funcit = gClingFunctions.find(lambdaExpression);
+         if (funcit != gClingFunctions.end())
+            gClingFunctions.erase(funcit);
+         // FIXME: handle assignment, ~TFormula before unloading (which will render &fLambdaPtr etc invalid)!
+         // Likely needs an extra indirection; e.g. fLambdaPtr should be a separate member of type weak_ptr
+         // if the lambda comes from cling, rendering fClingInitialized unnecessary. gClingFunctions's second should
+         // then hold shared_ptrs, and the following two lines can be removed.
+         fLambdaPtr = nullptr;
+         fClingInitialized = false;
+      },
+      []() {
+         if (gROOTMutex) gROOTMutex->UnLock();
+      });
    fLambdaPtr = (void*) gInterpreter->ProcessLine(TString(lambdaName)+TString(";"));  // add ; to avoid printing 
    if (fLambdaPtr != nullptr) { 
       R__LOCKGUARD2(gROOTMutex);
