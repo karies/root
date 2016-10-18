@@ -2495,7 +2495,9 @@ void TCling::ClearStack()
 /// plain #include.
 /// Returns true on success, false on failure.
 
-bool TCling::Declare(const char* code)
+bool TCling::Declare(const char* code,
+                     const UnloadCallback_t& preUnload /*= UnloadCallback_t()*/,
+                     const UnloadCallback_t& postUnload /*= UnloadCallback_t()*/)
 {
    R__LOCKGUARD(gInterpreterMutex);
 
@@ -2507,7 +2509,7 @@ bool TCling::Declare(const char* code)
    bool oldRawInput = fInterpreter->isRawInputEnabled();
    fInterpreter->enableRawInput(true);
 
-   Bool_t ret = LoadText(code);
+   Bool_t ret = LoadText(code, preUnload, postUnload);
 
    fInterpreter->enableRawInput(oldRawInput);
    fInterpreter->enableDynamicLookup(oldDynLookup);
@@ -6301,9 +6303,16 @@ int TCling::LoadFile(const char* path) const
 /// top level declarations.
 /// Returns true on success, false on failure.
 
-Bool_t TCling::LoadText(const char* text) const
+Bool_t TCling::LoadText(const char* text,
+                     const UnloadCallback_t& preUnload /*= UnloadCallback_t()*/,
+                     const UnloadCallback_t& postUnload /*= UnloadCallback_t()*/) const
 {
-   return (fInterpreter->declare(text) == cling::Interpreter::kSuccess);
+   cling::Transaction* T = nullptr;
+   auto result = fInterpreter->declare(text, &T);
+   if (T && result == cling::Interpreter::kSuccess)
+      T->setOnUnload(preUnload, postUnload);
+
+   return result == cling::Interpreter::kSuccess;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

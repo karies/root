@@ -170,7 +170,9 @@ public: // Public Interface
    Bool_t  IsAutoLoadNamespaceCandidate(const clang::NamespaceDecl* nsDecl);
    void    ClearFileBusy();
    void    ClearStack(); // Delete existing temporary values
-   Bool_t  Declare(const char* code);
+   Bool_t  Declare(const char* code,
+                   const UnloadCallback_t& preUnload = UnloadCallback_t(),
+                   const UnloadCallback_t& postUnload = UnloadCallback_t());
    void    EnableAutoLoading();
    void    EndOfLineAction();
    TClass *GetClass(const std::type_info& typeinfo, Bool_t load) const;
@@ -290,7 +292,9 @@ public: // Public Interface
    virtual const char* GetCurrentMacroName() const;
    virtual int    GetSecurityError() const;
    virtual int    LoadFile(const char* path) const;
-   virtual Bool_t LoadText(const char* text) const;
+   virtual Bool_t LoadText(const char* text,
+                           const UnloadCallback_t& preUnload = UnloadCallback_t(),
+                           const UnloadCallback_t& postUnload = UnloadCallback_t()) const;
    virtual const char* MapCppName(const char*) const;
    virtual void   SetAlloclockfunc(void (*)()) const;
    virtual void   SetAllocunlockfunc(void (*)()) const;
