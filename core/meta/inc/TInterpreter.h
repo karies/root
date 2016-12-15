@@ -234,6 +234,7 @@ public:
 
    // core/meta helper functions.
    virtual EReturnType MethodCallReturnType(TFunction *func) const = 0;
+   virtual void* GetInterpreterImpl() const = 0;
    virtual ULong64_t GetInterpreterStateMarker() const = 0;
    virtual bool DiagnoseIfInterpreterException(const std::exception &e) const = 0;
 
