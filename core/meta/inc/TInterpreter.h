@@ -30,6 +30,8 @@
 #include "TVirtualMutex.h"
 #endif
 
+#include <map>
+#include <typeinfo>
 #include <vector>
 
 class TClass;
@@ -52,6 +54,9 @@ protected:
    friend class SuspendAutoParsing;
 
 public:
+   // See as in TSchemaType.h.
+   typedef class std::map<std::string, std::string> MembersMap_t;
+
    enum EErrorCode {
       kNoError     = 0,
       kRecoverable = 1,
@@ -142,6 +147,9 @@ public:
    virtual Int_t    ReloadAllSharedLibraryMaps() = 0;
    virtual Int_t    UnloadAllSharedLibraryMaps() = 0;
    virtual Int_t    UnloadLibraryMap(const char *library) = 0;
+   virtual Bool_t   ParseClassConversionRule(const std::string &rule,
+                                             MembersMap_t &result,
+                                             std::string &error_string) = 0;
    virtual Long_t   ProcessLine(const char *line, EErrorCode *error = 0) = 0;
    virtual Long_t   ProcessLineSynch(const char *line, EErrorCode *error = 0) = 0;
    virtual void     PrintIntro() = 0;
@@ -226,6 +234,7 @@ public:
 
    // core/meta helper functions.
    virtual EReturnType MethodCallReturnType(TFunction *func) const = 0;
+   virtual void* GetInterpreterImpl() const = 0;
    virtual ULong64_t GetInterpreterStateMarker() const = 0;
    virtual bool DiagnoseIfInterpreterException(const std::exception &e) const = 0;
 
