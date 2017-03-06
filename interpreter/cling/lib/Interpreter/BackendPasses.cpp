@@ -96,12 +96,13 @@ void BackendPasses::CreatePasses(llvm::Module& M)
   CGOpts_.VectorizeLoop = 1;
   CGOpts_.VectorizeSLP = 1;
 #endif
-  CGOpts_.setInlining(CodeGenOptions::NormalInlining);
+  CGOpts_.OptimizationLevel = 2;
+  //CGOpts_.setInlining(CodeGenOptions::NormalInlining);
 
   unsigned OptLevel = m_CGOpts.OptimizationLevel;
 
-  // CodeGenOptions::InliningMethod Inlining = m_CGOpts.getInlining();
-  CodeGenOptions::InliningMethod Inlining = CodeGenOptions::NormalInlining;
+  CodeGenOptions::InliningMethod Inlining = m_CGOpts.getInlining();
+  // CodeGenOptions::InliningMethod Inlining = CodeGenOptions::NormalInlining;
 
   // Handle disabling of LLVM optimization, where we want to preserve the
   // internal module before any optimization.
@@ -111,7 +112,7 @@ void BackendPasses::CreatePasses(llvm::Module& M)
     // Inlining = CGOpts.NoInlining;
   }
 
-  OptLevel = 0; // we need to keep even "unused" values - until we
+  //OptLevel = 0; // we need to keep even "unused" values - until we
   // feed incremental modules into the JIT.
 
   llvm::PassManagerBuilder PMBuilder;
