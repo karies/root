@@ -49,7 +49,7 @@ namespace clang {
     QualType VisitConstantArrayType(const ConstantArrayType *T);
     QualType VisitIncompleteArrayType(const IncompleteArrayType *T);
     QualType VisitVariableArrayType(const VariableArrayType *T);
-    // FIXME: DependentSizedArrayType
+    QualType VisitDependentSizedArrayType(const DependentSizedArrayType *T);
     // FIXME: DependentSizedExtVectorType
     QualType VisitVectorType(const VectorType *T);
     QualType VisitExtVectorType(const ExtVectorType *T);
@@ -1681,6 +1681,19 @@ QualType ASTNodeImporter::VisitVariableArrayType(const VariableArrayType *T) {
                                                       T->getSizeModifier(),
                                                 T->getIndexTypeCVRQualifiers(),
                                                       Brackets);
+}
+
+QualType ASTNodeImporter::VisitDependentSizedArrayType(
+                                           const DependentSizedArrayType *T) {
+  QualType ToType = Importer.Import(T->getElementType());
+  if (ToType.isNull())
+    return QualType();
+
+  return
+    Importer.getToContext().getDependentSizedArrayType(ToType, T->getSizeExpr(),
+                                                       T->getSizeModifier(),
+                                                T->getIndexTypeCVRQualifiers(),
+                                                       T->getBracketsRange());
 }
 
 QualType ASTNodeImporter::VisitVectorType(const VectorType *T) {
