@@ -50,7 +50,7 @@ namespace Internal {
          kSetupMissingDictionary = -3, /// To read this branch, we need a dictionary.
          kSetupMismatch = -2, /// Mismatch of branch type and reader template type.
          kSetupNotACollection = -1, /// The branch class type is not a collection.
-         kSetupMatch = 0, /// This branch has been set up, branch data type and reader template type match, reading should succeed.
+         kSetupMatch = 0,       /// This branch has been set up, branch data type and reader template type match, reading should succeed.
          kSetupMatchBranch = 0, /// This branch has been set up, branch data type and reader template type match, reading should succeed.
          //kSetupMatchConversion = 1, /// This branch has been set up, the branch data type can be converted to the reader template type, reading should succeed.
          //kSetupMatchConversionCollection = 2, /// This branch has been set up, the data type of the branch's collection elements can be converted to the reader template type, reading should succeed.
@@ -67,7 +67,7 @@ namespace Internal {
 
       EReadStatus ProxyRead();
 
-      Bool_t IsValid() const { return fProxy && 0 == (int)fSetupStatus && 0 == (int)fReadStatus; }
+      Bool_t IsValid() const { return fProxy && kSetupMatch == fSetupStatus && kReadSuccess == fReadStatus; }
       ESetupStatus GetSetupStatus() const { return fSetupStatus; }
       virtual EReadStatus GetReadStatus() const { return fReadStatus; }
 
