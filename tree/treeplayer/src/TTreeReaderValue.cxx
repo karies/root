@@ -172,7 +172,7 @@ void* ROOT::Internal::TTreeReaderValueBase::GetAddress() {
 
    if (fHaveLeaf){
       if (GetLeaf()){
-         return fLeaf->GetValuePointer();
+         return (Byte_t*)fProxy->GetWhere();
       }
       else {
          fReadStatus = kReadError;
