@@ -403,7 +403,11 @@ void ROOT::Internal::TTreeReaderArrayBase::CreateProxy()
          if (membername.IsNull()) {
             membername = branch->GetName();
          }
+      } else if (branch->IsA() == TBranch::Class() && fLeaf) {
+         // We have a leaflist.
+         membername = fLeafName;
       }
+
       namedProxy = new TNamedBranchProxy(fTreeReader->fDirector, branch, membername);
       fTreeReader->GetProxies()->Add(namedProxy);
       fProxy = namedProxy->GetProxy();
