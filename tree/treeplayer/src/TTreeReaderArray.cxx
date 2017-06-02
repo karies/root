@@ -286,8 +286,7 @@ namespace {
       TLeafReader(TTreeReaderValueBase *valueReaderArg) : fValueReader(valueReaderArg), fElementSize(-1) {}
 
       virtual size_t GetSize(ROOT::Detail::TBranchProxy* /*proxy*/){
-         TLeaf *myLeaf = fValueReader->GetLeaf();
-         return myLeaf ? myLeaf->GetLen() : 0; // Error will be printed by GetLeaf
+         return fValueReader->GetProxy()->GetEntries();
       }
 
       virtual void* At(ROOT::Detail::TBranchProxy* /*proxy*/, size_t idx){
