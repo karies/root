@@ -283,7 +283,8 @@ namespace {
       TTreeReaderValueBase *fValueReader;
       Int_t fElementSize;
    public:
-      TLeafReader(TTreeReaderValueBase *valueReaderArg) : fValueReader(valueReaderArg), fElementSize(-1) {}
+      TLeafReader(TTreeReaderValueBase *valueReaderArg, TLeaf* leaf):
+         fValueReader(valueReaderArg), fElementSize(myLeaf->GetLenType()) {}
 
       virtual size_t GetSize(ROOT::Detail::TBranchProxy* /*proxy*/){
          return fValueReader->GetProxy()->GetEntries();
@@ -542,7 +543,7 @@ void ROOT::Internal::TTreeReaderArrayBase::SetImpl(TBranch* branch, TLeaf* myLea
 
    if (myLeaf){
       if (!myLeaf->GetLeafCount()){
-         fImpl = new TLeafReader(this);
+         fImpl = new TLeafReader(this, myLeaf);
       }
       else {
          TString leafFullName = myLeaf->GetBranch()->GetName();
