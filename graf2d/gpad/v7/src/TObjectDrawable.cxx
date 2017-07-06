@@ -2,8 +2,8 @@
 /// \ingroup CanvasPainter ROOT7
 /// \author Axel Naumann <axel@cern.ch>
 /// \date 2017-05-31
-/// \warning This is part of the ROOT 7 prototype! It will change without notice. It might trigger earthquakes. Feedback is welcome!
-
+/// \warning This is part of the ROOT 7 prototype! It will change without notice. It might trigger earthquakes. Feedback
+/// is welcome!
 
 /*************************************************************************
  * Copyright (C) 1995-2017, Rene Brun and Fons Rademakers.               *
@@ -21,10 +21,10 @@
 
 #include <exception>
 
-void ROOT::Experimental::Internal::TObjectDrawable::Paint(TVirtualCanvasPainter& canv) {
+void ROOT::Experimental::Internal::TObjectDrawable::Paint(TVirtualCanvasPainter &canv)
+{
    ROOT::Experimental::TDisplayItem *res = new TOrdinaryDisplayItem<TObject>(fObj.get());
    res->SetOption(fOpts.c_str());
 
    canv.AddDisplayItem(res);
 }
-

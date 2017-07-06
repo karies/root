@@ -2,8 +2,8 @@
 /// \ingroup Gpad ROOT7
 /// \author Axel Naumann <axel@cern.ch>
 /// \date 2017-05-31
-/// \warning This is part of the ROOT 7 prototype! It will change without notice. It might trigger earthquakes. Feedback is welcome!
-
+/// \warning This is part of the ROOT 7 prototype! It will change without notice. It might trigger earthquakes. Feedback
+/// is welcome!
 
 /*************************************************************************
  * Copyright (C) 1995-2017, Rene Brun and Fons Rademakers.               *
@@ -21,31 +21,31 @@
 #include <exception>
 
 namespace {
-static void LoadCanvasPainterLibrary() {
-  if (gSystem->Load("libROOTCanvasPainter") != 0)
-    R__ERROR_HERE("Gpad") << "Loading of libROOTCanvasPainter failed!";
+static void LoadCanvasPainterLibrary()
+{
+   if (gSystem->Load("libROOTCanvasPainter") != 0)
+      R__ERROR_HERE("Gpad") << "Loading of libROOTCanvasPainter failed!";
 }
 } // unnamed namespace
 
 std::unique_ptr<ROOT::Experimental::Internal::TVirtualCanvasPainter::Generator>
-  ROOT::Experimental::Internal::TVirtualCanvasPainter::fgGenerator;
-
+   ROOT::Experimental::Internal::TVirtualCanvasPainter::fgGenerator;
 
 /// The implementation is here to pin the vtable.
 ROOT::Experimental::Internal::TVirtualCanvasPainter::~TVirtualCanvasPainter() = default;
 
 std::unique_ptr<ROOT::Experimental::Internal::TVirtualCanvasPainter>
-ROOT::Experimental::Internal::TVirtualCanvasPainter::Create(const TCanvas& canv) {
-  if (!fgGenerator) {
-    LoadCanvasPainterLibrary();
-    if (!fgGenerator) {
-        R__ERROR_HERE("Gpad") << "TVirtualCanvasPainter::Generator failed to register!";
-        throw std::runtime_error("TVirtualCanvasPainter::Generator failed to initialize");
-    }
-  }
-  return fgGenerator->Create(canv);
+ROOT::Experimental::Internal::TVirtualCanvasPainter::Create(const TCanvas &canv)
+{
+   if (!fgGenerator) {
+      LoadCanvasPainterLibrary();
+      if (!fgGenerator) {
+         R__ERROR_HERE("Gpad") << "TVirtualCanvasPainter::Generator failed to register!";
+         throw std::runtime_error("TVirtualCanvasPainter::Generator failed to initialize");
+      }
+   }
+   return fgGenerator->Create(canv);
 }
 
 /// The implementation is here to pin the vtable.
 ROOT::Experimental::Internal::TVirtualCanvasPainter::Generator::~Generator() = default;
-
