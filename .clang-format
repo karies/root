@@ -83,7 +83,7 @@ SortIncludes: false
 SpaceAfterCStyleCast: false
 SpaceBeforeAssignmentOperators: true
 # You want this : enable it if you have https://reviews.llvm.org/D32525
-# SpaceBeforeColon: false
+SpaceBeforeColon: false
 SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 1

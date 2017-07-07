@@ -16,4 +16,4 @@
 #include "ROOT/TDrawable.hxx"
 
 // pin vtable
-ROOT::Experimental::Internal::TDrawable::~TDrawable() {}
+ROOT::Experimental::TDrawable::~TDrawable() {}

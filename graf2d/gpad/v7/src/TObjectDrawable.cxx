@@ -21,7 +21,7 @@
 
 #include <exception>
 
-void ROOT::Experimental::Internal::TObjectDrawable::Paint(TVirtualCanvasPainter &canv)
+void ROOT::Experimental::TObjectDrawable::Paint(Internal::TVirtualCanvasPainter &canv)
 {
    ROOT::Experimental::TDisplayItem *res = new TOrdinaryDisplayItem<TObject>(fObj.get());
    res->SetOption(fOpts.c_str());

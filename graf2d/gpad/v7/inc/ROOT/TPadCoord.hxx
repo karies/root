@@ -24,6 +24,39 @@ namespace Experimental {
   */
 
 class TPadCoord {
+protected:
+   template <class DERIVED>
+   struct CoordSysBase {
+      double fVal = 0.; ///< Coordinate value
+
+      CoordSysBase() = default;
+      CoordSysBase(double val): fVal(val) {}
+      DERIVED& ToDerived() { return static_cast<DERIVED&>(*this); }
+
+      friend DERIVED operator+(DERIVED lhs, DERIVED rhs) { return DERIVED{lhs.fVal + rhs.fVal}; }
+      friend DERIVED operator-(DERIVED lhs, DERIVED rhs) { return DERIVED{lhs.fVal - rhs.fVal}; }
+      friend double operator/(DERIVED lhs, DERIVED rhs) { return lhs.fVal / rhs.fVal; }
+      DERIVED &operator+=(const DERIVED &rhs)
+      {
+         fVal += rhs.fVal;
+         return ToDerived();
+      }
+      DERIVED &operator-=(const DERIVED &rhs)
+      {
+         fVal -= rhs.fVal;
+         return ToDerived();
+      }
+      DERIVED &operator*=(double scale)
+      {
+         fVal *= scale;
+         return ToDerived();
+      }
+      friend bool operator<(const DERIVED &lhs, const DERIVED &rhs) { return lhs.fVal < rhs.fVal; }
+      friend bool operator>(const DERIVED &lhs, const DERIVED &rhs) { return lhs.fVal > rhs.fVal; }
+      friend bool operator<=(const DERIVED &lhs, const DERIVED &rhs) { return lhs.fVal <= rhs.fVal; }
+      friend bool operator>=(const DERIVED &lhs, const DERIVED &rhs) { return lhs.fVal >= rhs.fVal; }
+      // no ==, !=
+   };
 public:
    /// \defgroup PadCoordSystems TPad coordinate systems
    /// These define typesafe coordinates used by TPad to identify which coordinate system a coordinate is referring to.
@@ -34,102 +67,23 @@ public:
      A normalized coordinate: 0 in the left, bottom corner, 1 in the top, right corner of the `TPad`. Resizing the pad
      will resize the objects with it.
     */
-   struct Normal {
-      double fVal = 0.; ///< Coordinate value
-
-      Normal() = default;
-      Normal(double val): fVal(val) {}
-
-      friend Normal operator+(Normal lhs, Normal rhs) { return Normal{lhs.fVal + rhs.fVal}; }
-      friend Normal operator-(Normal lhs, Normal rhs) { return Normal{lhs.fVal - rhs.fVal}; }
-      friend double operator/(Normal lhs, Normal rhs) { return lhs.fVal / rhs.fVal; }
-      Normal &operator+=(const Normal &rhs)
-      {
-         fVal += rhs.fVal;
-         return *this;
-      }
-      Normal &operator-=(const Normal &rhs)
-      {
-         fVal -= rhs.fVal;
-         return *this;
-      }
-      Normal &operator*=(double scale)
-      {
-         fVal *= scale;
-         return *this;
-      }
-      friend bool operator<(const Normal &lhs, const Normal &rhs) { return lhs.fVal < rhs.fVal; }
-      friend bool operator>(const Normal &lhs, const Normal &rhs) { return lhs.fVal > rhs.fVal; }
-      friend bool operator<=(const Normal &lhs, const Normal &rhs) { return lhs.fVal <= rhs.fVal; }
-      friend bool operator>=(const Normal &lhs, const Normal &rhs) { return lhs.fVal >= rhs.fVal; }
-      // no ==, !=
+   struct Normal: CoordSysBase<Normal> {
+      using CoordSysBase<Normal>::CoordSysBase;
    };
 
    /** \class Pixel
      A pixel coordinate: 0 in the left, bottom corner, 1 in the top, right corner of the `TPad`. Resizing the pad will
      keep the pixel-position of the objects positioned in `Pixel` coordinates.
     */
-   struct Pixel {
-      double fVal = 0.; ///< Coordinate value
-
-      Pixel() = default;
-      Pixel(double val): fVal(val) {}
-
-      friend Pixel operator+(Pixel lhs, Pixel rhs) { return Pixel{lhs.fVal + rhs.fVal}; }
-      friend Pixel operator-(Pixel lhs, Pixel rhs) { return Pixel{lhs.fVal - rhs.fVal}; }
-      friend double operator/(Pixel lhs, Pixel rhs) { return lhs.fVal / rhs.fVal; }
-      Pixel &operator+=(const Pixel &rhs)
-      {
-         fVal += rhs.fVal;
-         return *this;
-      }
-      Pixel &operator-=(const Pixel &rhs)
-      {
-         fVal -= rhs.fVal;
-         return *this;
-      }
-      Pixel &operator*=(double scale)
-      {
-         fVal *= scale;
-         return *this;
-      }
-      friend bool operator<(const Pixel &lhs, const Pixel &rhs) { return lhs.fVal < rhs.fVal; }
-      friend bool operator>(const Pixel &lhs, const Pixel &rhs) { return lhs.fVal > rhs.fVal; }
-      friend bool operator<=(const Pixel &lhs, const Pixel &rhs) { return lhs.fVal <= rhs.fVal; }
-      friend bool operator>=(const Pixel &lhs, const Pixel &rhs) { return lhs.fVal >= rhs.fVal; }
+   struct Pixel: CoordSysBase<Pixel> {
+      using CoordSysBase<Pixel>::CoordSysBase;
    };
 
    /** \class User
      A user coordinate, as defined by the EUserCoordSystem parameter of the `TPad`.
     */
-   struct User {
-      double fVal = 0.; ///< Coordinate value
-
-      User() = default;
-      User(double val): fVal(val) {}
-
-      friend User operator+(User lhs, User rhs) { return User{lhs.fVal + rhs.fVal}; }
-      friend User operator-(User lhs, User rhs) { return User{lhs.fVal - rhs.fVal}; }
-      friend double operator/(User lhs, User rhs) { return lhs.fVal / rhs.fVal; }
-      User &operator+=(const User &rhs)
-      {
-         fVal += rhs.fVal;
-         return *this;
-      }
-      User &operator-=(const User &rhs)
-      {
-         fVal -= rhs.fVal;
-         return *this;
-      }
-      User &operator*=(double scale)
-      {
-         fVal *= scale;
-         return *this;
-      }
-      friend bool operator<(const User &lhs, const User &rhs) { return lhs.fVal < rhs.fVal; }
-      friend bool operator>(const User &lhs, const User &rhs) { return lhs.fVal > rhs.fVal; }
-      friend bool operator<=(const User &lhs, const User &rhs) { return lhs.fVal <= rhs.fVal; }
-      friend bool operator>=(const User &lhs, const User &rhs) { return lhs.fVal >= rhs.fVal; }
+   struct User: CoordSysBase<User> {
+      using CoordSysBase<User>::CoordSysBase;
    };
    /// \}
 

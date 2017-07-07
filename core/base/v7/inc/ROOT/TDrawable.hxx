@@ -24,8 +24,8 @@ namespace Experimental {
 class TCanvas;
 
 namespace Internal {
-
 class TVirtualCanvasPainter;
+}
 
 /** \class TDrawable
   Base class for drawable entities: objects that can be painted on a `TPad`.
@@ -35,8 +35,10 @@ class TDrawable {
 public:
    virtual ~TDrawable();
 
-   virtual void Paint(TVirtualCanvasPainter &onCanv) = 0;
+   virtual void Paint(Internal::TVirtualCanvasPainter &onCanv) = 0;
 };
+
+namespace Internal {
 
 /// \class TAnyPtr
 /// Models a shared pointer or a unique pointer.

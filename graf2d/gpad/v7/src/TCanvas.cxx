@@ -15,9 +15,6 @@
 
 #include "ROOT/TCanvas.hxx"
 
-#include "ROOT/TDrawable.hxx"
-#include "ROOT/TLogger.hxx"
-
 #include <memory>
 #include <stdio.h>
 #include <string.h>

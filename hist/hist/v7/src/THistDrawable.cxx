@@ -41,11 +41,11 @@ THistPainterBase<DIMENSION>::~THistPainterBase()
 template <int DIMENSION>
 THistPainterBase<DIMENSION> *THistPainterBase<DIMENSION>::fgPainter = nullptr;
 
-Internal::THistDrawableBase::THistDrawableBase() = default;
-Internal::THistDrawableBase::THistDrawableBase(THistDrawableBase &&) = default;
-Internal::THistDrawableBase::~THistDrawableBase() = default;
+THistDrawableBase::THistDrawableBase() = default;
+THistDrawableBase::THistDrawableBase(THistDrawableBase &&) = default;
+THistDrawableBase::~THistDrawableBase() = default;
 
-Internal::THistDrawableBase &Internal::THistDrawableBase::operator=(THistDrawableBase &&) = default;
+THistDrawableBase &THistDrawableBase::operator=(THistDrawableBase &&) = default;
 
 template <int DIMENSIONS>
 bool THistDrawable<DIMENSIONS>::UpdateOldHist()
@@ -119,14 +119,15 @@ bool THistDrawable<DIMENSIONS>::UpdateOldHist()
 
 namespace ROOT {
 namespace Experimental {
+
 namespace Internal {
 template class THistPainterBase<1>;
 template class THistPainterBase<2>;
 template class THistPainterBase<3>;
+} // namespace Internal
 
 template class THistDrawable<1>;
 template class THistDrawable<2>;
 template class THistDrawable<3>;
-} // namespace Internal
 } // namespace Experimental
 } // namespace ROOT
