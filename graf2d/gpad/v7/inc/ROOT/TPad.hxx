@@ -20,7 +20,9 @@
 #include <vector>
 
 #include "ROOT/TDrawable.hxx"
+#include "ROOT/TPadExtent.hxx"
 #include "ROOT/TPadPos.hxx"
+#include "ROOT/TPadUserCoord.hxx"
 #include "ROOT/TypeTraits.hxx"
 
 namespace ROOT {
@@ -30,11 +32,13 @@ namespace Internal {
 class TVirtualCanvasPainter;
 }
 
-/** \class ROOT::Experimental::TPad
-  Graphic container for `TDrawable`-s.
+namespace Internal {
+
+/** \class ROOT::Experimental::Internal::TPadBase
+  Base class for graphic containers for `TDrawable`-s.
   */
 
-class TPad {
+class TPadBase {
 public:
    using Primitives_t = std::vector<std::unique_ptr<TDrawable>>;
 
@@ -42,42 +46,14 @@ private:
    /// Content of the pad.
    Primitives_t fPrimitives;
 
-   /// Pad containing this pad as a sub-pad.
-   const TPad *fParent = nullptr;
+   /// User coordinate system used by this pad.
+   std::unique_ptr<Detail::TPadUserCoordBase> fUserCoord;
 
-   /// Size of the pad in the parent's (!) coordinate system.
-   TPadPos fSize;
+   /// Disable copy construction.
+   TPadBase(const TPadBase &) = delete;
 
-   /// Disable copy construction for now.
-   TPad(const TPad &) = delete;
-
-   /// Disable assignment for now.
-   TPad &operator=(const TPad &) = delete;
-
-   /** \class TPadDrawable
-      Draw a TPad, by drawing its contained graphical elements at the pad offset in the parent pad.'
-      */
-   class TPadDrawable: public TDrawable {
-   private:
-      const std::unique_ptr<TPad> fPad; ///< The pad to be painted
-      TPadPos fPos;                     ///< Offset with respect to parent TPad.
-
-   public:
-      TPadDrawable(std::unique_ptr<TPad> &&pPad, const TPadPos &pos): fPad(std::move(pPad)), fPos(pos) {}
-
-      /// Paint the pad.
-      void Paint(Internal::TVirtualCanvasPainter &/*canv*/) final
-      {
-         // FIXME: and then what? Something with fPad.GetListOfPrimitives()?
-      }
-
-      TPad* Get() const { return fPad.get(); }
-   };
-
-   friend std::unique_ptr<TPadDrawable> GetDrawable(std::unique_ptr<TPad> &&pad, const TPadPos &pos)
-   {
-      return std::make_unique<TPadDrawable>(std::move(pad), pos);
-   }
+   /// Disable assignment.
+   TPadBase &operator=(const TPadBase &) = delete;
 
    template <class DRAWABLE>
    DRAWABLE &AddDrawable(std::unique_ptr<DRAWABLE> &&uPtr)
@@ -88,19 +64,18 @@ private:
    }
 
 protected:
-   /// Create a TPad without parent.
-   TPad(const TPadPos& size): fSize(size) {}
+   /// Allow derived classes to default construct a TPadBase.
+   TPadBase();
 
 public:
-   /// Create a child pad.
-   TPad(const TPad &parent, const TPadPos& size): fParent(&parent), fSize(size) {}
+   virtual ~TPadBase();
 
    /// Divide this pad into a grid of subpad with padding in between.
    /// \param nHoriz Number of horizontal pads.
    /// \param nVert Number of vertical pads.
    /// \param padding Padding between pads.
    /// \returns vector of vector (ret[x][y]) of created pads.
-   std::vector<std::vector<TPad *>> Divide(int nHoriz, int nVert, const TPadPos &padding = {});
+   std::vector<std::vector<TPad *>> Divide(int nHoriz, int nVert, const TPadExtent &padding = {});
 
    /// Add something to be painted.
    /// The pad observes what's lifetime through a weak pointer.
@@ -159,30 +134,82 @@ public:
    /// Get the elements contained in the canvas.
    const Primitives_t &GetPrimitives() const { return fPrimitives; }
 
-   /// Get the size of the pad.
-   const TPadPos &GetSize() const { return fSize; }
+   /// Convert a `Pixel` position to Canvas-normalized positions.
+   virtual std::array<TPadCoord::Normal, 2> PixelsToNormal(const std::array<TPadCoord::Pixel, 2> &pos) const = 0;
+
+   /// Convert user coordinates to normal coordinates.
+   std::array<TPadCoord::Normal, 2> UserToNormal(const std::array<TPadCoord::User, 2> &pos) const {
+      return fUserCoord->ToNormal(pos);
+   }
+};
+} // namespace Internal
+
+/** \class ROOT::Experimental::TPad
+  Graphic container for `TDrawable`-s.
+  */
+
+class TPad: public Internal::TPadBase {
+private:
+   /// Pad containing this pad as a sub-pad.
+   const TPad *fParent = nullptr;
+
+   /// Size of the pad in the parent's (!) coordinate system.
+   TPadExtent fSize;
+
+   /** \class TPadDrawable
+      Draw a TPad, by drawing its contained graphical elements at the pad offset in the parent pad.'
+      */
+   class TPadDrawable: public TDrawable {
+   private:
+      const std::unique_ptr<TPad> fPad; ///< The pad to be painted
+      TPadPos fPos;                     ///< Offset with respect to parent TPad.
+
+   public:
+      TPadDrawable(std::unique_ptr<TPad> &&pPad, const TPadPos &pos): fPad(std::move(pPad)), fPos(pos) {}
+
+      /// Paint the pad.
+      void Paint(Internal::TVirtualCanvasPainter &/*canv*/) final
+      {
+         // FIXME: and then what? Something with fPad.GetListOfPrimitives()?
+      }
+
+      TPad* Get() const { return fPad.get(); }
+   };
+
+   friend std::unique_ptr<TPadDrawable> GetDrawable(std::unique_ptr<TPad> &&pad, const TPadPos &pos)
+   {
+      return std::make_unique<TPadDrawable>(std::move(pad), pos);
+   }
+
+public:
+   /// Create a child pad.
+   TPad(const TPad &parent, const TPadExtent& size): fParent(&parent), fSize(size) {}
+
+   /// Destructor to have a vtable.
+   virtual ~TPad();
+
+   /// Get the size of the pad in parent (!) coordinates.
+   const TPadExtent &GetSize() const { return fSize; }
 
    /// Convert a `Pixel` position to Canvas-normalized positions.
-   const TPadCoord PixelsToNormal(const TPadCoord &pos) const {
-      if (!fParent) {
-         assert(!fSize.fHoriz.fNorm && !fSize.fVert.fNorm && !fSize.fHoriz.fUser && !fSize.fHoriz.fUser "Canvas size must be in pixels!");
-         assert(!fSize.f && !fSize.fUser && "Canvas size must be in pixels!");
-         return {pos.fPixels[0] / fSize.fHoriz.fPixel, pos[1] / fSize.fVert.fPixel};
-      }
-      // Normalized coords given the parent size:
-      std::array<TPadCoord::Normal, 2> parentNormal = fParent->ToNormal({pos[0], pos[1]});
-
-      // Our size is fSize; need to know in parent's Normal:
-      Normal mySizeInParentNormal = ;
-      return {parentNormal[0] / fParent->ToNormal(fSize).}
+   std::array<TPadCoord::Normal, 2> PixelsToNormal(const std::array<TPadCoord::Pixel, 2> &pos) const override {
+     std::array<TPadCoord::Normal, 2> posInParentNormal = fParent->PixelsToNormal(pos);
+     std::array<TPadCoord::Normal, 2> myPixelInNormal = fParent->PixelsToNormal({fSize.fHoriz.fPixel, fSize.fVert.fPixel});
+     std::array<TPadCoord::Normal, 2> myUserInNormal = fParent->UserToNormal({fSize.fHoriz.fUser, fSize.fVert.fUser});
+     // If the parent says pos is at 0.6 in normal coords, and our size converted to normal is 0.2, then pos in our coord system
+     // is 3.0!
+     return {posInParentNormal[0] / (fSize.fHoriz.fNormal + myPixelInNormal[0] + myUserInNormal[0]),
+             posInParentNormal[1] / (fSize.fVert.fNormal + myPixelInNormal[1] + myUserInNormal[1])};
    }
 
    /// Convert a TPadPos to [x, y] of normalized coordinates.
-   std::array<TPadCoord::Normal, 2> ToNormal(const TPadPos &pos) const {
-      std::array<TPadCoord::Normal, 2> pixelsInNormal = PixelsToNormal({coord.fHoriz.fPixel, coord.fVert.fPixel});
-      return {pos.fHoriz.fNormal + pixelsInNormal[0] + 
+   template <class DERIVED>
+   std::array<TPadCoord::Normal, 2> ToNormal(const TPadHorizVert<DERIVED> &pos) const {
+      std::array<TPadCoord::Normal, 2> pixelsInNormal = PixelsToNormal({pos.fHoriz.fPixel, pos.fVert.fPixel});
+      std::array<TPadCoord::Normal, 2> userInNormal = UserToNormal({pos.fHoriz.fUser, pos.fVert.fUser});
+      return {pos.fHoriz.fNormal + pixelsInNormal[0] + userInNormal[0],
+              pos.fVert.fNormal + pixelsInNormal[1] + userInNormal[1]};
    }
-   /// Convert a TPadPos to of normalized coordinates.
    
 };
 

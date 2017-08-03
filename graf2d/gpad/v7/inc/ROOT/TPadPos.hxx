@@ -21,40 +21,44 @@
 namespace ROOT {
 namespace Experimental {
 
-/** \class ROOT::Experimental::TPadPos
-  A position (horizontal and vertical) in a `TPad`.
+namespace Internal {
+/** \class ROOT::Experimental::Internal::TPadHorizVert
+  A 2D (horizontal and vertical) combination of `TPadCoord`s.
   */
 
-struct TPadPos {
+template <class DERIVED>
+struct TPadHorizVert {
    TPadCoord fHoriz; ///< Horizontal position
    TPadCoord fVert; ///< Vertical position
 
    /// Add two `TPadPos`s.
-   friend TPadPos operator+(TPadPos lhs, const TPadPos &rhs)
+   friend DERIVED operator+(DERIVED lhs, const DERIVED &rhs)
    {
       return {lhs.fHoriz + rhs.fHoriz, lhs.fVert + rhs.fVert};
    }
 
    /// Subtract two `TPadPos`s.
-   friend TPadPos operator-(TPadPos lhs, const TPadPos &rhs)
+   friend DERIVED operator-(DERIVED lhs, const DERIVED &rhs)
    {
-      return TPadPos{lhs.fHoriz - rhs.fHoriz, lhs.fVert - rhs.fVert};
+      return {lhs.fHoriz - rhs.fHoriz, lhs.fVert - rhs.fVert};
    }
 
+   DERIVED &toDerived() { return *static_cast<DERIVED*>(this); }
+
    /// Add a `TPadPos`.
-   TPadPos &operator+=(const TPadPos &rhs)
+   DERIVED &operator+=(const DERIVED &rhs)
    {
       fHoriz += rhs.fHoriz;
       fVert += rhs.fVert;
-      return *this;
+      return toDerived();
    };
 
    /// Subtract a `TPadPos`.
-   TPadPos &operator-=(const TPadPos &rhs)
+   DERIVED &operator-=(const DERIVED &rhs)
    {
       fHoriz -= rhs.fHoriz;
       fVert -= rhs.fVert;
-      return *this;
+      return toDerived();
    };
 
    /** \class ScaleFactor
@@ -64,14 +68,22 @@ struct TPadPos {
       double fHoriz; ///< Horizontal scale factor
       double fVert; ///< Vertical scale factor
    };
-   /// Scale a `TPadPos` horizonally and vertically.
-   /// \param scale.first is the horizontal scale factor, scale.second is the vertical scale factor, 
-   TPadPos &operator*=(const ScaleFactor& scale)
+
+   /// Scale a `TPadHorizVert` horizonally and vertically.
+   /// \param scale - the scale factor, 
+   DERIVED &operator*=(const ScaleFactor& scale)
    {
       fHoriz *= scale.fHoriz;
       fVert *= scale.fVert;
-      return *this;
+      return toDerived();
    };
+};
+};
+
+/** \class ROOT::Experimental::TPadPos
+  A position (horizontal and vertical) in a `TPad`.
+  */
+struct TPadPos: Internal::TPadHorizVert<TPadPos> {
 };
 
 } // namespace Experimental

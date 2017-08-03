@@ -35,10 +35,13 @@ class TCanvasSharedPtrMaker;
   Access is through TCanvasPtr.
   */
 
-class TCanvas: public TPad {
+class TCanvas: public Internal::TPadBase {
 private:
    /// Title of the canvas.
    std::string fTitle;
+
+   /// Size of the canvas in pixels.
+   std::array<TPadCoord::Pixel, 2> fSize;
 
    /// If canvas modified.
    bool fModified;
@@ -60,6 +63,8 @@ public:
    /// Create a temporary TCanvas; for long-lived ones please use Create().
    TCanvas() = default;
 
+   const std::array<TPadCoord::Pixel, 2>& GetSize() const { return fSize; }
+
    void Modified() { fModified = true; }
 
    /// Actually display the canvas.
@@ -73,6 +78,11 @@ public:
 
    /// Set the canvas's title.
    void SetTitle(const std::string &title) { fTitle = title; }
+
+   /// Convert a `Pixel` position to Canvas-normalized positions.
+   const TPadCoord PixelsToNormal(const std::array<TPadCoord::Pixel, 2> &pos) const final {
+      return {pos.fPixels[0] / fSize[0], pos.fPixels[1] / fSize[1]};
+   }
 
    static const std::vector<std::shared_ptr<TCanvas>> &GetCanvases();
 };

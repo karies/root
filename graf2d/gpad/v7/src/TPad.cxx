@@ -18,8 +18,10 @@
 #include "ROOT/TLogger.hxx"
 
 
+ROOT::Experimental::Internal::TPadBase::~TPadBase() = default;
+
 std::vector<std::vector<ROOT::Experimental::TPad*>>
-ROOT::Experimental::TPad::Divide(int nHoriz, int nVert, const TPadPos& padding /*= {}*/) {
+ROOT::Experimental::Internal::TPadBase::Divide(int nHoriz, int nVert, const TPadPos& padding /*= {}*/) {
    std::vector<std::vector<TPad*>> ret;
    if (!nHoriz)
       R__ERROR_HERE("Gpad") << "Cannot divide into 0 horizontal sub-pads!";
@@ -45,4 +47,19 @@ ROOT::Experimental::TPad::Divide(int nHoriz, int nVert, const TPadPos& padding /
       }
    }
    return ret;
+}
+
+ROOT::Experimental::TPad::~TPad() = default;
+
+const TPadCoord PixelsToNormal(const TPadCoord &pos) const {
+   if (auto canv = dynamic_cast<const TCanvas*>(fParent)) {
+      TPadCoord::Pixels canvSize = canv->GetSize();
+      return {pos.fPixels[0] / fSize.fHoriz.fPixel, pos[1] / fSize.fVert.fPixel};
+   }
+// Normalized coords given the parent size:
+std::array<TPadCoord::Normal, 2> parentNormal = fParent->ToNormal({pos[0], pos[1]});
+
+// Our size is fSize; need to know in parent's Normal:
+Normal mySizeInParentNormal = ;
+return {parentNormal[0] / fParent->ToNormal(fSize).}
 }
