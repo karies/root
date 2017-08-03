@@ -80,8 +80,8 @@ public:
    void SetTitle(const std::string &title) { fTitle = title; }
 
    /// Convert a `Pixel` position to Canvas-normalized positions.
-   const TPadCoord PixelsToNormal(const std::array<TPadCoord::Pixel, 2> &pos) const final {
-      return {pos.fPixels[0] / fSize[0], pos.fPixels[1] / fSize[1]};
+   std::array<TPadCoord::Normal, 2> PixelsToNormal(const std::array<TPadCoord::Pixel, 2> &pos) const final {
+      return {pos[0] / fSize[0], pos[1] / fSize[1]};
    }
 
    static const std::vector<std::shared_ptr<TCanvas>> &GetCanvases();

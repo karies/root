@@ -204,7 +204,7 @@ public:
 
    /// Convert a TPadPos to [x, y] of normalized coordinates.
    template <class DERIVED>
-   std::array<TPadCoord::Normal, 2> ToNormal(const TPadHorizVert<DERIVED> &pos) const {
+   std::array<TPadCoord::Normal, 2> ToNormal(const Internal::TPadHorizVert<DERIVED> &pos) const {
       std::array<TPadCoord::Normal, 2> pixelsInNormal = PixelsToNormal({pos.fHoriz.fPixel, pos.fVert.fPixel});
       std::array<TPadCoord::Normal, 2> userInNormal = UserToNormal({pos.fHoriz.fUser, pos.fVert.fUser});
       return {pos.fHoriz.fNormal + pixelsInNormal[0] + userInNormal[0],
