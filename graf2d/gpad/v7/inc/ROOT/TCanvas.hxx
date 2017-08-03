@@ -81,7 +81,7 @@ public:
 
    /// Convert a `Pixel` position to Canvas-normalized positions.
    std::array<TPadCoord::Normal, 2> PixelsToNormal(const std::array<TPadCoord::Pixel, 2> &pos) const final {
-      return {pos[0] / fSize[0], pos[1] / fSize[1]};
+      return {{pos[0] / fSize[0], pos[1] / fSize[1]}};
    }
 
    static const std::vector<std::shared_ptr<TCanvas>> &GetCanvases();

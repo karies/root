@@ -18,29 +18,35 @@
 
 #include "ROOT/TPadCoord.hxx"
 
+#include <array>
+
 namespace ROOT {
 namespace Experimental {
 
 namespace Internal {
 /** \class ROOT::Experimental::Internal::TPadHorizVert
-  A 2D (horizontal and vertical) combination of `TPadCoord`s.
-  */
+   A 2D (horizontal and vertical) combination of `TPadCoord`s.
+   */
 
 template <class DERIVED>
 struct TPadHorizVert {
    TPadCoord fHoriz; ///< Horizontal position
    TPadCoord fVert; ///< Vertical position
 
+   TPadHorizVert() = default;
+   TPadHorizVert(const std::array<TPadCoord,2> &hv): fHoriz(hv[0]), fVert(hv[1]) {}
+   TPadHorizVert(const TPadCoord &horiz, const TPadCoord &vert): fHoriz(horiz), fVert(vert) {}
+
    /// Add two `TPadPos`s.
    friend DERIVED operator+(DERIVED lhs, const DERIVED &rhs)
    {
-      return {lhs.fHoriz + rhs.fHoriz, lhs.fVert + rhs.fVert};
+      return DERIVED{lhs.fHoriz + rhs.fHoriz, lhs.fVert + rhs.fVert};
    }
 
    /// Subtract two `TPadPos`s.
    friend DERIVED operator-(DERIVED lhs, const DERIVED &rhs)
    {
-      return {lhs.fHoriz - rhs.fHoriz, lhs.fVert - rhs.fVert};
+      return DERIVED{lhs.fHoriz - rhs.fHoriz, lhs.fVert - rhs.fVert};
    }
 
    DERIVED &toDerived() { return *static_cast<DERIVED*>(this); }
@@ -84,6 +90,7 @@ struct TPadHorizVert {
   A position (horizontal and vertical) in a `TPad`.
   */
 struct TPadPos: Internal::TPadHorizVert<TPadPos> {
+   using Internal::TPadHorizVert<TPadPos>::TPadHorizVert;
 };
 
 } // namespace Experimental

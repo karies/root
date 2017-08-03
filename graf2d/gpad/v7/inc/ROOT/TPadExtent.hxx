@@ -25,6 +25,7 @@ namespace Experimental {
   An extent / size (horizontal and vertical) in a `TPad`.
   */
 struct TPadExtent: Internal::TPadHorizVert<TPadPos> {
+  using Internal::TPadHorizVert<TPadPos>::TPadHorizVert;
 };
 
 

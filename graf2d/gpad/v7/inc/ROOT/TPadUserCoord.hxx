@@ -74,8 +74,8 @@ public:
 
    /// Convert user coordinates to normal coordinates.
    std::array<TPadCoord::Normal, 2> ToNormal(const std::array<TPadCoord::User, 2> &pos) const override {
-      return {(pos[0] - fMin[0]) / GetDenominator(0),
-              (pos[1] - fMin[1]) / GetDenominator(1)};
+      return {{(pos[0] - fMin[0]) / GetDenominator(0),
+               (pos[1] - fMin[1]) / GetDenominator(1)}};
    }
 };
 

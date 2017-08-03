@@ -28,6 +28,8 @@
 namespace ROOT {
 namespace Experimental {
 
+class TPad;
+
 namespace Internal {
 class TVirtualCanvasPainter;
 }
@@ -65,7 +67,7 @@ private:
 
 protected:
    /// Allow derived classes to default construct a TPadBase.
-   TPadBase();
+   TPadBase() = default;
 
 public:
    virtual ~TPadBase();
@@ -151,7 +153,7 @@ public:
 class TPad: public Internal::TPadBase {
 private:
    /// Pad containing this pad as a sub-pad.
-   const TPad *fParent = nullptr;
+   const TPadBase *fParent = nullptr;
 
    /// Size of the pad in the parent's (!) coordinate system.
    TPadExtent fSize;
@@ -183,7 +185,7 @@ private:
 
 public:
    /// Create a child pad.
-   TPad(const TPad &parent, const TPadExtent& size): fParent(&parent), fSize(size) {}
+   TPad(const TPadBase &parent, const TPadExtent& size): fParent(&parent), fSize(size) {}
 
    /// Destructor to have a vtable.
    virtual ~TPad();
@@ -194,12 +196,12 @@ public:
    /// Convert a `Pixel` position to Canvas-normalized positions.
    std::array<TPadCoord::Normal, 2> PixelsToNormal(const std::array<TPadCoord::Pixel, 2> &pos) const override {
      std::array<TPadCoord::Normal, 2> posInParentNormal = fParent->PixelsToNormal(pos);
-     std::array<TPadCoord::Normal, 2> myPixelInNormal = fParent->PixelsToNormal({fSize.fHoriz.fPixel, fSize.fVert.fPixel});
-     std::array<TPadCoord::Normal, 2> myUserInNormal = fParent->UserToNormal({fSize.fHoriz.fUser, fSize.fVert.fUser});
+     std::array<TPadCoord::Normal, 2> myPixelInNormal = fParent->PixelsToNormal({{fSize.fHoriz.fPixel, fSize.fVert.fPixel}});
+     std::array<TPadCoord::Normal, 2> myUserInNormal = fParent->UserToNormal({{fSize.fHoriz.fUser, fSize.fVert.fUser}});
      // If the parent says pos is at 0.6 in normal coords, and our size converted to normal is 0.2, then pos in our coord system
      // is 3.0!
-     return {posInParentNormal[0] / (fSize.fHoriz.fNormal + myPixelInNormal[0] + myUserInNormal[0]),
-             posInParentNormal[1] / (fSize.fVert.fNormal + myPixelInNormal[1] + myUserInNormal[1])};
+     return {{posInParentNormal[0] / (fSize.fHoriz.fNormal + myPixelInNormal[0] + myUserInNormal[0]),
+              posInParentNormal[1] / (fSize.fVert.fNormal + myPixelInNormal[1] + myUserInNormal[1])}};
    }
 
    /// Convert a TPadPos to [x, y] of normalized coordinates.
@@ -207,8 +209,8 @@ public:
    std::array<TPadCoord::Normal, 2> ToNormal(const Internal::TPadHorizVert<DERIVED> &pos) const {
       std::array<TPadCoord::Normal, 2> pixelsInNormal = PixelsToNormal({pos.fHoriz.fPixel, pos.fVert.fPixel});
       std::array<TPadCoord::Normal, 2> userInNormal = UserToNormal({pos.fHoriz.fUser, pos.fVert.fUser});
-      return {pos.fHoriz.fNormal + pixelsInNormal[0] + userInNormal[0],
-              pos.fVert.fNormal + pixelsInNormal[1] + userInNormal[1]};
+      return {{pos.fHoriz.fNormal + pixelsInNormal[0] + userInNormal[0],
+               pos.fVert.fNormal + pixelsInNormal[1] + userInNormal[1]}};
    }
    
 };
