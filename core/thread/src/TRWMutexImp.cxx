@@ -81,7 +81,7 @@ TVirtualRWMutex *TRWMutexImp<MutexT, RecurseCountsT>::Factory(Bool_t /*recursive
 
 template <typename MutexT, typename RecurseCountsT>
 std::unique_ptr<TVirtualRWMutex::StateDelta>
-TRWMutexImp<MutexT, RecurseCountsT>::RewindToBefore(const TVirtualRWMutex::State &earlierState)
+TRWMutexImp<MutexT, RecurseCountsT>::Rewind(const TVirtualRWMutex::State &earlierState)
 {
    return fMutexImp.Rewind(earlierState);
 }
