@@ -103,7 +103,7 @@ void TRWMutexImp<MutexT, RecurseCountsT>::Apply(std::unique_ptr<TVirtualRWMutex:
 
 template <typename MutexT, typename RecurseCountsT>
 std::unique_ptr<TVirtualRWMutex::State>
-TRWMutexImp<MutexT, RecurseCountsT>::GetStateBefore() const
+TRWMutexImp<MutexT, RecurseCountsT>::GetStateBefore()
 {
    return fMutexImp.GetStateBefore();
 }
