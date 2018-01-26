@@ -257,6 +257,7 @@ TReentrantRWLock<MutexT, RecurseCountsT>::GetStateBefore()
    }
 
    std::unique_ptr<State_t> pState(new State_t);
+   std::lock_guard<MutexT> lock(fMutex);
    pState->fReadersCountLoc = &(fRecurseCounts.GetLocalReadersCount(local));
    pState->fReadersCount = *(pState->fReadersCountLoc);
    pState->fWriteRecurse = fRecurseCounts.fWriteRecurse - 1;
@@ -354,6 +355,7 @@ void TReentrantRWLock<MutexT, RecurseCountsT>::AssertReadCountLocIsFromCurrentTh
    (void)presumedLocalReadersCount;
 #ifdef DEBUG
    auto local = fRecurseCounts.GetLocal();
+   std::lock_guard<MutexT> lock(fMutex);
    size_t* localReadersCount = &(fRecurseCounts.GetLocalReadersCount(local));
    if (localReadersCount != presumedLocalReadersCount) {
       Error("TReentrantRWLock::AssertReadCountLocIsFromCurrentThread", "ReadersCount is from different thread!")
