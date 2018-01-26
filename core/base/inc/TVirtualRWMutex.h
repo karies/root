@@ -48,14 +48,14 @@ public:
    /// Earlier lock state as returned by `GetState()` that can be passed to
    /// `Restore()`
    struct State {
-      virtual ~State();
+      virtual ~State(); // implemented in TVirtualMutex.cxx
    };
 
    /// \class StateDelta
    /// State as returned by `GetStateDelta()` that can be passed to
    /// `Restore()`
    struct StateDelta {
-      virtual ~StateDelta();
+      virtual ~StateDelta(); // implemented in TVirtualMutex.cxx
    };
 
    virtual Hint_t *ReadLock() = 0;
