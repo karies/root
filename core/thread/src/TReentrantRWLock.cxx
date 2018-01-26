@@ -259,7 +259,7 @@ TReentrantRWLock<MutexT, RecurseCountsT>::GetStateBefore()
    std::unique_ptr<State_t> pState(new State_t);
    pState->fReadersCountLoc = &(fRecurseCounts.GetLocalReadersCount(local));
    pState->fReadersCount = *(pState->fReadersCountLoc);
-   pState->fWriteRecurse = fRecurseCounts.fWriteRecurse;
+   pState->fWriteRecurse = fRecurseCounts.fWriteRecurse - 1;
 
    return std::move(pState);
 }
