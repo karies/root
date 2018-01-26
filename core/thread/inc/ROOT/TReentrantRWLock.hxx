@@ -37,7 +37,7 @@ struct UniqueLockRecurseCount {
 
    using local_t = LocalCounts*;
 
-   local_t GetLocal() {
+   local_t GetLocal(){
       TTHREAD_TLS_DECL(LocalCounts, gLocal);
       return &gLocal;
    }
