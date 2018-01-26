@@ -8467,7 +8467,8 @@ void TCling::ForgetMutexState()
    if (fInitialMutex.back().fRecurseCount == 0) {
       Error("ForgetMutexState", "mutex state's recurse count already 0!");
    }
-   else if (--fInitialMutex.back().fRecurseCount) {
+   else if (--fInitialMutex.back().fRecurseCount == 0) {
+      // We have returned from all interpreter frames. Reset the initial lock state.
       fInitialMutex.back().fState.reset();
    }
 }
