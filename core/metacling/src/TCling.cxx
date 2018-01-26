@@ -8457,6 +8457,8 @@ void TCling::SnapshotMutexState(ROOT::TVirtualRWMutex* mtx)
       }
       fInitialMutex.back().fState = mtx->GetStateBefore();
    }
+   // We will "forget" this lock once we backed out of all interpreter frames.
+   // Here we are entering one, so ++.
    ++fInitialMutex.back().fRecurseCount;
 }
 

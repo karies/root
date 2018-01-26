@@ -260,6 +260,8 @@ TReentrantRWLock<MutexT, RecurseCountsT>::GetStateBefore()
    std::lock_guard<MutexT> lock(fMutex);
    pState->fReadersCountLoc = &(fRecurseCounts.GetLocalReadersCount(local));
    pState->fReadersCount = *(pState->fReadersCountLoc);
+   // *Before* the most recent write lock (that is required by GetStateBefore())
+   // was taken, the write recursion level was `fWriteRecurse - 1`
    pState->fWriteRecurse = fRecurseCounts.fWriteRecurse - 1;
 
    return std::move(pState);
