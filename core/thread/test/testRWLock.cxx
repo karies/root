@@ -190,7 +190,7 @@ template <typename T>
 void ResetRestore(T &m, size_t repeat = 1)
 {
    do {
-      m.WriteLock();
+      auto whint0 = m.WriteLock();
       auto state = m.GetStateBefore();
       auto rhint = m.ReadLock();
       m.Apply( m.Rewind(*state.get()) );
@@ -226,6 +226,7 @@ void ResetRestore(T &m, size_t repeat = 1)
       m.ReadUnLock(rhint);
       m.ReadUnLock(rhint);
       m.ReadUnLock(rhint);
+      m.WriteUnLock(whint0);
    } while ( --repeat > 0 );
 }
 
