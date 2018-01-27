@@ -298,13 +298,15 @@ TReentrantRWLock<MutexT, RecurseCountsT>::Rewind(const State &earlierState) {
    if (pStateDelta->fDeltaWriteRecurse != 0) {
       // Notify through WriteUnLock()
       *typedState.fReadersCountLoc = typedState.fReadersCount;
-      fRecurseCounts.fWriteRecurse = typedState.fWriteRecurse - 1;
+      // Claim a recurse-state +1 to be able to call Unlock() below.
+      fRecurseCounts.fWriteRecurse = typedState.fWriteRecurse + 1;
 
       // Release this thread's write lock
       WriteUnLock(hint);
    } else if (pStateDelta->fReadersCountLoc != 0) {
       // Notify through ReadUnLock()
-      *typedState.fReadersCountLoc = typedState.fReadersCount - 1;
+      // Claim a recurse-state +1 to be able to call Unlock() below.
+      *typedState.fReadersCountLoc = typedState.fReadersCount + 1;
       fRecurseCounts.fWriteRecurse = typedState.fWriteRecurse;
 
       // Release this thread's reader lock(s)
