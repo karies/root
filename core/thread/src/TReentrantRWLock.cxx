@@ -339,13 +339,13 @@ void TReentrantRWLock<MutexT, RecurseCountsT>::Apply(std::unique_ptr<StateDelta>
    }
    AssertReadCountLocIsFromCurrentThread(typedDelta->fReadersCountLoc);
 
-   if (typedDelta->fDeltaReadersCount != 0) {
-      ReadLock();
-      *typedDelta->fReadersCountLoc += typedDelta->fDeltaReadersCount - 1;
-   } else if (typedDelta->fDeltaWriteRecurse != 0) {
+   if (typedDelta->fDeltaWriteRecurse != 0) {
       WriteLock();
       fRecurseCounts.fWriteRecurse += typedDelta->fDeltaWriteRecurse - 1;
       *typedDelta->fReadersCountLoc += typedDelta->fDeltaReadersCount;
+   } else if (typedDelta->fDeltaReadersCount != 0) {
+      ReadLock();
+      *typedDelta->fReadersCountLoc += typedDelta->fDeltaReadersCount - 1;
    }
 }
 
