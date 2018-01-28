@@ -515,13 +515,13 @@ R__EXTERN TInterpreter* gCling;
 
 namespace ROOT {
 namespace Internal {
-struct DeregisterInterpreterMutexRAII {
+struct InterpreterMutexRegistrationRAII {
    TLockGuard fLockGuard;
-   DeregisterInterpreterMutexRAII(TVirtualMutex* mutex): fLockGuard(mutex)
+   InterpreterMutexRegistrationRAII(TVirtualMutex* mutex): fLockGuard(mutex)
    {
       ::gCling->SnapshotMutexState(gCoreMutex);
    }
-   ~DeregisterInterpreterMutexRAII() {
+   ~InterpreterMutexRegistrationRAII() {
       ::gCling->ForgetMutexState();
    }
 };
@@ -529,7 +529,7 @@ struct DeregisterInterpreterMutexRAII {
 }
 
 #if defined (_REENTRANT) || defined (WIN32)
-# define R__LOCKGUARD_CLING(mutex)  ROOT::Internal::DeregisterInterpreterMutexRAII _R__UNIQUE_(R__guard)(mutex); { }
+# define R__LOCKGUARD_CLING(mutex)  ROOT::Internal::InterpreterMutexRegistrationRAII _R__UNIQUE_(R__guard)(mutex); { }
 #else
 # define R__LOCKGUARD_CLING(mutex)  (void)mutex; { }
 #endif
