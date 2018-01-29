@@ -305,7 +305,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname) const
       return tmi;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
@@ -356,7 +356,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
       return tmi;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
@@ -450,7 +450,7 @@ TClingMethodInfo TClingClassInfo::GetMethod(const char *fname,
       return tmi;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
@@ -516,7 +516,7 @@ TClingMethodInfo TClingClassInfo::GetMethodWithArgs(const char *fname,
       EInheritanceMode /* imode = kWithInheritance*/) const
 {
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (fType) {
       const TypedefType *TT = llvm::dyn_cast<TypedefType>(fType);
@@ -578,7 +578,7 @@ int TClingClassInfo::GetMethodNArg(const char *method, const char *proto,
       return -1;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    TClingMethodInfo mi = GetMethod(method, proto, objectIsConst, 0, mode);
    int clang_val = -1;
@@ -592,7 +592,7 @@ int TClingClassInfo::GetMethodNArg(const char *method, const char *proto,
 long TClingClassInfo::GetOffset(const CXXMethodDecl* md) const
 {
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    long offset = 0L;
    const CXXRecordDecl* definer = md->getParent();
@@ -619,7 +619,7 @@ long TClingClassInfo::GetOffset(const CXXMethodDecl* md) const
 ptrdiff_t TClingClassInfo::GetBaseOffset(TClingClassInfo* base, void* address, bool isDerivedObject)
 {
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    // Check for the offset in the cache.
    auto iter = fOffsetCache.find(base->GetDecl());
@@ -669,7 +669,7 @@ bool TClingClassInfo::HasDefaultConstructor() const
 
 bool TClingClassInfo::HasMethod(const char *name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (IsLoaded() && !llvm::isa<EnumDecl>(fDecl)) {
       return fInterp->getLookupHelper()
          .hasFunction(fDecl, name,
@@ -729,7 +729,7 @@ void TClingClassInfo::Init(const Type &tag)
 {
    fType = &tag;
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    const TagType *tagtype = fType->getAs<TagType>();
    if (tagtype) {
@@ -758,7 +758,7 @@ bool TClingClassInfo::IsBase(const char *name) const
       return false;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    const CXXRecordDecl *CRD =
       llvm::dyn_cast<CXXRecordDecl>(fDecl);
@@ -795,7 +795,7 @@ bool TClingClassInfo::IsLoaded() const
       return false;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    const CXXRecordDecl *CRD = llvm::dyn_cast<CXXRecordDecl>(fDecl);
    if ( CRD ) {
@@ -836,7 +836,7 @@ bool TClingClassInfo::IsValidMethod(const char *method, const char *proto,
 int TClingClassInfo::InternalNext()
 {
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (!fIsIter) {
       // Object was not setup for iteration.
@@ -969,7 +969,7 @@ void *TClingClassInfo::New(const ROOT::TMetaUtils::TNormalizedCtxt &normCtxt) co
       return 0;
    }
    {
-      R__LOCKGUARD(gInterpreterMutex);
+      R__LOCKGUARD_CLING(gInterpreterMutex);
       const CXXRecordDecl* RD = dyn_cast<CXXRecordDecl>(fDecl);
       if (!RD) {
          Error("TClingClassInfo::New()", "This is a namespace!: %s",
@@ -1011,7 +1011,7 @@ void *TClingClassInfo::New(int n, const ROOT::TMetaUtils::TNormalizedCtxt &normC
    }
 
    {
-      R__LOCKGUARD(gInterpreterMutex);
+      R__LOCKGUARD_CLING(gInterpreterMutex);
 
       const CXXRecordDecl* RD = dyn_cast<CXXRecordDecl>(fDecl);
       if (!RD) {
@@ -1056,7 +1056,7 @@ void *TClingClassInfo::New(int n, void *arena, const ROOT::TMetaUtils::TNormaliz
       return 0;
    }
    {
-      R__LOCKGUARD(gInterpreterMutex);
+      R__LOCKGUARD_CLING(gInterpreterMutex);
 
       const CXXRecordDecl* RD = dyn_cast<CXXRecordDecl>(fDecl);
       if (!RD) {
@@ -1095,7 +1095,7 @@ void *TClingClassInfo::New(void *arena, const ROOT::TMetaUtils::TNormalizedCtxt 
       return 0;
    }
    {
-      R__LOCKGUARD(gInterpreterMutex);
+      R__LOCKGUARD_CLING(gInterpreterMutex);
 
       const CXXRecordDecl* RD = dyn_cast<CXXRecordDecl>(fDecl);
       if (!RD) {
@@ -1124,7 +1124,7 @@ long TClingClassInfo::Property() const
       return 0L;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    long property = 0L;
    property |= kIsCPPCompiled;
@@ -1192,7 +1192,7 @@ int TClingClassInfo::Size() const
       return 0;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    Decl::Kind DK = fDecl->getKind();
    if (DK == Decl::Namespace) {
@@ -1288,7 +1288,7 @@ const char *TClingClassInfo::Title()
    // Iterate over the redeclarations, we can have multiple definitions in the
    // redecl chain (came from merging of pcms).
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (const TagDecl *TD = llvm::dyn_cast<TagDecl>(GetDecl())) {
       if ( (TD = ROOT::TMetaUtils::GetAnnotatedRedeclarable(TD)) ) {
@@ -1323,7 +1323,7 @@ const char *TClingClassInfo::TmpltName() const
       return 0;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    // Note: This *must* be static/thread_local because we are returning a pointer inside it!
    TTHREAD_TLS_DECL( std::string, buf);

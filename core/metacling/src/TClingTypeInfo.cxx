@@ -108,7 +108,7 @@ const char *TClingTypeInfo::Name() const
    TTHREAD_TLS_DECL( std::string, buf);
    buf.clear();
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    ROOT::TMetaUtils::GetFullyQualifiedTypeName(buf,fQualType,*fInterp);
    return buf.c_str();
 }
