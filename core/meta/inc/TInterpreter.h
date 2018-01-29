@@ -519,10 +519,12 @@ struct InterpreterMutexRegistrationRAII {
    TLockGuard fLockGuard;
    InterpreterMutexRegistrationRAII(TVirtualMutex* mutex): fLockGuard(mutex)
    {
-      ::gCling->SnapshotMutexState(gCoreMutex);
+      if (gCoreMutex)
+         ::gCling->SnapshotMutexState(gCoreMutex);
    }
    ~InterpreterMutexRegistrationRAII() {
-      ::gCling->ForgetMutexState();
+      if (gCoreMutex)
+         ::gCling->ForgetMutexState();
    }
 };
 }
