@@ -296,23 +296,21 @@ TReentrantRWLock<MutexT, RecurseCountsT>::Rewind(const State &earlierState) {
 
    auto hint = reinterpret_cast<TVirtualRWMutex::Hint_t *>(typedState.fReadersCountLoc);
    if (pStateDelta->fDeltaWriteRecurse != 0) {
-      // Notify through WriteUnLock()
-      *typedState.fReadersCountLoc = typedState.fReadersCount;
       // Claim a recurse-state +1 to be able to call Unlock() below.
       fRecurseCounts.fWriteRecurse = typedState.fWriteRecurse + 1;
-
       // Release this thread's write lock
       WriteUnLock(hint);
-   } else if (pStateDelta->fReadersCountLoc != 0) {
-      // Notify through ReadUnLock()
+   }
+
+   if (pStateDelta->fReadersCountLoc != 0) {
       // Claim a recurse-state +1 to be able to call Unlock() below.
       *typedState.fReadersCountLoc = typedState.fReadersCount + 1;
-      fRecurseCounts.fWriteRecurse = typedState.fWriteRecurse;
-
+      fReaders += typedState.fReadersCount + 1;
       // Release this thread's reader lock(s)
       ReadUnLock(hint);
    }
    // else earlierState and *this are identical!
+
    return pStateDelta;
 }
 
@@ -342,9 +340,11 @@ void TReentrantRWLock<MutexT, RecurseCountsT>::Apply(std::unique_ptr<StateDelta>
    if (typedDelta->fDeltaWriteRecurse != 0) {
       WriteLock();
       fRecurseCounts.fWriteRecurse += typedDelta->fDeltaWriteRecurse - 1;
-      *typedDelta->fReadersCountLoc += typedDelta->fDeltaReadersCount;
-   } else if (typedDelta->fDeltaReadersCount != 0) {
+   }
+   if (typedDelta->fDeltaReadersCount != 0) {
       ReadLock();
+      // "- 1" due to ReadLock() above.
+      fReaders += typedDelta->fDeltaReadersCount - 1;
       *typedDelta->fReadersCountLoc += typedDelta->fDeltaReadersCount - 1;
    }
 }
