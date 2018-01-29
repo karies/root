@@ -2096,7 +2096,7 @@ Long_t TCling::ProcessLine(const char* line, EErrorCode* error/*=0*/)
       // and is implemented by
       if (gApplication) {
          if (gApplication->IsCmdThread()) {
-            R__LOCKGUARD(fLockProcessLine ? gInterpreterMutex : 0);
+            R__LOCKGUARD_CLING(fLockProcessLine ? gInterpreterMutex : 0);
             gROOT->SetLineIsProcessing();
 
             UpdateAllCanvases();
@@ -2113,7 +2113,7 @@ Long_t TCling::ProcessLine(const char* line, EErrorCode* error/*=0*/)
          gInterpreterMutex = gGlobalMutex->Factory(kTRUE);
       gGlobalMutex->UnLock();
    }
-   R__LOCKGUARD(fLockProcessLine ? gInterpreterMutex : 0);
+   R__LOCKGUARD_CLING(fLockProcessLine ? gInterpreterMutex : 0);
    gROOT->SetLineIsProcessing();
 
    struct InterpreterFlagsRAII {
@@ -2257,7 +2257,7 @@ void TCling::PrintIntro()
 
 void TCling::AddIncludePath(const char *path)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    // Favorite source of annoyance: gSystem->AddIncludePath() needs "-I",
    // gCling->AddIncludePath() does not! Work around that inconsistency:
    if (path[0] == '-' && path[1] == 'I')
@@ -2676,7 +2676,7 @@ void TCling::ClearStack()
 
 bool TCling::Declare(const char* code)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    int oldload = SetClassAutoloading(0);
    SuspendAutoParsing autoParseRaii(this);
@@ -2727,7 +2727,7 @@ void TCling::EndOfLineAction()
 
 Bool_t TCling::IsLoaded(const char* filename) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    //FIXME: if we use llvm::sys::fs::make_absolute all this can go away. See
    // cling::DynamicLibraryManager.
@@ -2993,7 +2993,7 @@ Int_t TCling::Load(const char* filename, Bool_t system)
    }
 
    // Used to return 0 on success, 1 on duplicate, -1 on failure, -2 on "fatal".
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    cling::DynamicLibraryManager* DLM = fInterpreter->getDynamicLibraryManager();
    std::string canonLib = DLM->lookupLibrary(filename);
    cling::DynamicLibraryManager::LoadLibResult res
@@ -3044,7 +3044,7 @@ Long_t TCling::ProcessLineAsynch(const char* line, EErrorCode* error)
 
 Long_t TCling::ProcessLineSynch(const char* line, EErrorCode* error)
 {
-   R__LOCKGUARD(fLockProcessLine ? gInterpreterMutex : 0);
+   R__LOCKGUARD_CLING(fLockProcessLine ? gInterpreterMutex : 0);
    if (gApplication) {
       if (gApplication->IsCmdThread()) {
          return ProcessLine(line, error);
@@ -3072,7 +3072,7 @@ Long_t TCling::Calc(const char* line, EErrorCode* error)
       gROOT->SetLineIsProcessing();
    }
 #endif // R__WIN32
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (error) {
       *error = TInterpreter::kNoError;
    }
@@ -3130,7 +3130,7 @@ void TCling::SetGetline(const char * (*getlineFunc)(const char* prompt),
 
 Bool_t TCling::HandleNewTransaction(const cling::Transaction &T)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if ((std::distance(T.decls_begin(), T.decls_end()) != 1)
       || T.deserialized_decls_begin() != T.deserialized_decls_end()
@@ -3178,7 +3178,7 @@ void TCling::Reset()
    // TCling::SaveContext().
 #if defined(R__MUST_REVISIT)
 #if R__MUST_REVISIT(6,2)
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Warning("Reset","Cling should support the equivalent of scratch_upto(&fDictPos)");
 #endif
 #endif
@@ -3191,7 +3191,7 @@ void TCling::ResetAll()
 {
 #if defined(R__MUST_REVISIT)
 #if R__MUST_REVISIT(6,2)
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Warning("ResetAll","Cling should support the equivalent of complete reset (unload everything but the startup decls.");
 #endif
 #endif
@@ -3205,7 +3205,7 @@ void TCling::ResetAll()
 
 void TCling::ResetGlobals()
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    // TODO:
    // Here we should iterate over the transactions (N-3) and revert.
    // N-3 because the first three internal to cling.
@@ -3221,7 +3221,7 @@ void TCling::ResetGlobalVar(void* obj)
 {
 #if defined(R__MUST_REVISIT)
 #if R__MUST_REVISIT(6,2)
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Warning("ResetGlobalVar","Cling should support the equivalent of resetglobalvar(obj)");
 #endif
 #endif
@@ -3236,7 +3236,7 @@ void TCling::RewindDictionary()
 {
 #if defined(R__MUST_REVISIT)
 #if R__MUST_REVISIT(6,2)
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Warning("RewindDictionary","Cling should provide a way to revert transaction similar to rewinddictionary()");
 #endif
 #endif
@@ -3250,7 +3250,7 @@ Int_t TCling::DeleteGlobal(void* obj)
 {
 #if defined(R__MUST_REVISIT)
 #if R__MUST_REVISIT(6,2)
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Warning("DeleteGlobal","Cling should provide the equivalent of deleteglobal(obj), see also DeleteVariable.");
 #endif
 #endif
@@ -3269,7 +3269,7 @@ Int_t TCling::DeleteVariable(const char* name)
 #endif
 #endif
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    llvm::StringRef srName(name);
    const char* unscopedName = name;
    llvm::StringRef::size_type posScope = srName.rfind("::");
@@ -3324,7 +3324,7 @@ void TCling::SaveContext()
 {
 #if defined(R__MUST_REVISIT)
 #if R__MUST_REVISIT(6,2)
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Warning("SaveContext","Cling should provide a way to record a state watermark similar to store_dictposition(&fDictPos)");
 #endif
 #endif
@@ -3337,7 +3337,7 @@ void TCling::SaveGlobalsContext()
 {
 #if defined(R__MUST_REVISIT)
 #if R__MUST_REVISIT(6,2)
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Warning("SaveGlobalsContext","Cling should provide a way to record a watermark for the list of global variable similar to store_dictposition(&fDictPosGlobals)");
 #endif
 #endif
@@ -3476,7 +3476,7 @@ std::string AtlernateTuple(const char *classname)
 
 void TCling::SetClassInfo(TClass* cl, Bool_t reload)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (cl->fClassInfo && !reload) {
       return;
    }
@@ -3583,7 +3583,7 @@ void TCling::SetClassInfo(TClass* cl, Bool_t reload)
 TInterpreter::ECheckClassInfo
 TCling::CheckClassInfo(const char *name, Bool_t autoload, Bool_t isClassOrNamespaceOnly /* = kFALSE*/)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    static const char *anonEnum = "anonymous enum ";
    static const int cmplen = strlen(anonEnum);
 
@@ -3755,7 +3755,7 @@ Bool_t TCling::CheckClassTemplate(const char *name)
 
 void TCling::CreateListOfBaseClasses(TClass *cl) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (cl->fBase) {
       return;
    }
@@ -3779,7 +3779,7 @@ void TCling::CreateListOfBaseClasses(TClass *cl) const
 
 void TCling::LoadEnums(TListOfEnums& enumList) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    const Decl * D;
    TClass* cl = enumList.GetClass();
@@ -3826,7 +3826,7 @@ void TCling::LoadEnums(TListOfEnums& enumList) const
 
 void TCling::LoadFunctionTemplates(TClass* cl) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    const Decl * D;
    TListOfFunctionTemplates* funcTempList;
@@ -3897,7 +3897,7 @@ void TCling::UpdateListOfDataMembers(TClass* cl) const
 
 void TCling::CreateListOfMethodArgs(TFunction* m) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (m->fMethodArgs) {
       return;
    }
@@ -4137,7 +4137,7 @@ Int_t TCling::GenerateDictionary(const char* classes, const char* includes /* = 
 
 TInterpreter::DeclId_t TCling::GetDataMember(ClassInfo_t *opaque_cl, const char *name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    DeclId_t d;
    TClingClassInfo *cl = (TClingClassInfo*)opaque_cl;
 
@@ -4168,7 +4168,7 @@ TInterpreter::DeclId_t TCling::GetDataMember(ClassInfo_t *opaque_cl, const char 
 
 TInterpreter::DeclId_t TCling::GetEnum(TClass *cl, const char *name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    const clang::Decl* possibleEnum = 0;
    // FInd the context of the decl.
@@ -4295,7 +4295,7 @@ TInterpreter::DeclId_t TCling::GetDataMemberAtAddr(const void *addr) const
 TString TCling::GetMangledName(TClass* cl, const char* method,
                                const char* params, Bool_t objectIsConst /* = kFALSE */)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingCallFunc func(fInterpreter,*fNormalizedCtxt);
    if (cl) {
       Long_t offset;
@@ -4323,7 +4323,7 @@ TString TCling::GetMangledNameWithPrototype(TClass* cl, const char* method,
                                             const char* proto, Bool_t objectIsConst /* = kFALSE */,
                                             EFunctionMatchMode mode /* = kConversionMatch */)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (cl) {
       return ((TClingClassInfo*)cl->GetClassInfo())->
          GetMethod(method, proto, objectIsConst, 0 /*poffset*/, mode).GetMangledName();
@@ -4340,7 +4340,7 @@ TString TCling::GetMangledNameWithPrototype(TClass* cl, const char* method,
 void* TCling::GetInterfaceMethod(TClass* cl, const char* method,
                                  const char* params, Bool_t objectIsConst /* = kFALSE */)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingCallFunc func(fInterpreter,*fNormalizedCtxt);
    if (cl) {
       Long_t offset;
@@ -4361,7 +4361,7 @@ void* TCling::GetInterfaceMethod(TClass* cl, const char* method,
 
 TInterpreter::DeclId_t TCling::GetFunction(ClassInfo_t *opaque_cl, const char* method)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    DeclId_t f;
    TClingClassInfo *cl = (TClingClassInfo*)opaque_cl;
    if (cl) {
@@ -4438,7 +4438,7 @@ void* TCling::GetInterfaceMethodWithPrototype(TClass* cl, const char* method,
                                               Bool_t objectIsConst /* = kFALSE */,
                                               EFunctionMatchMode mode /* = kConversionMatch */)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    void* f;
    if (cl) {
       f = ((TClingClassInfo*)cl->GetClassInfo())->
@@ -4460,7 +4460,7 @@ TInterpreter::DeclId_t TCling::GetFunctionWithValues(ClassInfo_t *opaque_cl, con
                                                      const char* params,
                                                      Bool_t objectIsConst /* = kFALSE */)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    DeclId_t f;
    TClingClassInfo *cl = (TClingClassInfo*)opaque_cl;
    if (cl) {
@@ -4483,7 +4483,7 @@ TInterpreter::DeclId_t TCling::GetFunctionWithPrototype(ClassInfo_t *opaque_cl, 
                                                         Bool_t objectIsConst /* = kFALSE */,
                                                         EFunctionMatchMode mode /* = kConversionMatch */)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    DeclId_t f;
    TClingClassInfo *cl = (TClingClassInfo*)opaque_cl;
    if (cl) {
@@ -4502,7 +4502,7 @@ TInterpreter::DeclId_t TCling::GetFunctionWithPrototype(ClassInfo_t *opaque_cl, 
 
 TInterpreter::DeclId_t TCling::GetFunctionTemplate(ClassInfo_t *opaque_cl, const char* name)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    DeclId_t f;
    TClingClassInfo *cl = (TClingClassInfo*)opaque_cl;
    if (cl) {
@@ -4527,7 +4527,7 @@ void TCling::GetInterpreterTypeName(const char* name, std::string &output, Bool_
 {
    output.clear();
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    TClingClassInfo cl(fInterpreter, name);
    if (!cl.IsValid()) {
@@ -4558,7 +4558,7 @@ void TCling::GetInterpreterTypeName(const char* name, std::string &output, Bool_
 
 void TCling::Execute(const char* function, const char* params, int* error)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (error) {
       *error = TInterpreter::kNoError;
    }
@@ -4583,7 +4583,7 @@ void TCling::Execute(const char* function, const char* params, int* error)
 void TCling::Execute(TObject* obj, TClass* cl, const char* method,
                      const char* params, Bool_t objectIsConst, int* error)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (error) {
       *error = TInterpreter::kNoError;
    }
@@ -4686,7 +4686,7 @@ void TCling::Execute(TObject* obj, TClass* cl, TMethod* method,
    }
 
    // And now execute it.
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (error) {
       *error = TInterpreter::kNoError;
    }
@@ -4728,7 +4728,7 @@ void TCling::ExecuteWithArgsAndReturn(TMethod* method, void* address,
 
 Long_t TCling::ExecuteMacro(const char* filename, EErrorCode* error)
 {
-   R__LOCKGUARD(fLockProcessLine ? gInterpreterMutex : 0);
+   R__LOCKGUARD_CLING(fLockProcessLine ? gInterpreterMutex : 0);
    fCurExecutingMacros.push_back(filename);
    Long_t result = TApplication::ExecuteFile(filename, (int*)error);
    fCurExecutingMacros.pop_back();
@@ -5064,7 +5064,7 @@ namespace {
 
 Int_t TCling::LoadLibraryMap(const char* rootmapfile)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    // open the [system].rootmap files
    if (!fMapfile) {
       fMapfile = new TEnv();
@@ -5356,7 +5356,7 @@ Int_t TCling::UnloadLibraryMap(const char* library)
    size_t len = libname.Length();
    TEnvRec *rec;
    TIter next(fMapfile->GetTable());
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    Int_t ret = 0;
    while ((rec = (TEnvRec *) next())) {
       TString cls = rec->GetName();
@@ -5418,7 +5418,7 @@ Int_t TCling::SetClassSharedLibs(const char *cls, const char *libs)
    // blanks and TEnv considers a blank a terminator
    key.ReplaceAll(" ", "-");
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    if (!fMapfile) {
       fMapfile = new TEnv();
       fMapfile->IgnoreDuplicates(kTRUE);
@@ -5487,7 +5487,7 @@ Int_t TCling::AutoLoad(const std::type_info& typeinfo, Bool_t knowDictNotLoaded 
 
 Int_t TCling::AutoLoad(const char *cls, Bool_t knowDictNotLoaded /* = kFALSE */)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (!knowDictNotLoaded && gClassTable->GetDictNorm(cls)) {
       // The library is already loaded as the class's dictionary is known.
@@ -5625,7 +5625,7 @@ static cling::Interpreter::CompilationResult ExecAutoParse(const char *what,
 UInt_t TCling::AutoParseImplRecurse(const char *cls, bool topLevel)
 {
    // We assume the lock has already been taken.
-   //    R__LOCKGUARD(gInterpreterMutex);
+   //    R__LOCKGUARD_CLING(gInterpreterMutex);
 
    Int_t nHheadersParsed = 0;
    unsigned long offset = 0;
@@ -5766,7 +5766,7 @@ UInt_t TCling::AutoParseImplRecurse(const char *cls, bool topLevel)
 
 Int_t TCling::AutoParse(const char *cls)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (!fHeaderParsingOnDemand || fIsAutoParsingSuspended) {
       if (fClingCallbacks->IsAutoloadingEnabled()) {
@@ -6435,7 +6435,7 @@ Bool_t TCling::SetErrorMessages(Bool_t enable)
 
 const char* TCling::GetIncludePath()
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    fIncludePath = "";
 
@@ -6730,7 +6730,7 @@ void TCling::RegisterTemporary(const TInterpreterValue& value)
 void TCling::RegisterTemporary(const cling::Value& value)
 {
    if (value.isValid() && value.needsManagedAllocation()) {
-      R__LOCKGUARD(gInterpreterMutex);
+      R__LOCKGUARD_CLING(gInterpreterMutex);
       fTemporaries->push_back(value);
    }
 }
@@ -6937,7 +6937,7 @@ Double_t TCling::CallFunc_ExecDouble(CallFunc_t* func, void* address) const
 
 CallFunc_t* TCling::CallFunc_Factory() const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (CallFunc_t*) new TClingCallFunc(fInterpreter,*fNormalizedCtxt);
 }
 
@@ -6968,7 +6968,7 @@ void TCling::CallFunc_IgnoreExtraArgs(CallFunc_t* func, bool ignore) const
 
 void TCling::CallFunc_Init(CallFunc_t* func) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingCallFunc* f = (TClingCallFunc*) func;
    f->Init();
 }
@@ -7219,7 +7219,7 @@ void TCling::ClassInfo_Destruct(ClassInfo_t* cinfo, void* arena) const
 
 ClassInfo_t* TCling::ClassInfo_Factory(Bool_t all) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (ClassInfo_t*) new TClingClassInfo(fInterpreter, all);
 }
 
@@ -7234,7 +7234,7 @@ ClassInfo_t* TCling::ClassInfo_Factory(ClassInfo_t* cinfo) const
 
 ClassInfo_t* TCling::ClassInfo_Factory(const char* name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (ClassInfo_t*) new TClingClassInfo(fInterpreter, name);
 }
 
@@ -7266,7 +7266,7 @@ bool TCling::ClassInfo_HasMethod(ClassInfo_t* cinfo, const char* name) const
 
 void TCling::ClassInfo_Init(ClassInfo_t* cinfo, const char* name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingClassInfo* TClinginfo = (TClingClassInfo*) cinfo;
    TClinginfo->Init(name);
 }
@@ -7275,7 +7275,7 @@ void TCling::ClassInfo_Init(ClassInfo_t* cinfo, const char* name) const
 
 void TCling::ClassInfo_Init(ClassInfo_t* cinfo, int tagnum) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingClassInfo* TClinginfo = (TClingClassInfo*) cinfo;
    TClinginfo->Init(tagnum);
 }
@@ -7451,7 +7451,7 @@ void TCling::BaseClassInfo_Delete(BaseClassInfo_t* bcinfo) const
 
 BaseClassInfo_t* TCling::BaseClassInfo_Factory(ClassInfo_t* cinfo) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingClassInfo* TClinginfo = (TClingClassInfo*) cinfo;
    return (BaseClassInfo_t*) new TClingBaseClassInfo(fInterpreter, TClinginfo);
 }
@@ -7461,7 +7461,7 @@ BaseClassInfo_t* TCling::BaseClassInfo_Factory(ClassInfo_t* cinfo) const
 BaseClassInfo_t* TCling::BaseClassInfo_Factory(ClassInfo_t* derived,
    ClassInfo_t* base) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingClassInfo* TClinginfo = (TClingClassInfo*) derived;
    TClingClassInfo* TClinginfoBase = (TClingClassInfo*) base;
    return (BaseClassInfo_t*) new TClingBaseClassInfo(fInterpreter, TClinginfo, TClinginfoBase);
@@ -7578,7 +7578,7 @@ void TCling::DataMemberInfo_Delete(DataMemberInfo_t* dminfo) const
 
 DataMemberInfo_t* TCling::DataMemberInfo_Factory(ClassInfo_t* clinfo /*= 0*/) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingClassInfo* TClingclass_info = (TClingClassInfo*) clinfo;
    return (DataMemberInfo_t*) new TClingDataMemberInfo(fInterpreter, TClingclass_info);
 }
@@ -7587,7 +7587,7 @@ DataMemberInfo_t* TCling::DataMemberInfo_Factory(ClassInfo_t* clinfo /*= 0*/) co
 
 DataMemberInfo_t* TCling::DataMemberInfo_Factory(DeclId_t declid, ClassInfo_t* clinfo) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    const clang::Decl* decl = reinterpret_cast<const clang::Decl*>(declid);
    const clang::ValueDecl* vd = llvm::dyn_cast_or_null<clang::ValueDecl>(decl);
    return (DataMemberInfo_t*) new TClingDataMemberInfo(fInterpreter, vd, (TClingClassInfo*)clinfo);
@@ -7956,7 +7956,7 @@ void TCling::MethodInfo_CreateSignature(MethodInfo_t* minfo, TString& signature)
 
 MethodInfo_t* TCling::MethodInfo_Factory() const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (MethodInfo_t*) new TClingMethodInfo(fInterpreter);
 }
 
@@ -7964,7 +7964,7 @@ MethodInfo_t* TCling::MethodInfo_Factory() const
 
 MethodInfo_t* TCling::MethodInfo_Factory(ClassInfo_t* clinfo) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (MethodInfo_t*) new TClingMethodInfo(fInterpreter, (TClingClassInfo*)clinfo);
 }
 
@@ -7973,7 +7973,7 @@ MethodInfo_t* TCling::MethodInfo_Factory(ClassInfo_t* clinfo) const
 MethodInfo_t* TCling::MethodInfo_Factory(DeclId_t declid) const
 {
    const clang::Decl* decl = reinterpret_cast<const clang::Decl*>(declid);
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    const clang::FunctionDecl* fd = llvm::dyn_cast_or_null<clang::FunctionDecl>(decl);
    return (MethodInfo_t*) new TClingMethodInfo(fInterpreter, fd);
 }
@@ -8177,7 +8177,7 @@ void TCling::MethodArgInfo_Delete(MethodArgInfo_t* marginfo) const
 
 MethodArgInfo_t* TCling::MethodArgInfo_Factory() const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (MethodArgInfo_t*) new TClingMethodArgInfo(fInterpreter);
 }
 
@@ -8185,7 +8185,7 @@ MethodArgInfo_t* TCling::MethodArgInfo_Factory() const
 
 MethodArgInfo_t* TCling::MethodArgInfo_Factory(MethodInfo_t *minfo) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (MethodArgInfo_t*) new TClingMethodArgInfo(fInterpreter, (TClingMethodInfo*)minfo);
 }
 
@@ -8269,7 +8269,7 @@ void TCling::TypeInfo_Delete(TypeInfo_t* tinfo) const
 
 TypeInfo_t* TCling::TypeInfo_Factory() const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (TypeInfo_t*) new TClingTypeInfo(fInterpreter);
 }
 
@@ -8277,7 +8277,7 @@ TypeInfo_t* TCling::TypeInfo_Factory() const
 
 TypeInfo_t* TCling::TypeInfo_Factory(const char *name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (TypeInfo_t*) new TClingTypeInfo(fInterpreter, name);
 }
 
@@ -8292,7 +8292,7 @@ TypeInfo_t* TCling::TypeInfo_FactoryCopy(TypeInfo_t* tinfo) const
 
 void TCling::TypeInfo_Init(TypeInfo_t* tinfo, const char* name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingTypeInfo* TClinginfo = (TClingTypeInfo*) tinfo;
    TClinginfo->Init(name);
 }
@@ -8362,7 +8362,7 @@ void TCling::TypedefInfo_Delete(TypedefInfo_t* tinfo) const
 
 TypedefInfo_t* TCling::TypedefInfo_Factory() const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (TypedefInfo_t*) new TClingTypedefInfo(fInterpreter);
 }
 
@@ -8370,7 +8370,7 @@ TypedefInfo_t* TCling::TypedefInfo_Factory() const
 
 TypedefInfo_t* TCling::TypedefInfo_Factory(const char *name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    return (TypedefInfo_t*) new TClingTypedefInfo(fInterpreter, name);
 }
 
@@ -8386,7 +8386,7 @@ TypedefInfo_t* TCling::TypedefInfo_FactoryCopy(TypedefInfo_t* tinfo) const
 void TCling::TypedefInfo_Init(TypedefInfo_t* tinfo,
                               const char* name) const
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingTypedefInfo* TClinginfo = (TClingTypedefInfo*) tinfo;
    TClinginfo->Init(name);
 }

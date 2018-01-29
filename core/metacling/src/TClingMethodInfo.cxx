@@ -94,7 +94,7 @@ TClingMethodInfo::TClingMethodInfo(const TClingMethodInfo &rhs) :
 {
    if (rhs.fTemplateSpecIter) {
       // The SpecIterator query the decl.
-      R__LOCKGUARD(gInterpreterMutex);
+      R__LOCKGUARD_CLING(gInterpreterMutex);
       fTemplateSpecIter = new SpecIterator(*rhs.fTemplateSpecIter);
    }
 }
@@ -105,7 +105,7 @@ TClingMethodInfo::TClingMethodInfo(cling::Interpreter *interp,
    : fInterp(interp), fFirstTime(true), fContextIdx(0U), fTitle(""),
      fTemplateSpecIter(0), fSingleDecl(0)
 {
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    if (!ci || !ci->IsValid()) {
       return;
@@ -173,7 +173,7 @@ void TClingMethodInfo::CreateSignature(TString &signature) const
       return;
    }
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingMethodArgInfo arg(fInterp, this);
 
    int idx = 0;
@@ -211,7 +211,7 @@ void *TClingMethodInfo::InterfaceMethod(const ROOT::TMetaUtils::TNormalizedCtxt 
    if (!IsValid()) {
       return 0;
    }
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    TClingCallFunc cf(fInterp,normCtxt);
    cf.SetFunc(this);
    return cf.InterfaceMethod();
@@ -221,7 +221,7 @@ bool TClingMethodInfo::IsValidSlow() const
 {
    if (fTemplateSpecIter) {
       // Could trigger deserialization of decls.
-      R__LOCKGUARD(gInterpreterMutex);
+      R__LOCKGUARD_CLING(gInterpreterMutex);
       cling::Interpreter::PushTransactionRAII RAII(fInterp);
       return *(*fTemplateSpecIter);
    }
@@ -605,7 +605,7 @@ std::string TClingMethodInfo::GetMangledName() const
    mangled_name.clear();
    const FunctionDecl* D = GetMethodDecl();
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
    cling::Interpreter::PushTransactionRAII RAII(fInterp);
    GlobalDecl GD;
    if (const CXXConstructorDecl* Ctor = dyn_cast<CXXConstructorDecl>(D))
@@ -707,7 +707,7 @@ const char *TClingMethodInfo::Title()
    // redecl chain (came from merging of pcms).
    const FunctionDecl *FD = GetMethodDecl();
 
-   R__LOCKGUARD(gInterpreterMutex);
+   R__LOCKGUARD_CLING(gInterpreterMutex);
 
    // Could trigger deserialization of decls.
    cling::Interpreter::PushTransactionRAII RAII(fInterp);
