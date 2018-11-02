@@ -34,7 +34,7 @@ namespace Internal {
                            TDictionary* dict):
          TTreeReaderValueBase(reader, branchname, dict), fImpl(0) {}
 
-      size_t GetSize() const { return fImpl->GetSize(GetProxy()); }
+      size_t GetSize() const { return GetProxy()->GetEntries(); }
       Bool_t IsEmpty() const { return !GetSize(); }
 
       virtual EReadStatus GetReadStatus() const { return fImpl ? fImpl->fReadStatus : kReadError; }
@@ -44,12 +44,10 @@ namespace Internal {
       virtual void CreateProxy();
       bool GetBranchAndLeaf(TBranch* &branch, TLeaf* &myLeaf,
                             TDictionary* &branchActualType);
-      void SetImpl(TBranch* branch, TLeaf* myLeaf);
+      void CreateProxyImpl(TBranch* branch, TLeaf* myLeaf);
       const char* GetBranchContentDataType(TBranch* branch,
                                            TString& contentTypeName,
                                            TDictionary* &dict);
-
-      TVirtualCollectionReader* fImpl; // Common interface to collections
 
       // FIXME: re-introduce once we have ClassDefInline!
       //ClassDef(TTreeReaderArrayBase, 0);//Accessor to member of an object stored in a collection

@@ -40,37 +40,29 @@ namespace Internal {
 
    class TNamedBranchProxy: public TObject {
    public:
-      TNamedBranchProxy(): fDict(0), fContentDict(0) {}
-      TNamedBranchProxy(TBranchProxyDirector* boss, TBranch* branch, const char* membername):
-         fProxy(boss, branch, membername), fDict(0), fContentDict(0) {}
+      TNamedBranchProxy() = default;
 
-      const char* GetName() const { return fProxy.GetBranchName(); }
-      const Detail::TBranchProxy* GetProxy() const { return &fProxy; }
-      Detail::TBranchProxy* GetProxy() { return &fProxy; }
+      TNamedBranchProxy(TBranchProxyDirector* boss, TBranch* branch, const char* membername):
+         fProxy(new TBranchProxy(boss, branch, membername)) {}
+
+      template <class PROXY>
+      TNamedBranchProxy(TBranchProxyDirector* boss, TBranch* branch, const char* membername):
+         fProxy(new PROXY(boss, branch, membername)) {}
+
+      const char* GetName() const { return fProxy->GetBranchName(); }
+      const Detail::TBranchProxy* GetProxy() const { return fProxy.get(); }
+      Detail::TBranchProxy* GetProxy() { return fProxy.get(); }
       TDictionary* GetDict() const { return fDict; }
       void SetDict(TDictionary* dict) { fDict = dict; }
       TDictionary* GetContentDict() const { return fContentDict; }
       void SetContentDict(TDictionary* dict) { fContentDict = dict; }
 
    private:
-      Detail::TBranchProxy fProxy;
-      TDictionary*       fDict;
-      TDictionary*       fContentDict; // type of content, if a collection
+      std::unique_ptr<Detail::TBranchProxy> fProxy;
+      TDictionary*         fDict = 0;
+      TDictionary*         fContentDict = 0; // type of content, if a collection
       ClassDef(TNamedBranchProxy, 0); // branch proxy with a name
    };
-
-   // Used by TTreeReaderArray
-   class TVirtualCollectionReader {
-   public:
-      TTreeReaderValueBase::EReadStatus fReadStatus;
-
-      TVirtualCollectionReader() : fReadStatus(TTreeReaderValueBase::kReadNothingYet) {}
-
-      virtual ~TVirtualCollectionReader();
-      virtual size_t GetSize(Detail::TBranchProxy*) = 0;
-      virtual void* At(Detail::TBranchProxy*, size_t /*idx*/) = 0;
-   };
-
 }
 }
 

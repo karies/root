@@ -71,9 +71,6 @@ namespace Internal {
       ESetupStatus GetSetupStatus() const { return fSetupStatus; }
       virtual EReadStatus GetReadStatus() const { return fReadStatus; }
 
-      /// If we are reading a leaf, return the corresponding TLeaf.
-      TLeaf* GetLeaf() { return fLeaf; }
-
       void* GetAddress();
 
       const char* GetBranchName() const { return fBranchName; }
@@ -110,7 +107,6 @@ namespace Internal {
       TTreeReader* fTreeReader; // tree reader we belong to
       TDictionary* fDict; // type that the branch should contain
       Detail::TBranchProxy* fProxy = nullptr; // proxy for this branch, owned by TTreeReader
-      TLeaf*       fLeaf = nullptr;
       std::vector<Long64_t> fStaticClassOffsets;
 
       // FIXME: re-introduce once we have ClassDefInline!

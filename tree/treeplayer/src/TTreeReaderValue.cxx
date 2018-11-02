@@ -63,7 +63,6 @@ ROOT::Internal::TTreeReaderValueBase::TTreeReaderValueBase(const TTreeReaderValu
    fTreeReader(rhs.fTreeReader),
    fDict(rhs.fDict),
    fProxy(rhs.fProxy),
-   fLeaf(rhs.fLeaf),
    fStaticClassOffsets(rhs.fStaticClassOffsets)
 {
    RegisterWithTreeReader();
@@ -87,7 +86,6 @@ ROOT::Internal::TTreeReaderValueBase::operator=(const TTreeReaderValueBase& rhs)
       }
       fDict = rhs.fDict;
       fProxy = rhs.fProxy;
-      fLeaf = rhs.fLeaf;
       fSetupStatus = rhs.fSetupStatus;
       fReadStatus = rhs.fReadStatus;
       fStaticClassOffsets = rhs.fStaticClassOffsets;
@@ -156,11 +154,6 @@ void ROOT::Internal::TTreeReaderValueBase::NotifyNewTree(TTree* newTree) {
       fReadStatus = kReadError;
       Error("TTreeReaderValueBase::GetLeaf()", "Unable to get the branch from the tree");
       return;
-   }
-
-   fLeaf = myBranch->GetLeaf(fLeafName);
-   if (!fLeaf) {
-      Error("TTreeReaderValueBase::GetLeaf()", "Failed to get the leaf from the branch");
    }
 }
 
@@ -354,7 +347,6 @@ void ROOT::Internal::TTreeReaderValueBase::CreateProxy() {
                if (tempDict && tempDict->IsA() == TDataType::Class() && TDictionary::GetDictionary(((TDataType*)tempDict)->GetTypeName()) == fDict){
                   //fLeafOffset = myLeaf->GetOffset() / 4;
                   branchActualType = fDict;
-                  fLeaf = myLeaf;
                   fBranchName = branchName;
                   fLeafName = leafName(1, leafName.Length());
                   fHaveLeaf = fLeafName.Length() > 0;
@@ -433,7 +425,7 @@ void ROOT::Internal::TTreeReaderValueBase::CreateProxy() {
       if (membername.IsNull()) {
          membername = branch->GetName();
       }
-   } else if (branch->IsA() == TBranch::Class() && fLeaf) {
+   } else if (branch->IsA() == TBranch::Class() && fHaveLeaf) {
       // We have a leaflist.
       membername = fLeafName;
    }
