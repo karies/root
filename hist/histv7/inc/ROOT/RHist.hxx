@@ -27,6 +27,44 @@
 namespace ROOT {
 namespace Experimental {
 
+/**
+\class RHistBase
+Base class for RHist, offering axis- and precision agnostic features such as getting bin content
+as a double and bin iteration.
+*/
+
+template <int DIMENSIONS>
+class RHistBase {
+public:
+   virtual ~RHistBase() = default;
+
+   /// Number of dimensions of the coordinates.
+   static constexpr int GetNDim() noexcept { return DIMENSIONS; }
+
+   /// Number of bins of this histogram, including all overflow and underflow
+   /// bins. Simply the product of all axes' number of bins.
+   virtual int GetNBins() const noexcept = 0;
+
+   /// Get the histogram title.
+   const std::string &GetTitle() const { return fTitle; }
+
+protected:
+   ///\name Inaccessible copy, assignment
+   /// The copy and move constructors and assignment operators are protected to
+   /// prevent slicing.
+   ///\{
+   RHistBase() = default;
+   RHistBase(const RHistBase &) = default;
+   RHistBase(RHistBase &&) = default;
+   RHistBase(std::string_view title): fTitle(title) {}
+   RHistBase &operator=(const RHistBase &rhs) = default;
+   RHistBase &operator=(RHistBase &&rhs) = default;
+   ///\}
+
+private:
+   std::string fTitle; ///< Histogram title.
+};
+
 // fwd declare for fwd declare for friend declaration in RHist...
 template <int DIMENSIONS, class PRECISION, template <int D_, class P_> class... STAT>
 class RHist;
@@ -49,7 +87,7 @@ HistFromImpl(std::unique_ptr<typename RHist<DIMENSIONS, PRECISION, STAT...>::Imp
  */
 
 template <int DIMENSIONS, class PRECISION, template <int D_, class P_> class... STAT>
-class RHist {
+class RHist: public RHistBase<DIMENSIONS, PRECISION> {
 public:
    /// The type of the `Detail::RHistImplBase` of this histogram.
    using ImplBase_t =
@@ -64,9 +102,6 @@ public:
    using AxisRange_t = typename ImplBase_t::AxisIterRange_t;
 
    using const_iterator = Detail::RHistBinIter<ImplBase_t>;
-
-   /// Number of dimensions of the coordinates
-   static constexpr int GetNDim() noexcept { return DIMENSIONS; }
 
    RHist() = default;
    RHist(RHist &&) = default;
