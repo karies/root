@@ -110,4 +110,6 @@ The following people have contributed to this new version:
 
 ## Build, Configuration and Testing Infrastructure
 
+### Support for Apple macOS 11 Big Sur and Silicon ARM
 
+ROOT now builds on macOS 11 ("Big Sur") and on Apple's new ARM computers.
