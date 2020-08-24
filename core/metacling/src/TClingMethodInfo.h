@@ -33,6 +33,7 @@
 #include <string>
 
 #include "clang/AST/DeclBase.h"
+#include "clang/AST/DeclCXX.h"
 #include "llvm/ADT/SmallVector.h"
 
 namespace cling {
@@ -64,6 +65,8 @@ private:
    const clang::FunctionDecl                   *fTemplateSpec; // an all-default-template-args function.
    llvm::SmallVector<clang::Decl *,4>           fDefDataSpecFuns; // decl_begin() will skip these special members, materialized from DefinitionData
    llvm::SmallVector<clang::Decl *,4>::const_iterator fDefDataSpecFunIter; // Iterator over fDefDataSpecFuns
+   clang::UsingDecl                            *fCurrentUsingDecl = nullptr; // Iterating the shadowed decls of this using decl.
+   clang::UsingDecl::shadow_iterator            fCurrentUsingShadowedIter; // Shadowed decl iterator of fCurrentUsingDecl.
 
    const clang::Decl* GetDeclSlow() const;
 

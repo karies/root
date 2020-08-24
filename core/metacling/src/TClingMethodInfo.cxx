@@ -67,7 +67,9 @@ TClingMethodInfo::TClingMethodInfo(const TClingMethodInfo &rhs) :
    fTitle(rhs.fTitle),
    fTemplateSpec(rhs.fTemplateSpec),
    fDefDataSpecFuns(rhs.fDefDataSpecFuns),
-   fDefDataSpecFunIter(fDefDataSpecFuns.begin() + (rhs.fDefDataSpecFunIter - rhs.fDefDataSpecFuns.begin()))
+   fDefDataSpecFunIter(fDefDataSpecFuns.begin() + (rhs.fDefDataSpecFunIter - rhs.fDefDataSpecFuns.begin())),
+   fCurrentUsingDecl(rhs.fCurrentUsingDecl),
+   fCurrentUsingShadowedIter(rhs.fCurrentUsingShadowedIter)
 {
 }
 
@@ -86,7 +88,8 @@ TClingMethodInfo& TClingMethodInfo::operator=(const TClingMethodInfo &rhs) {
    fTemplateSpec = rhs.fTemplateSpec;
    fDefDataSpecFuns = rhs.fDefDataSpecFuns;
    fDefDataSpecFunIter = fDefDataSpecFuns.begin() + (rhs.fDefDataSpecFunIter - rhs.fDefDataSpecFuns.begin());
-
+   fCurrentUsingDecl = rhs.fCurrentUsingDecl;
+   fCurrentUsingShadowedIter = rhs.fCurrentUsingShadowedIter;
    return *this;
 }
 
@@ -116,7 +119,7 @@ TClingMethodInfo::TClingMethodInfo(cling::Interpreter *interp,
             return; // Handle "structor not found" case.
 
          if (std::find(cxxdecl->decls_begin(), cxxdecl->decls_end(), D)
-            == cxxdecl->decls_end())
+            == cxxdecl->decls_end() && !clang::isa<clang::UsingDecl>(D))
             fDefDataSpecFuns.emplace_back(D);
       };
 
@@ -228,6 +231,8 @@ const clang::Decl* TClingMethodInfo::GetDeclSlow() const
    }
    if (!fDefDataSpecFuns.empty())
       return *fDefDataSpecFunIter;
+   if (fCurrentUsingDecl)
+      return *fCurrentUsingShadowedIter;
    return *fIter;
 }
 
@@ -411,11 +416,15 @@ int TClingMethodInfo::InternalNext()
                fDefDataSpecFuns.clear();
                assert(fContextIdx == 0 && "Unexpected DC iteration state");
             }
+         } else if (fCurrentUsingDecl) {
+            if (++fCurrentUsingShadowedIter == fCurrentUsingDecl->shadow_end()) {
+               fCurrentUsingDecl = nullptr;
+            }
          } else
             ++fIter;
       }
       // Fix it if we have gone past the end of the current decl context.
-      while (fDefDataSpecFuns.empty() && !*fIter) {
+      while (fDefDataSpecFuns.empty() && !fCurrentUsingDecl && !*fIter) {
          ++fContextIdx;
          if (fContextIdx >= fContexts.size()) {
             // Iterator is now invalid.
@@ -435,6 +444,9 @@ int TClingMethodInfo::InternalNext()
       clang::Decl *declIter = *fIter;
       if (!fDefDataSpecFuns.empty())
          declIter = *fDefDataSpecFunIter;
+      else if (fCurrentUsingDecl) {
+         declIter = *fCurrentUsingShadowedIter;
+      }
 
       if (const auto templateDecl = llvm::dyn_cast<clang::FunctionTemplateDecl>(declIter)) {
          // Instantiation below can trigger deserialization.
@@ -456,6 +468,16 @@ int TClingMethodInfo::InternalNext()
          if (!FD->isDeleted())
             // Iterator is now valid.
             return 1;
+      }
+
+      // Handle using decls.
+      if (auto *UD = llvm::dyn_cast<clang::UsingDecl>(declIter)) {
+         if (UD->shadow_size()) {
+            fCurrentUsingDecl = UD;
+            fCurrentUsingShadowedIter = fCurrentUsingDecl->shadow_begin();
+            declIter = *fCurrentUsingShadowedIter;
+            return 1;
+         }
       }
 
       // Collect internal `__cling_N5xxx' inline namespaces; they will be traversed later
