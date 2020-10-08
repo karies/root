@@ -76,7 +76,7 @@ namespace clang {
     QualType VisitSubstTemplateTypeParmType(const SubstTemplateTypeParmType *T);
     QualType VisitTemplateSpecializationType(const TemplateSpecializationType *T);
     QualType VisitElaboratedType(const ElaboratedType *T);
-    // FIXME: DependentNameType
+    QualType VisitDependentNameType(const DependentNameType *T);
     // FIXME: DependentTemplateSpecializationType
     QualType VisitObjCInterfaceType(const ObjCInterfaceType *T);
     QualType VisitObjCObjectType(const ObjCObjectType *T);
@@ -765,6 +765,22 @@ QualType ASTNodeImporter::VisitElaboratedType(const ElaboratedType *T) {
 
   return Importer.getToContext().getElaboratedType(T->getKeyword(),
                                                    ToQualifier, ToNamedType);
+}
+
+QualType ASTNodeImporter::VisitDependentNameType(const DependentNameType *T) {
+
+  NestedNameSpecifier *ToName
+    = dyn_cast_or_null<NestedNameSpecifier>(Importer.Import(T->getQualifier()));
+  if (!ToName)
+    return QualType();
+
+  IdentifierInfo *identifierInfo = Importer.Import(T->getIdentifier());
+  if (!identifierInfo)
+    return QualType();
+
+  return Importer.getToContext().getDependentNameType(T->getKeyword(), ToName,
+                                                      identifierInfo,
+                                            T->getCanonicalTypeUnqualified());
 }
 
 QualType ASTNodeImporter::VisitObjCInterfaceType(const ObjCInterfaceType *T) {
@@ -1933,8 +1949,18 @@ Decl *ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
     Parameters.push_back(ToP);
   }
   
-  // Create the imported function.
   TypeSourceInfo *TInfo = Importer.Import(D->getTypeSourceInfo());
+  // If it is a function with Dependent Type parameters
+  if (TInfo) {
+    for (unsigned I = 0; I < Parameters.size(); I++) {
+      if (FunctionProtoTypeLoc ToProtoLoc
+        = TInfo->getTypeLoc().getAs<FunctionProtoTypeLoc>()) {
+        ToProtoLoc.setParam(I, Parameters[I]);
+      }
+    }
+  }
+
+  // Create the imported function.
   FunctionDecl *ToFunction = nullptr;
   SourceLocation InnerLocStart = Importer.Import(D->getInnerLocStart());
   if (CXXConstructorDecl *FromConstructor = dyn_cast<CXXConstructorDecl>(D)) {
